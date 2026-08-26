@@ -1,0 +1,88 @@
+@theme {
+  --radius-base: 16px;
+  --font-family-base: "Montserrat", sans-serif;
+  --font-family-inter: "Inter", Inter Fallback;
+
+  --color-black: #333333;
+  --color-primary: #713bce;
+  --color-red: #d11a2a;
+  --color-blue: #372895;
+  --color-darkBlue: #2b3674;
+  --color-lightBlue: #4318ff;
+  --color-lighterBlue: #707eae;
+  --color-gray: #9ca3af;
+  --color-lightGray: #f4f7fe;
+  --color-lighertGray: #ced4da;
+  --color-mutedForeground: #64748b;
+  --color-linkText: #020817;
+  --color-btnPrimary: #713bce;
+  --color-btnText: #faf8fc;
+  --color-active: #22c55e;
+  --color-warning: #fdc212;
+  --breakpoint-xs: 25rem;
+  --breakpoint-3xl: 103.125rem;
+
+  /* shadcn/ui token bridge — the two components under components/PaginatedSelectBox
+     and components/DateRangePicker (and the primitives under components/ui) were
+     authored against these semantic tokens; this app has no shadcn CSS-variable
+     theme of its own, so without these the classes (bg-background, text-muted-
+     foreground, bg-popover, ...) silently resolve to nothing. --muted-foreground
+     is deliberately the same value as --color-gray so a shadcn placeholder reads
+     identically to every FormInput's own placeholder:text-gray. */
+  --color-background: #ffffff;
+  --color-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
+  --color-muted-foreground: #9ca3af;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #0f172a;
+  --color-input: #e0e5f2;
+  --color-ring: var(--color-teal-500);
+
+  /* Tenant brand color — the whole app's teal-* classes (buttons, active
+     states, accents) are built on Tailwind's stock `teal` palette, so
+     overriding its own CSS variables here reskins everything without
+     touching a single component. This is the platform DEFAULT ramp,
+     generated from #3643AB by global/colorRamp.js's generateColorRamp() —
+     ThemeApplier overrides these same variables inline once a logged-in
+     tenant's own themeColor is known, so keep this block and that
+     generator's output in sync if the default ever changes. */
+  --color-teal-50: #f4f5fb;
+  --color-teal-100: #e5e7f6;
+  --color-teal-200: #c7cbeb;
+  --color-teal-300: #9ea5dc;
+  --color-teal-400: #6974c9;
+  --color-teal-500: #3643ab;
+  --color-teal-600: #2c378c;
+  --color-teal-700: #252e74;
+  --color-teal-800: #1f2661;
+  --color-teal-900: #181e4e;
+  --color-teal-950: #0f122f;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark {
+  --color-background: #1e293b;
+  --color-foreground: #ffffff;
+  --color-popover: #0f172a;
+  --color-popover-foreground: #ffffff;
+  --color-muted-foreground: #94a3b8;
+  --color-accent: rgba(255, 255, 255, 0.1);
+  --color-accent-foreground: #ffffff;
+  --color-input: rgba(255, 255, 255, 0.2);
+  --color-ring: var(--color-teal-500);
+}
+
+.border,
+.border-r,
+.border-l,
+.border-t,
+.border-b,
+.\[\&_td\]\:border-b td {
+  border-color: #e2e8f0;
+}
+
+body {
+  font-family: var(--font-family-inter);
+}

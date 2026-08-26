@@ -1,0 +1,165 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+/* RTL scrollbar: make #root the scroll container so scrollbar follows direction (left in RTL, right in LTR) */
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+#root {
+  height: 100%;
+  overflow: auto;
+}
+.container {
+  margin: auto;
+  padding-left: "1rem";
+  padding-right: "1rem";
+}
+
+/* auth css */
+
+.auth-carousel .slick-dots {
+  bottom: -60px;
+  width: auto;
+}
+.auth-carousel .slick-dots li button:before {
+  color: #ffffff;
+  display: none;
+  opacity: 1;
+}
+.auth-carousel .slick-dots li button {
+  padding: 0;
+  background-color: #fff !important;
+  width: 8px;
+  height: 8px;
+  border-radius: 48px;
+}
+.auth-carousel .slick-dots li.slick-active button {
+  background-color: var(--color-teal-500) !important;
+  width: 38px;
+  opacity: 1;
+}
+.auth-carousel .slick-dots li {
+  margin: 0 2px;
+  width: unset;
+  height: unset;
+}
+.register .auth-carousel .slick-dots li.slick-active button {
+  background-color: var(--color-blue) !important;
+}
+
+/* input number hide icons */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+input:focus-visible {
+  outline: none;
+}
+button {
+  transition: all;
+  transition-duration: 0.3s;
+  cursor: pointer;
+}
+button:not([aria-expanded]):hover {
+  opacity: 0.7;
+}
+
+/* scroller – var(--color-teal-500) theme */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(54, 67, 171, 0.08);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-teal-500);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-teal-600);
+}
+
+.pagination ul {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.pagination li a {
+  min-width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  white-space: nowrap;
+  padding: 10px;
+  display: flex;
+  font-size: 14px;
+  align-items: center;
+  color: #343a40;
+  font-weight: 600;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid #ced4da;
+}
+
+li.previous.disabled a,
+li.next.disabled a {
+  cursor: default;
+  color: #94a3b8;
+  background-color: #e9ecef;
+  border: 0;
+}
+li.previous a,
+li.next a {
+  cursor: pointer;
+  color: #64748b;
+}
+li.selected a {
+  color: var(--color-lightBlue);
+  border-color: var(--color-lightBlue);
+}
+
+.border-dash-large::before {
+  border-image: repeating-linear-gradient(
+      00deg,
+      var(--color-lighertGray),
+      var(--color-lighertGray) 10px,
+      transparent 10px,
+      transparent 20px
+    )
+    1;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* DateRangePicker's trigger (components/DateRangePicker — a pasted component
+   left unmodified) sets its own `h-auto py-2`, which lets its height grow
+   with content instead of matching FormInput's fixed h-10. Overridden here
+   (via its stable data-testid, not a class we can't safely touch) rather
+   than editing that component. */
+[data-testid="date-range-trigger"] {
+  height: 2.5rem !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Partners module keyframes */
+@keyframes partners-cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

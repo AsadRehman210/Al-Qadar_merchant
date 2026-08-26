@@ -1,0 +1,27 @@
+/* RichTextEditor's onChange hands back react-quill-new's getSemanticHTML()
+   output (see react-quill-new/lib/index.js onEditorChangeText) — genuine
+   semantic <ol>/<ul>/<li>, with no `data-list` attribute or Quill-specific
+   marker markup at all. But Quill's own base CSS (quill.core.css) sets
+   `.ql-editor li { list-style-type: none }` unconditionally, for its OWN
+   internal editing representation (which DOES use data-list + a JS-injected
+   marker span) — that blanket rule also hides the plain browser markers on
+   these genuinely semantic lists when we reuse `.ql-editor` for read-only
+   display. Restore them here, scoped to `.ql-readonly` so the live editor
+   itself is untouched. */
+.ql-readonly ol,
+.ql-readonly ul {
+  padding-left: 1.5em;
+}
+
+.ql-readonly li {
+  list-style-position: outside;
+  padding-left: 0.2em;
+}
+
+.ql-readonly ol li {
+  list-style-type: decimal;
+}
+
+.ql-readonly ul li {
+  list-style-type: disc;
+}

@@ -1,0 +1,13 @@
+{
+  "selected_count": "Selected {{name}} ({{count}})",
+  "clear_all": "Clear All",
+  "selecting": "Selecting...",
+  "selected_with_count": "Selected ({{count}})",
+  "of": "of",
+  "remove": "Remove",
+  "no_assets_found": "No assets found",
+  "no_assets_selected": "No assets selected",
+  "teams": "Teams",
+  "asset": "Asset",
+  "assets": "Assets"
+}

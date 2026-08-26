@@ -1,0 +1,98 @@
+/* react-calendar base - import in component */
+/* Attendance status tile colors - applied via tileClassName */
+.react-calendar__tile.attendance-present {
+  background-color: rgb(16 185 129 / 0.35) !important;
+  color: rgb(5 46 22);
+}
+.dark .react-calendar__tile.attendance-present {
+  background-color: rgb(16 185 129 / 0.25) !important;
+  color: rgb(167 243 208);
+}
+
+.react-calendar__tile.attendance-leave {
+  background-color: rgb(245 158 11 / 0.4) !important;
+  color: rgb(120 53 15);
+}
+.dark .react-calendar__tile.attendance-leave {
+  background-color: rgb(245 158 11 / 0.3) !important;
+  color: rgb(253 224 71);
+}
+
+.react-calendar__tile.attendance-absent {
+  background-color: rgb(127 29 29 / 0.75) !important;
+  color: rgb(254 226 226);
+}
+.dark .react-calendar__tile.attendance-absent {
+  background-color: rgb(153 27 27 / 0.65) !important;
+  color: rgb(254 202 202);
+}
+
+.react-calendar__tile.attendance-holiday {
+  background-color: rgb(99 102 241 / 0.35) !important;
+  color: rgb(30 27 75);
+}
+.dark .react-calendar__tile.attendance-holiday {
+  background-color: rgb(99 102 241 / 0.25) !important;
+  color: rgb(199 210 254);
+}
+
+.react-calendar__tile.attendance-half_day {
+  background: linear-gradient(
+    135deg,
+    rgb(16 185 129 / 0.25) 50%,
+    rgb(245 158 11 / 0.25) 50%
+  ) !important;
+  color: rgb(30 41 59);
+}
+.dark .react-calendar__tile.attendance-half_day {
+  background: linear-gradient(
+    135deg,
+    rgb(16 185 129 / 0.2) 50%,
+    rgb(245 158 11 / 0.2) 50%
+  ) !important;
+  color: rgb(226 232 240);
+}
+
+/* Legend dots - exact same colors as calendar tiles */
+.attendance-legend-present {
+  background-color: rgb(16 185 129) !important;
+}
+.attendance-legend-leave {
+  background-color: rgb(245 158 11) !important;
+}
+.attendance-legend-absent {
+  background-color: rgb(127 29 29) !important;
+}
+.attendance-legend-holiday {
+  background-color: rgb(99 102 241) !important;
+}
+.attendance-legend-half-day {
+  background: linear-gradient(90deg, rgb(16 185 129) 50%, rgb(245 158 11) 50%) !important;
+}
+
+/* Future dates - white/neutral */
+.react-calendar__tile.attendance-future {
+  background-color: transparent !important;
+  color: inherit;
+}
+
+/* Monthly calendar - full width, taller tiles */
+.attendance-calendar-wrapper .react-calendar {
+  width: 100%;
+  min-height: 420px;
+}
+.attendance-calendar-wrapper .react-calendar__month-view {
+  padding: 0.5rem;
+}
+.attendance-calendar-wrapper .react-calendar__tile {
+  padding: 0.85em 0.5em !important;
+  min-height: 52px;
+  font-size: 1rem;
+}
+.attendance-calendar-wrapper .react-calendar__month-view__weekdays__weekday {
+  padding: 0.6em 0.5em;
+  font-size: 0.875rem;
+}
+.attendance-calendar-wrapper .react-calendar__navigation {
+  min-height: 52px;
+}

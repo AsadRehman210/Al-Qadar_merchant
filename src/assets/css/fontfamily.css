@@ -1,0 +1,43 @@
+/* Font face declaration for Montserrat Bold */
+@font-face {
+  font-family: "Montserrat";
+  src: url("Montserrat-Bold.ttf") format("truetype");
+  font-weight: 700; /* or 'bold' */
+  font-style: normal;
+}
+
+/* For a complete font family, you should include other weights too */
+@font-face {
+  font-family: "Montserrat";
+  src: url("Montserrat-Medium.ttf") format("truetype");
+  font-weight: 500; /* or 'normal' */
+  font-style: normal;
+}
+
+/* For a complete font family, you should include other weights too */
+@font-face {
+  font-family: "Montserrat";
+  src: url("Montserrat-SemiBold.ttf") format("truetype");
+  font-weight: 600; /* or 'normal' */
+  font-style: normal;
+}
+
+/* For a complete font family, you should include other weights too */
+@font-face {
+  font-family: "Montserrat";
+  src: url("Montserrat-Regular.ttf") format("truetype");
+  font-weight: 400; /* or 'normal' */
+  font-style: normal;
+}
+
+*,
+input::placeholder,
+select::placeholder,
+textarea::placeholder,
+button,
+input,
+optgroup,
+select,
+textarea {
+  font-family: "Inter", Inter Fallback;
+}

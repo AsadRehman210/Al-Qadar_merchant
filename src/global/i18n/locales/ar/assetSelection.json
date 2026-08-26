@@ -1,0 +1,13 @@
+{
+  "selected_count": "المحدد {{name}} ({{count}})",
+  "clear_all": "مسح الكل",
+  "selecting": "جاري التحديد...",
+  "selected_with_count": "المحدد ({{count}})",
+  "of": "من",
+  "remove": "إزالة",
+  "no_assets_found": "لم يتم العثور على أصول",
+  "no_assets_selected": "لم يتم تحديد أصول",
+  "teams": "فرق",
+  "asset": "أصل",
+  "assets": "أصول"
+}

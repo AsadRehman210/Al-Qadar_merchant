@@ -1,0 +1,67 @@
+/* Arabic: keep date format as 31-01-2026 10:08 PM (LTR), align text to right */
+.datepicker-rtl .custom-date-input {
+  direction: ltr;
+  text-align: right;
+}
+
+.rmdp-ep-arrow {
+  display: none;
+}
+.rmdp-week-day {
+  color: #a0aec0;
+  font-size: 14px;
+  font-weight: 400;
+}
+.rmdp-range.start,
+.rmdp-range.end {
+  position: relative;
+  color: #fff;
+}
+/* .rmdp-range.start span,
+.rmdp-range.end span {
+  z-index: 1;
+} */
+.rmdp-day {
+  min-width: 45px;
+  min-height: 45px;
+  flex-grow: 1;
+}
+.rmdp-day span:hover,
+.rmdp-day span:hover,
+.rmdp-today span {
+  background-color: #e7f7ef !important;
+  color: #27a376 !important;
+}
+.rmdp-range.start:before,
+.rmdp-range.end:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: #27a376;
+  color: #fff;
+  border-radius: 10px !important;
+}
+.rmdp-range {
+  background-color: #e7f7ef;
+  color: #27a376;
+  box-shadow: none;
+}
+.rmdp-calendar,
+.rmdp-day-picker,
+.rmdp-week,
+.rmdp-ym {
+  min-width: 320px;
+}
+.rmdp-arrow {
+  border-color: #000;
+  width: 8px;
+  height: 8px;
+  border-width: 0 1px 1px 0;
+}
+.rmdp-border-bottom {
+  border: 0;
+}
+.rmdp-shadow {
+  box-shadow: 0px 5px 40px 0px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+}
