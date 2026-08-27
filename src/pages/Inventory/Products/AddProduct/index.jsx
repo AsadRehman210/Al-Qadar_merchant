@@ -11,7 +11,7 @@ import SelectDropdown from "components/SelectDropdown";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { STATUS_OPTIONS, PRODUCT_TYPE_OPTIONS } from "../../inventoryOptions";
+import { PRODUCT_TYPE_OPTIONS } from "../../inventoryOptions";
 import {
   createProduct,
   updateProduct,
@@ -53,7 +53,6 @@ const AddProduct = () => {
   );
 
   const [selCategory, setSelCategory] = useState({});
-  const [selStatus, setSelStatus] = useState(STATUS_OPTIONS[0]);
   const [selProductType, setSelProductType] = useState(PRODUCT_TYPE_OPTIONS[0]);
 
   const {
@@ -68,7 +67,6 @@ const AddProduct = () => {
     defaultValues: {
       productName: "",
       categoryId: "",
-      status: "Active",
       productType: "Finished Product",
     },
   });
@@ -85,11 +83,8 @@ const AddProduct = () => {
       reset({
         productName: existing.productName || "",
         categoryId: existing.categoryId || "",
-        status: existing.status || "Active",
         productType: existing.productType || "Finished Product",
       });
-      const st = STATUS_OPTIONS.find((x) => x.id === existing.status);
-      setSelStatus(st || STATUS_OPTIONS[0]);
       const pt = PRODUCT_TYPE_OPTIONS.find((x) => x.id === existing.productType);
       setSelProductType(pt || PRODUCT_TYPE_OPTIONS[0]);
 
@@ -128,7 +123,7 @@ const AddProduct = () => {
     const payload = {
       productName: data.productName,
       categoryId: selCategory?.id || data.categoryId,
-      status: selStatus?.id || data.status,
+      status: "Active",
       productType: selProductType?.id || data.productType,
     };
 
@@ -179,7 +174,7 @@ const AddProduct = () => {
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-8 border-l-4 !border-l-[var(--color-teal-500)] dark:border-l-teal-500/60"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormInput
               label={t("product:product_name")}
               name="productName"
@@ -189,6 +184,7 @@ const AddProduct = () => {
               pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
               maxLength={150}
+              placeholder={t("product:product_name_placeholder")}
             />
             <SearchablePaginatedDropdown
               label={t("product:category")}
@@ -209,21 +205,6 @@ const AddProduct = () => {
               placeholder={t("product:select_category")}
             />
             <SelectDropdown
-              label="product:status"
-              data={STATUS_OPTIONS}
-              selected={selStatus}
-              setSelected={(v) => {
-                setSelStatus(v);
-                setValue("status", v?.id);
-                trigger("status");
-              }}
-              name="status"
-              register={register}
-              setValue={setValue}
-              trigger={trigger}
-              valueKey="id"
-            />
-            <SelectDropdown
               label="product:product_type"
               data={PRODUCT_TYPE_OPTIONS}
               selected={selProductType}
@@ -237,21 +218,8 @@ const AddProduct = () => {
               setValue={setValue}
               trigger={trigger}
               valueKey="id"
+              placeholder="product:select_product_type"
             />
-          </div>
-
-          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/20">
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-white/15 bg-slate-50/80 dark:bg-white/5 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-slate-600 dark:text-white/70">
-                {t("product:variants_managed_elsewhere")}
-              </p>
-              <Button
-                type="button"
-                title={t("product:variants_title")}
-                onClick={() => navigate("/inventory/variants")}
-                className="!w-auto !rounded-lg !h-10 !px-4 !border border-teal-500/40 !text-teal-700 dark:!text-teal-300 !bg-teal-50 dark:!bg-teal-500/10"
-              />
-            </div>
           </div>
 
           <div className="flex flex-wrap gap-3 justify-end mt-8 pt-6 border-t border-slate-200 dark:border-white/20">

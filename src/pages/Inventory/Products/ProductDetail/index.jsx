@@ -132,16 +132,6 @@ const ProductDetail = () => {
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 dark:text-white/60 mb-1">
-              {t("product:status")}
-            </p>
-            <p className="text-sm text-slate-900 dark:text-white/90">
-              {product.status === "Active"
-                ? t("product:status_active")
-                : t("product:status_inactive")}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500 dark:text-white/60 mb-1">
               {t("product:created_at")}
             </p>
             <p className="text-sm text-slate-900 dark:text-white/90">

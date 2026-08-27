@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
@@ -24,9 +24,9 @@ const Purchases = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [filters, setFilters] = useListFilters("purchases-list", { page: 1, search: "" });
+  const [filters, setFilters] = useListFilters("purchases-list", { page: 1, limitId: tableRows[0].id, search: "" });
   const { page, search } = filters;
-  const [selRows] = useState(tableRows[0]);
+  const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
 
   const rows = useSelector(showPurchaseInvoices);
   const total = useSelector(showPurchaseInvoicesTotal);
@@ -38,7 +38,9 @@ const Purchases = () => {
   useEffect(() => {
     refreshList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, page, selRows, search]);
+  }, [dispatch, page, selRows.id, search]);
+
+  const totalPages = useMemo(() => Math.ceil((total || 0) / selRows.id) || 1, [total, selRows]);
 
   const onDeleteConfirmed = async (row) => {
     await dispatch(deletePurchaseInvoice(row.id)).unwrap();
@@ -94,8 +96,9 @@ const Purchases = () => {
               loading={loading}
               page={page}
               setPage={(p) => setFilters({ page: p })}
-              totalRecords={total}
-              perPage={selRows.id}
+              selRows={selRows}
+              setSelRows={(v) => setFilters({ limitId: v.id, page: 1 })}
+              totalPages={totalPages}
               onDeleteConfirmed={onDeleteConfirmed}
             />
           )}

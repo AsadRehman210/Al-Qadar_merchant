@@ -22,6 +22,8 @@
   "description": "الوصف",
   "name_required": "الاسم مطلوب",
   "location_required": "الموقع مطلوب",
+  "location_placeholder": "مثال: الرياض - المنطقة الصناعية - بلوك أ",
+  "description_placeholder": "ملاحظات مختصرة عن هذا المستودع…",
   "warehouse_info": "معلومات المستودع",
   "tab_overview": "نظرة عامة",
   "tab_stock": "المخزون",

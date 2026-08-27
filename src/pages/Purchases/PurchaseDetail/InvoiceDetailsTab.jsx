@@ -19,10 +19,6 @@ const InvoiceDetailsTab = ({
   };
 
   const products = invoice.products || [];
-  // "Different per product" mode leaves a real (non-null) taxPercent
-  // override on at least one line — same detection rule the add/edit form
-  // uses to reconstruct its own tax-mode toggle from saved data.
-  const hasDifferentTax = products.some((p) => p.taxPercent !== null && p.taxPercent !== undefined);
 
   // Only Applied debit notes have actually reversed anything — Draft/
   // Approved ones are still just proposals.
@@ -68,6 +64,22 @@ const InvoiceDetailsTab = ({
           label={t("purchase:tax_amount")}
           value={`${formatAmount(taxAmt)} ${invoice.currency || "SAR"}`}
         />
+        <div>
+          <p className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-1">
+            {t("purchase:tax_recoverable_label")}
+          </p>
+          <span
+            className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+              invoice.taxRecoverable === false
+                ? "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70 ring-1 ring-inset ring-slate-200 dark:ring-white/15"
+                : "bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300 ring-1 ring-inset ring-teal-200 dark:ring-teal-500/25"
+            }`}
+          >
+            {invoice.taxRecoverable === false
+              ? t("purchase:tax_recoverable_no")
+              : t("purchase:tax_recoverable_yes")}
+          </span>
+        </div>
         <DetailField
           label={t("purchase:total")}
           value={`${formatAmount(invoice.total)} ${invoice.currency || "SAR"}`}
@@ -123,9 +135,7 @@ const InvoiceDetailsTab = ({
               <th className="p-3 font-semibold">{t("purchase:unit")}</th>
               <th className="p-3 font-semibold whitespace-nowrap">{t("purchase:expiry_date")}</th>
               <th className="p-3 font-semibold">{t("purchase:base_amount")}</th>
-              {hasDifferentTax && (
-                <th className="p-3 font-semibold">{t("purchase:tax_percent")}</th>
-              )}
+              <th className="p-3 font-semibold">{t("purchase:tax_percent")}</th>
               <th className="p-3 font-semibold">{t("purchase:tax_amount")}</th>
               <th className="p-3 font-semibold">{t("purchase:unit_cost")}</th>
               <th className="p-3 font-semibold">{t("purchase:subtotal")}</th>
@@ -135,6 +145,7 @@ const InvoiceDetailsTab = ({
             {products.map((line, idx) => {
               const base = lineTotal(line);
               const lineTaxAmount = line.taxAmount ?? 0;
+              const lineTaxPercent = line.taxPercent ?? invoice.taxPercent ?? 0;
               const returnedQty = returnedQtyByVariant.get(line.variantId) || 0;
               const hasReturn = returnedQty > 0;
               return (
@@ -165,11 +176,7 @@ const InvoiceDetailsTab = ({
                     {line.expiryDate ? String(line.expiryDate).slice(0, 10) : "—"}
                   </td>
                   <td className="p-3 font-semibold">{formatAmount(base)}</td>
-                  {hasDifferentTax && (
-                    <td className="p-3">
-                      {line.taxPercent !== null && line.taxPercent !== undefined ? `${line.taxPercent}%` : "—"}
-                    </td>
-                  )}
+                  <td className="p-3">{lineTaxPercent}%</td>
                   <td className="p-3">{formatAmount(lineTaxAmount)}</td>
                   <td className="p-3">{formatAmount(line.unitCost)}</td>
                   <td className="p-3 font-semibold">

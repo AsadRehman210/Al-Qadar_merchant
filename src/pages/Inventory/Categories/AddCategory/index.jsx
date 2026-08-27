@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -7,10 +7,8 @@ import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
-import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { STATUS_OPTIONS } from "../../inventoryOptions";
 import {
   createCategory,
   updateCategory,
@@ -29,14 +27,11 @@ const AddCategory = () => {
 
   const existing = useSelector(showCurrentCategory);
 
-  const [selStatus, setSelStatus] = useState(STATUS_OPTIONS[0]);
-
-  const { register, handleSubmit, reset, setValue, trigger, formState: { errors } } = useForm({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm({
     mode: "onChange",
     defaultValues: {
       name: "",
       description: "",
-      status: "Active",
     },
   });
 
@@ -51,17 +46,14 @@ const AddCategory = () => {
       reset({
         name: existing.name || "",
         description: existing.description || "",
-        status: existing.status || "Active",
       });
-      const st = STATUS_OPTIONS.find((x) => x.id === existing.status);
-      setSelStatus(st || STATUS_OPTIONS[0]);
     }
   }, [id, existing, reset]);
 
   const onSubmit = async (data) => {
     const payload = {
       ...data,
-      status: selStatus?.id || data.status,
+      status: "Active",
     };
     try {
       if (id) {
@@ -107,7 +99,7 @@ const AddCategory = () => {
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-8 border-l-4 !border-l-[var(--color-teal-500)] dark:border-l-teal-500/60"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 w-full">
             <FormInput
               label={t("product:category_name")}
               name="name"
@@ -117,30 +109,17 @@ const AddCategory = () => {
               pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
               maxLength={150}
+              placeholder={t("product:category_name_placeholder")}
             />
-            <SelectDropdown
-              label="product:status"
-              data={STATUS_OPTIONS}
-              selected={selStatus}
-              setSelected={(v) => {
-                setSelStatus(v);
-                setValue("status", v?.id);
-                trigger("status");
-              }}
-              name="status"
-              register={register}
-              setValue={setValue}
-              trigger={trigger}
-              valueKey="id"
-            />
-            <div className="md:col-span-2">
+            <div>
               <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
                 {t("product:description")}
               </label>
               <textarea
                 rows={4}
+                placeholder={t("product:category_description_placeholder")}
                 {...register("description", { maxLength: { value: 500, message: t("product:max_length_500", { defaultValue: "Maximum length is 500 characters" }) } })}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
+                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-teal-500 focus:outline-0"
               />
               {errors.description && <p className="text-red text-xs mt-1 font-medium">{errors.description.message}</p>}
             </div>

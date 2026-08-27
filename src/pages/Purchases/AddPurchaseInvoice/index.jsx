@@ -17,7 +17,7 @@ import {
   showCurrentPurchaseInvoice,
   clearCurrentPurchaseInvoice,
 } from "store/slices/purchaseInvoiceSlice";
-import { defaultPurchaseLine, PURCHASE_LINE_TYPES } from "../purchaseInvoiceHelpers";
+import { defaultPurchaseLine } from "../purchaseInvoiceHelpers";
 import PurchaseInvoiceForm from "./PurchaseInvoiceForm";
 
 const { add_customer, edit_customer } = rafeeqi_role_ids;
@@ -25,12 +25,8 @@ const { add_customer, edit_customer } = rafeeqi_role_ids;
 const DEFAULT_PURCHASE_FORM = {
   supplierId: "", date: dayjs().format("YYYY-MM-DD"), expectedDelivery: "",
   warehouseId: "", receiverName: "", products: [defaultPurchaseLine()],
-  taxPercent: 0, notes: "", status: "Draft",
-  // Set from the start (not left undefined until the "Type of Product"
-  // dropdown's own mount effect assigns it) — an undefined -> real-value
-  // transition right after mount was one leg of a render-loop chain that
-  // used to hammer the variant dropdown API on every load.
-  productType: PURCHASE_LINE_TYPES.raw_material,
+  taxPercent: 0, taxRecoverable: "yes", notes: "", status: "Draft",
+  productType: "",
 };
 
 const AddPurchaseInvoice = () => {
@@ -76,9 +72,10 @@ const AddPurchaseInvoice = () => {
             }))
           : [defaultPurchaseLine()],
         taxPercent: current.taxPercent ?? 0,
+        taxRecoverable: current.taxRecoverable === false ? "no" : "yes",
         notes: current.notes || "",
         status: current.status || "Draft",
-        productType: current.productType || PURCHASE_LINE_TYPES.raw_material,
+        productType: current.productType || "",
       });
     }
   }, [id, current, reset]);
@@ -94,6 +91,10 @@ const AddPurchaseInvoice = () => {
   }, [id, navigate, t]);
 
   const onSubmit = async (data) => {
+    if (!data.productType) {
+      toast.error(t("purchase:product_type_required"));
+      return;
+    }
     if (!data.supplierId) {
       toast.error(t("purchase:supplier_required"));
       return;
@@ -102,9 +103,13 @@ const AddPurchaseInvoice = () => {
       toast.error(t("sales:warehouse"));
       return;
     }
+    // The dropdown's own id is a string ("yes"/"no" — see
+    // PurchaseInvoiceForm's TAX_RECOVERABLE_OPTS comment for why); the API
+    // field is a real boolean, so convert exactly once, right here.
+    const payload = { ...data, taxRecoverable: data.taxRecoverable !== "no" };
     try {
       if (id) {
-        await dispatch(updatePurchaseInvoice({ id, data })).unwrap();
+        await dispatch(updatePurchaseInvoice({ id, data: payload })).unwrap();
         // Status transitions (esp. -> Received) carry stock/cost/journal side
         // effects the generic PUT deliberately never applies — the backend
         // silently ignores `status` there. Only the dedicated PATCH endpoint
@@ -116,7 +121,7 @@ const AddPurchaseInvoice = () => {
         toast.success(t("purchase:update_success"));
         navigate(`/purchases/detail/${id}`);
       } else {
-        const result = await dispatch(createPurchaseInvoice(data)).unwrap();
+        const result = await dispatch(createPurchaseInvoice(payload)).unwrap();
         if (data.status && data.status !== "Draft") {
           await dispatch(updatePurchaseStatus({ id: result.id, status: data.status })).unwrap();
         }
@@ -132,6 +137,9 @@ const AddPurchaseInvoice = () => {
   if (!id && !checkRoleAuth(add_customer)) return null;
 
   const isRTL = i18n.language === "ar";
+  // Every field is disabled once Received (see PurchaseInvoiceForm) — nothing
+  // is left to submit, so the Update action itself goes away too.
+  const locked = Boolean(id) && current?.status === "Received";
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -171,13 +179,15 @@ const AddPurchaseInvoice = () => {
                 onClick={() => navigate("/purchases")}
                 className="!rounded-md !bg-slate-200 dark:!bg-white/20 !text-slate-700 dark:!text-white"
               />
-              <Button
-                type="submit"
-                title={id ? t("update") : t("save")}
-                btn="primary"
-                loading={isSubmitting}
-                className="!rounded-md !bg-[var(--color-teal-500)] hover:!bg-[var(--color-teal-600)] !border-0"
-              />
+              {!locked && (
+                <Button
+                  type="submit"
+                  title={id ? t("update") : t("save")}
+                  btn="primary"
+                  loading={isSubmitting}
+                  className="!rounded-md !bg-[var(--color-teal-500)] hover:!bg-[var(--color-teal-600)] !border-0"
+                />
+              )}
             </div>
           </form>
         </FormProvider>

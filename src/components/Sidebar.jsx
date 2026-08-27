@@ -349,9 +349,11 @@ export default function Sidebar() {
             {openGroup.blocks.map((block) => {
               return (
                 <div key={block.key}>
-                  <h3 className="px-1 mb-2 text-sm font-bold text-gray-500 dark:text-gray-400 truncate">
-                    {block.label}
-                  </h3>
+                  {openGroup.blocks.length > 1 && (
+                    <h3 className="px-1 mb-2 text-sm font-bold text-gray-500 dark:text-gray-400 truncate">
+                      {block.label}
+                    </h3>
+                  )}
                   <div className="space-y-1">
                     {block.itemNodes.map((node) => {
                       if (node.type === "group") {

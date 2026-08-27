@@ -22,6 +22,8 @@
   "description": "Description",
   "name_required": "Name is required",
   "location_required": "Location is required",
+  "location_placeholder": "e.g. Riyadh - Industrial Zone - Block A",
+  "description_placeholder": "Brief notes about this warehouse…",
   "warehouse_info": "Warehouse Information",
   "tab_overview": "Overview",
   "tab_stock": "Stock",

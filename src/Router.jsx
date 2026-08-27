@@ -158,11 +158,6 @@ const AddFinanceExpense = lazy(
 );
 const FinanceIncome = lazy(() => import("pages/Finance/Income"));
 const AddFinanceIncome = lazy(() => import("pages/Finance/Income/AddIncome"));
-const FinanceInvoices = lazy(() => import("pages/Finance/FinanceInvoices"));
-const AddInvoice = lazy(() => import("pages/Finance/FinanceInvoices/AddInvoice"));
-const InvoiceDetail = lazy(
-  () => import("pages/Finance/FinanceInvoices/InvoiceDetail"),
-);
 const FinancePayments = lazy(() => import("pages/Finance/Payments"));
 const AddFinancePayment = lazy(
   () => import("pages/Finance/Payments/AddPayment"),
@@ -177,7 +172,9 @@ const BankAccountDetail = lazy(
 const AddBankEntry = lazy(() => import("pages/Finance/BankCash/AddBankEntry"));
 const FinancialReports = lazy(() => import("pages/Finance/FinancialReports"));
 const BankReconciliation = lazy(() => import("pages/Finance/BankReconciliation"));
-const VatManagement = lazy(() => import("pages/Finance/VatManagement"));
+const RecoverableTax = lazy(() => import("pages/Finance/RecoverableTax"));
+const CollectedTax = lazy(() => import("pages/Finance/CollectedTax"));
+const TaxPayment = lazy(() => import("pages/Finance/TaxPayment"));
 const Warehouse = lazy(() => import("pages/Warehouse"));
 const AddWarehouse = lazy(() => import("pages/Warehouse/AddWarehouse"));
 const WarehouseDetail = lazy(() => import("pages/Warehouse/WarehouseDetail"));
@@ -411,10 +408,6 @@ function Router() {
                 path="finance/income/edit/:id"
                 element={<AddFinanceIncome />}
               />
-              <Route path="finance/invoices" element={<FinanceInvoices />} />
-              <Route path="finance/invoices/add" element={<AddInvoice />} />
-              <Route path="finance/invoices/edit/:id" element={<AddInvoice />} />
-              <Route path="finance/invoices/:id" element={<InvoiceDetail />} />
               <Route path="finance/payments" element={<FinancePayments />} />
               <Route
                 path="finance/payments/add"
@@ -447,7 +440,9 @@ function Router() {
               />
               <Route path="finance/reports" element={<FinancialReports />} />
               <Route path="finance/bank-reconciliation" element={<BankReconciliation />} />
-              <Route path="finance/vat" element={<VatManagement />} />
+              <Route path="finance/recoverable-tax" element={<RecoverableTax />} />
+              <Route path="finance/collected-tax" element={<CollectedTax />} />
+              <Route path="finance/tax-payment" element={<TaxPayment />} />
               <Route path="warehouse" element={<Warehouse />} />
               <Route path="warehouse/add" element={<AddWarehouse />} />
               <Route path="warehouse/edit/:id" element={<AddWarehouse />} />

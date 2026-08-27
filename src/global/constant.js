@@ -25,7 +25,6 @@ import {
   CircleArrowUp,
   Wallet,
   TrendingUp,
-  ScrollText,
   Banknote,
   Landmark,
   LineChart,
@@ -46,12 +45,33 @@ import {
   UserPlus,
   UserMinus,
   CalendarClock,
-  ClipboardCheck,
   Sparkles,
   Network,
   ShieldAlert,
+  CalendarOff,
+  Calculator,
+  BadgeDollarSign,
+  HandCoins,
+  Stamp,
+  PackageSearch,
+  ScanLine,
+  SlidersHorizontal,
+  FilePenLine,
+  FileMinus,
+  FilePlus,
+  Archive,
+  Coins,
+  Undo2,
+  BadgePercent,
+  CreditCard,
+  PackageMinus,
+  FolderTree,
+  LayoutGrid,
+  FileCheck,
+  BarChart3,
+  HardDrive,
+  PackageCheck,
 } from "lucide-react";
-import { LuCalendarCheck } from "react-icons/lu";
 
 export const language = [
   { id: "en", title: "english" },
@@ -136,14 +156,14 @@ export const menuSections = [
       {
         name: "Organization",
         nameKey: "sidebar_grp_organization",
-        icon: Building2,
+        icon: LayoutGrid,
         role: `${view_employee},${add_employee},${edit_employee},${delete_employee},${view_user}`,
         children: [
           {
             name: "Departments",
             nameKey: "sidebar_departments",
             href: "/departments",
-            icon: Building2,
+            icon: FolderTree,
             role: `${view_employee},${add_employee},${edit_employee},${delete_employee},${view_user}`,
           },
           {
@@ -186,14 +206,14 @@ export const menuSections = [
             name: "Attendance",
             nameKey: "sidebar_attendance",
             href: "/attendance",
-            icon: LuCalendarCheck,
+            icon: UserCheck,
             role: `${view_employee},${add_employee},${edit_employee},${delete_employee},${view_user}`,
           },
           {
             name: "Leave Management",
             nameKey: "sidebar_leave_management",
             href: "/leave-management",
-            icon: LuCalendarCheck,
+            icon: CalendarOff,
             role: `${view_employee},${add_employee},${edit_employee},${delete_employee},${view_user}`,
           },
           {
@@ -207,7 +227,7 @@ export const menuSections = [
             name: "Attendance Policies",
             nameKey: "sidebar_attendance_policies",
             href: "/attendance-policy",
-            icon: ClipboardCheck,
+            icon: FileCheck,
             role: `${view_employee},${add_employee},${edit_employee},${delete_employee},${view_user}`,
           },
         ],
@@ -229,7 +249,7 @@ export const menuSections = [
             name: "Payroll Processing",
             nameKey: "sidebar_payroll_batch",
             href: "/payroll-batch",
-            icon: Banknote,
+            icon: Calculator,
             role: `${view_employee},${add_employee},${edit_employee},${delete_employee},${view_user}`,
           },
           {
@@ -243,7 +263,7 @@ export const menuSections = [
             name: "Special Payments",
             nameKey: "sidebar_special_payments",
             href: "/special-payments",
-            icon: Banknote,
+            icon: BadgeDollarSign,
             role: `${view_employee},${add_employee},${edit_employee},${delete_employee},${view_user}`,
           },
           {
@@ -257,7 +277,7 @@ export const menuSections = [
             name: "Expenses",
             nameKey: "sidebar_expenses",
             href: "/expenses",
-            icon: DollarSign,
+            icon: HandCoins,
             role: `${view_employee},${add_employee},${edit_employee},${delete_employee},${view_user}`,
           },
         ],
@@ -279,7 +299,7 @@ export const menuSections = [
             name: "My Approvals",
             nameKey: "sidebar_my_approvals",
             href: "/my-approvals",
-            icon: Inbox,
+            icon: Stamp,
             role: `${view_employee},${add_employee},${edit_employee},${delete_employee},${view_user}`,
           },
         ],
@@ -296,14 +316,14 @@ export const menuSections = [
   {
     title: "Asset Management",
     titleKey: "sidebar_asset_management",
-    icon: Boxes,
+    icon: Archive,
     role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
     items: [
       {
         name: "Assets",
         nameKey: "sidebar_assets_register",
         href: "/assets",
-        icon: Package2,
+        icon: HardDrive,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
@@ -317,21 +337,21 @@ export const menuSections = [
         name: "Asset requests",
         nameKey: "sidebar_asset_requests",
         href: "/assets/requests",
-        icon: ClipboardList,
+        icon: PackageSearch,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
         name: "Asset audits",
         nameKey: "sidebar_asset_audits",
         href: "/assets/audits",
-        icon: ClipboardCheck,
+        icon: ScanLine,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
         name: "Asset reports",
         nameKey: "sidebar_asset_reports",
         href: "/assets/reports",
-        icon: PieChart,
+        icon: BarChart3,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
     ],
@@ -367,7 +387,7 @@ export const menuSections = [
         name: "Stock",
         nameKey: "sidebar_stock",
         href: "/inventory/stock",
-        icon: Warehouse,
+        icon: PackageCheck,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
@@ -381,7 +401,7 @@ export const menuSections = [
         name: "Stock Adjustment",
         nameKey: "sidebar_stock_adjust",
         href: "/inventory/stock/adjust",
-        icon: Warehouse,
+        icon: SlidersHorizontal,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
     ],
@@ -394,7 +414,7 @@ export const menuSections = [
     items: [
       { name: "Warehouses",       nameKey: "sidebar_warehouses",      href: "/warehouse",            icon: Warehouse, role: `${view_user}` },
       { name: "Stock Transfers",  nameKey: "sidebar_stock_transfers",  href: "/warehouse_transfers",  icon: GitMerge,  role: `${view_user}` },
-      { name: "Stock Issues",     nameKey: "sidebar_stock_issues",     href: "/warehouse_issues",     icon: CircleArrowUp, role: `${view_user}` },
+      { name: "Stock Issues",     nameKey: "sidebar_stock_issues",     href: "/warehouse_issues",     icon: PackageMinus, role: `${view_user}` },
     ],
   },
   {
@@ -428,14 +448,14 @@ export const menuSections = [
         name: "Quotations",
         nameKey: "sidebar_quotations",
         href: "/quotation",
-        icon: Receipt,
+        icon: FilePenLine,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
         name: "Credit Notes",
         nameKey: "sidebar_credit_notes",
         href: "/credit-notes",
-        icon: Receipt,
+        icon: FileMinus,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
@@ -449,7 +469,7 @@ export const menuSections = [
         name: "Debit Notes",
         nameKey: "sidebar_debit_notes",
         href: "/debit-notes",
-        icon: ShoppingCart,
+        icon: FilePlus,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
     ],
@@ -510,13 +530,6 @@ export const menuSections = [
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
-        name: "Invoices",
-        nameKey: "sidebar_finance_invoices",
-        href: "/finance/invoices",
-        icon: ScrollText,
-        role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
-      },
-      {
         name: "Payments",
         nameKey: "sidebar_finance_payments",
         href: "/finance/payments",
@@ -527,7 +540,7 @@ export const menuSections = [
         name: "Bank & Cash",
         nameKey: "sidebar_finance_bank",
         href: "/finance/bank-cash",
-        icon: Landmark,
+        icon: Coins,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
@@ -545,10 +558,24 @@ export const menuSections = [
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
-        name: "VAT / Tax",
-        nameKey: "sidebar_finance_vat",
-        href: "/finance/vat",
-        icon: GitMerge,
+        name: "Recoverable Tax",
+        nameKey: "sidebar_finance_recoverable_tax",
+        href: "/finance/recoverable-tax",
+        icon: Undo2,
+        role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
+      },
+      {
+        name: "Collected Tax",
+        nameKey: "sidebar_finance_collected_tax",
+        href: "/finance/collected-tax",
+        icon: BadgePercent,
+        role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
+      },
+      {
+        name: "Tax Payment",
+        nameKey: "sidebar_finance_tax_payment",
+        href: "/finance/tax-payment",
+        icon: CreditCard,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
     ],
@@ -765,11 +792,6 @@ export const breadcrumbs = [
     description: "Finance expenses",
   },
   {
-    title: "sidebar_finance_invoices",
-    url: "/finance/invoices",
-    description: "Sales and purchase invoices",
-  },
-  {
     title: "sidebar_finance_payments",
     url: "/finance/payments",
     description: "Payments",
@@ -810,9 +832,19 @@ export const breadcrumbs = [
     description: "Bank reconciliation",
   },
   {
-    title: "sidebar_finance_vat",
-    url: "/finance/vat",
-    description: "VAT and tax management",
+    title: "sidebar_finance_recoverable_tax",
+    url: "/finance/recoverable-tax",
+    description: "Recoverable input tax by purchase invoice",
+  },
+  {
+    title: "sidebar_finance_collected_tax",
+    url: "/finance/collected-tax",
+    description: "Collected output tax by sale invoice",
+  },
+  {
+    title: "sidebar_finance_tax_payment",
+    url: "/finance/tax-payment",
+    description: "Net VAT payable reconciliation",
   },
   {
     title: "sidebar_designations",
@@ -1367,15 +1399,6 @@ export const paymentStatusBadge = {
   Pending: "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70",
   Partial: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
   Cleared: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-};
-
-// Finance sales-invoice status pill classes.
-export const financeInvoiceStatusBadge = {
-  Draft: "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70",
-  Sent: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
-  Partial: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
-  Paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  Cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
 };
 
 // Finance payable (vendor bill) status pill classes.

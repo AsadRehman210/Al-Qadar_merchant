@@ -10,8 +10,7 @@ import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
-import { SkeletonTable } from "components/Skeleton";
-import EmptyState from "components/EmptyState";
+import TableState from "components/TableState";
 import {
   fetchReceivables,
   showReceivables,
@@ -71,12 +70,6 @@ const Receivable = () => {
               initialValue={search}
             />
           </div>
-          {loading ? (
-            <SkeletonTable rows={6} columns={5} />
-          ) : rows.length === 0 ? (
-            <EmptyState />
-          ) : (
-          <>
           <div className="overflow-x-auto rounded-md overflow-hidden border border-slate-200 dark:border-white/10">
             <table className="w-full border-collapse text-sm mb-0 min-w-[900px]">
               <thead>
@@ -89,25 +82,27 @@ const Receivable = () => {
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => (
-                    <tr key={row.id} className="transition-colors border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10 last:[&_td]:border-b-0">
-                      <td className="px-4 py-4 align-middle pl-6 font-medium">
-                        <Link to={`/customers/detail/${row.customerId}`} className="text-teal-700 hover:underline dark:text-teal-400">
-                          {row.customerName}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-4 align-middle font-mono text-xs">
-                        <Link to={`/sales/detail/${row.id}`} className="hover:underline">{row.invoiceNumber}</Link>
-                      </td>
-                      <td className="px-4 py-4 align-middle">{row.date ? String(row.date).slice(0, 10) : "—"}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold">
-                        {(Number(row.balanceDue) || 0) > 0 ? `${fmt(row.balanceDue)} ${row.currency}` : "—"}
-                      </td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold text-amber-600 dark:text-amber-400 pr-6">
-                        {(Number(row.refundDue) || 0) > 0 ? `${fmt(row.refundDue)} ${row.currency}` : "—"}
-                      </td>
-                    </tr>
-                ))}
+                <TableState loading={loading} data={rows} colSpan={5}>
+                  {rows.map((row) => (
+                      <tr key={row.id} className="transition-colors border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10 last:[&_td]:border-b-0">
+                        <td className="px-4 py-4 align-middle pl-6 font-medium">
+                          <Link to={`/customers/detail/${row.customerId}`} className="text-teal-700 hover:underline dark:text-teal-400">
+                            {row.customerName}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-4 align-middle font-mono text-xs">
+                          <Link to={`/sales/detail/${row.id}`} className="hover:underline">{row.invoiceNumber}</Link>
+                        </td>
+                        <td className="px-4 py-4 align-middle">{row.date ? String(row.date).slice(0, 10) : "—"}</td>
+                        <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold">
+                          {(Number(row.balanceDue) || 0) > 0 ? `${fmt(row.balanceDue)} ${row.currency}` : "—"}
+                        </td>
+                        <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold text-amber-600 dark:text-amber-400 pr-6">
+                          {(Number(row.refundDue) || 0) > 0 ? `${fmt(row.refundDue)} ${row.currency}` : "—"}
+                        </td>
+                      </tr>
+                  ))}
+                </TableState>
               </tbody>
             </table>
           </div>
@@ -138,8 +133,6 @@ const Receivable = () => {
               />
             </div>
           </div>
-          </>
-          )}
         </>
       )}
     </FinancePage>

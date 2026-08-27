@@ -153,14 +153,19 @@ const PurchaseDetail = () => {
               iconClass="!text-base"
               onClick={() => navigate(`/debit-notes/add?invoiceId=${invoice.id}`)}
             />
-            <Button
+            <button
               type="button"
-              title={t("purchase:download_invoice")}
-              icon={HiOutlineArrowDownTray}
-              className="!w-auto !rounded-md !h-11 !px-4 !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700"
-              iconClass="!text-lg"
               onClick={() => setPreviewOpen(true)}
-            />
+              className="group inline-flex items-center gap-3 h-11 pl-3 pr-5 rounded-xl bg-gradient-to-r from-teal-500 via-teal-600 to-emerald-600 text-white font-semibold shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 ring-2 ring-teal-400/20 hover:ring-teal-300/40 dark:shadow-teal-900/30"
+            >
+              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/20 group-hover:bg-white/30 transition-colors">
+                <HiOutlineArrowDownTray className="h-5 w-5" />
+              </span>
+              <span className="flex flex-col items-start leading-tight text-left">
+                <span className="text-sm">{t("purchase:download_invoice")}</span>
+                <span className="text-[10px] font-normal text-white/80">PDF</span>
+              </span>
+            </button>
             <button
               type="button"
               onClick={() => {

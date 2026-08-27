@@ -18,6 +18,10 @@ const initialState = {
   payablesTotalBalanceDue: 0,
   payablesTotalRefundDue: 0,
   payablesLoading: false,
+  recoverableTax: [],
+  recoverableTaxTotal: 0,
+  recoverableTaxTotalAmount: 0,
+  recoverableTaxLoading: false,
 };
 
 // Accounts Payable — real Purchase Invoices still owed to the supplier or
@@ -27,6 +31,18 @@ export const fetchPayables = createAsyncThunk(
   async (params, { rejectWithValue }) => {
     const query = buildQuery({ page: 1, limit: 20, ...params });
     const response = await erpGet(`${erpUrls.purchaseInvoices}/payables?${query}`);
+    if (!response?.success) return rejectWithValue(response?.message);
+    return response.result;
+  },
+);
+
+// "Recoverable Tax" module — every Received invoice whose tax is a real
+// input-VAT credit, with the true total across every matching invoice.
+export const fetchRecoverableTaxReport = createAsyncThunk(
+  "purchaseInvoice/fetchRecoverableTaxReport",
+  async (params, { rejectWithValue }) => {
+    const query = buildQuery({ page: 1, limit: 10, ...params });
+    const response = await erpGet(`${erpUrls.purchaseInvoices}/recoverable-tax-report?${query}`);
     if (!response?.success) return rejectWithValue(response?.message);
     return response.result;
   },
@@ -148,6 +164,19 @@ const purchaseInvoiceSlice = createSlice({
         state.payablesLoading = false;
         state.payables = [];
       })
+      .addCase(fetchRecoverableTaxReport.pending, (state) => {
+        state.recoverableTaxLoading = true;
+      })
+      .addCase(fetchRecoverableTaxReport.fulfilled, (state, action) => {
+        state.recoverableTaxLoading = false;
+        state.recoverableTax = action.payload?.result || [];
+        state.recoverableTaxTotal = action.payload?.total_records || 0;
+        state.recoverableTaxTotalAmount = action.payload?.totalTaxAmount || 0;
+      })
+      .addCase(fetchRecoverableTaxReport.rejected, (state) => {
+        state.recoverableTaxLoading = false;
+        state.recoverableTax = [];
+      })
       .addCase(fetchPurchaseInvoices.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -209,6 +238,10 @@ export const showPayables = (state) => state.purchaseInvoice.payables;
 export const showPayablesTotal = (state) => state.purchaseInvoice.payablesTotal;
 export const showPayablesTotalBalanceDue = (state) => state.purchaseInvoice.payablesTotalBalanceDue;
 export const showPayablesTotalRefundDue = (state) => state.purchaseInvoice.payablesTotalRefundDue;
+export const showRecoverableTax = (state) => state.purchaseInvoice.recoverableTax;
+export const showRecoverableTaxTotal = (state) => state.purchaseInvoice.recoverableTaxTotal;
+export const showRecoverableTaxTotalAmount = (state) => state.purchaseInvoice.recoverableTaxTotalAmount;
+export const showRecoverableTaxLoading = (state) => state.purchaseInvoice.recoverableTaxLoading;
 export const showPayablesLoading = (state) => state.purchaseInvoice.payablesLoading;
 export const showCurrentPurchaseInvoice = (state) => state.purchaseInvoice.current;
 export const showCurrentPurchaseInvoiceLoading = (state) => state.purchaseInvoice.currentLoading;

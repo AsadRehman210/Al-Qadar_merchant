@@ -204,9 +204,11 @@ const AddVariant = () => {
               name="variantName"
               register={register}
               errors={errors}
+              required
               pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
               maxLength={150}
+              placeholder={t("product:variant_name_placeholder")}
             />
             <FormInput
               label={t("product:sku_barcode")}
@@ -217,6 +219,7 @@ const AddVariant = () => {
               pattern={/[A-Za-z0-9\-_/]/}
               minLength={2}
               maxLength={100}
+              placeholder={t("product:sku_barcode_placeholder")}
             />
             <FormInput
               label={t("product:attr_size_short")}
@@ -225,6 +228,7 @@ const AddVariant = () => {
               errors={errors}
               pattern={/[a-zA-Z0-9\s.'-]/}
               maxLength={50}
+              placeholder={t("product:attr_size_placeholder")}
             />
             <FormInput
               label={t("product:attr_color_short")}
@@ -233,13 +237,15 @@ const AddVariant = () => {
               errors={errors}
               pattern={/[a-zA-Z0-9\s.'-]/}
               maxLength={50}
+              placeholder={t("product:attr_color_placeholder")}
             />
             <FormInput
               label={t("product:unit")}
               name="unit"
               register={register}
               errors={errors}
-              placeholder="pcs"
+              required
+              placeholder={t("product:unit_placeholder")}
               pattern={/[a-zA-Z]/}
               maxLength={20}
             />

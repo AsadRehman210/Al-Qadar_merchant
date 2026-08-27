@@ -69,9 +69,6 @@ const initialState = {
   businessExpenseTotal: 0,
   businessExpenseLoading: false,
 
-  vatConfig: { id: null, rate: 0, registrationNumber: null },
-  vatConfigLoading: false,
-
   vatSummary: { outputVat: 0, inputVat: 0, netVat: 0 },
   vatSummaryLoading: false,
 
@@ -484,27 +481,9 @@ export const createBusinessExpense = createAsyncThunk(
   },
 );
 
-// ─── VAT Management — a tenant-wide rate/registration config, plus a
-// collected-vs-paid report read directly off the VAT Payable/Receivable
-// ledger accounts (same derived-report pattern as Financial Reports). ──────
-export const fetchVatConfig = createAsyncThunk(
-  "finance/fetchVatConfig",
-  async (_params, { rejectWithValue }) => {
-    const response = await erpGet(erpUrls.vatConfig);
-    if (!response?.success) return rejectWithValue(response?.message);
-    return response.result;
-  },
-);
-
-export const updateVatConfig = createAsyncThunk(
-  "finance/updateVatConfig",
-  async (data, { rejectWithValue }) => {
-    const response = await erpPut(erpUrls.vatConfig, data);
-    if (!response?.success) return rejectWithValue(response?.message);
-    return response.result;
-  },
-);
-
+// ─── VAT summary — collected-vs-paid report read directly off the VAT
+// Payable/Receivable ledger accounts (same derived-report pattern as
+// Financial Reports). ───────────────────────────────────────────────────────
 export const fetchVatSummary = createAsyncThunk(
   "finance/fetchVatSummary",
   async (params, { rejectWithValue }) => {
@@ -904,20 +883,6 @@ const financeSlice = createSlice({
         if (action.payload) state.businessExpenseList.unshift(action.payload);
       })
 
-      .addCase(fetchVatConfig.pending, (state) => {
-        state.vatConfigLoading = true;
-      })
-      .addCase(fetchVatConfig.fulfilled, (state, action) => {
-        state.vatConfigLoading = false;
-        state.vatConfig = action.payload;
-      })
-      .addCase(fetchVatConfig.rejected, (state) => {
-        state.vatConfigLoading = false;
-      })
-      .addCase(updateVatConfig.fulfilled, (state, action) => {
-        state.vatConfig = action.payload;
-      })
-
       .addCase(fetchVatSummary.pending, (state) => {
         state.vatSummaryLoading = true;
       })
@@ -1040,9 +1005,6 @@ export const showIncomeEntriesLoading = (state) => state.finance.incomeEntryLoad
 export const showBusinessExpenses = (state) => state.finance.businessExpenseList;
 export const showBusinessExpensesTotal = (state) => state.finance.businessExpenseTotal;
 export const showBusinessExpensesLoading = (state) => state.finance.businessExpenseLoading;
-
-export const showVatConfig = (state) => state.finance.vatConfig;
-export const showVatConfigLoading = (state) => state.finance.vatConfigLoading;
 
 export const showVatSummary = (state) => state.finance.vatSummary;
 export const showVatSummaryLoading = (state) => state.finance.vatSummaryLoading;

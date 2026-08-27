@@ -14,7 +14,7 @@ const initialState = {
 export const fetchStockBatches = createAsyncThunk(
   "stockBatch/fetchAll",
   async (params, { rejectWithValue }) => {
-    const query = buildQuery({ page: 1, limit: 1000, ...params });
+    const query = buildQuery({ page: 1, limit: 10, ...params });
     const response = await erpGet(`${erpUrls.stockBatches}?${query}`);
     if (isEmptyListResponse(response)) return { result: [], total_records: 0 };
     if (!response?.success) return rejectWithValue(response?.message);

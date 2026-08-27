@@ -18,6 +18,10 @@ const initialState = {
   receivablesTotalBalanceDue: 0,
   receivablesTotalRefundDue: 0,
   receivablesLoading: false,
+  collectedTax: [],
+  collectedTaxTotal: 0,
+  collectedTaxTotalAmount: 0,
+  collectedTaxLoading: false,
 };
 
 // Accounts Receivable — real Sale Invoices still owed on or owing a refund
@@ -27,6 +31,18 @@ export const fetchReceivables = createAsyncThunk(
   async (params, { rejectWithValue }) => {
     const query = buildQuery({ page: 1, limit: 20, ...params });
     const response = await erpGet(`${erpUrls.saleInvoices}/receivables?${query}`);
+    if (!response?.success) return rejectWithValue(response?.message);
+    return response.result;
+  },
+);
+
+// "Collected Tax" module — every Sale Invoice's output tax, with the true
+// total across every matching invoice.
+export const fetchCollectedTaxReport = createAsyncThunk(
+  "saleInvoice/fetchCollectedTaxReport",
+  async (params, { rejectWithValue }) => {
+    const query = buildQuery({ page: 1, limit: 10, ...params });
+    const response = await erpGet(`${erpUrls.saleInvoices}/collected-tax-report?${query}`);
     if (!response?.success) return rejectWithValue(response?.message);
     return response.result;
   },
@@ -148,6 +164,19 @@ const saleInvoiceSlice = createSlice({
         state.receivablesLoading = false;
         state.receivables = [];
       })
+      .addCase(fetchCollectedTaxReport.pending, (state) => {
+        state.collectedTaxLoading = true;
+      })
+      .addCase(fetchCollectedTaxReport.fulfilled, (state, action) => {
+        state.collectedTaxLoading = false;
+        state.collectedTax = action.payload?.result || [];
+        state.collectedTaxTotal = action.payload?.total_records || 0;
+        state.collectedTaxTotalAmount = action.payload?.totalTaxAmount || 0;
+      })
+      .addCase(fetchCollectedTaxReport.rejected, (state) => {
+        state.collectedTaxLoading = false;
+        state.collectedTax = [];
+      })
       .addCase(fetchSaleInvoices.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -210,6 +239,10 @@ export const showReceivablesTotal = (state) => state.saleInvoice.receivablesTota
 export const showReceivablesTotalBalanceDue = (state) => state.saleInvoice.receivablesTotalBalanceDue;
 export const showReceivablesTotalRefundDue = (state) => state.saleInvoice.receivablesTotalRefundDue;
 export const showReceivablesLoading = (state) => state.saleInvoice.receivablesLoading;
+export const showCollectedTax = (state) => state.saleInvoice.collectedTax;
+export const showCollectedTaxTotal = (state) => state.saleInvoice.collectedTaxTotal;
+export const showCollectedTaxTotalAmount = (state) => state.saleInvoice.collectedTaxTotalAmount;
+export const showCollectedTaxLoading = (state) => state.saleInvoice.collectedTaxLoading;
 export const showCurrentSaleInvoice = (state) => state.saleInvoice.current;
 export const showCurrentSaleInvoiceLoading = (state) => state.saleInvoice.currentLoading;
 export const showSaleInvoiceDropdownOptions = (state) => state.saleInvoice.dropdownOptions;

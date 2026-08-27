@@ -16,6 +16,7 @@ import {
   showWarehouses,
   showWarehousesTotal,
   showWarehousesLoading,
+  showWarehousesSummary,
 } from "store/slices/warehouseSlice";
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonCards } from "components/Skeleton";
@@ -59,6 +60,7 @@ const Warehouse = () => {
   const warehouses = useSelector(showWarehouses);
   const totalRecords = useSelector(showWarehousesTotal);
   const loading = useSelector(showWarehousesLoading);
+  const summary = useSelector(showWarehousesSummary);
 
   const refresh = () =>
     dispatch(
@@ -96,9 +98,6 @@ const Warehouse = () => {
     popupRef.current?.closeModal?.();
   };
 
-  const activeCount = warehouses.filter((w) => w.status === "Active").length;
-  const totalCapacity = warehouses.reduce((s, w) => s + (w.capacity || 0), 0);
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -117,12 +116,12 @@ const Warehouse = () => {
         </div>
       </div>
 
-      {/* Summary Cards — reflect the current page only (totals across all pages aren't fetched) */}
+      {/* Summary Cards — server-computed tenant-wide totals, not just the current page */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard icon={FiArchive}   label={t("total_warehouses")} value={totalRecords || 0}  color="bg-teal-500" />
-        <SummaryCard icon={FiRefreshCw} label={t("active")}           value={activeCount}        color="bg-emerald-500" />
-        <SummaryCard icon={FiPackage}   label={t("total_capacity")}   value={`${totalCapacity.toLocaleString()} sqm`} color="bg-blue-500" />
-        <SummaryCard icon={FiTruck}     label={t("total_stock_items")} value="—"                 color="bg-purple-500" />
+        <SummaryCard icon={FiArchive}   label={t("total_warehouses")} value={summary.totalWarehouses || 0}  color="bg-teal-500" />
+        <SummaryCard icon={FiRefreshCw} label={t("active")}           value={summary.activeWarehouses || 0} color="bg-emerald-500" />
+        <SummaryCard icon={FiPackage}   label={t("total_capacity")}   value={`${(summary.totalCapacity || 0).toLocaleString()} sqm`} color="bg-blue-500" />
+        <SummaryCard icon={FiTruck}     label={t("total_stock_items")} value={summary.totalStockItems || 0} color="bg-purple-500" />
       </div>
 
       {/* Search + status filter — both re-query the backend */}
@@ -187,7 +186,7 @@ const Warehouse = () => {
       <div className="flex items-center flex-wrap gap-4 pt-2 [&_.pagination_li.selected_a]:!bg-gradient-to-br [&_.pagination_li.selected_a]:!from-teal-500 [&_.pagination_li.selected_a]:!to-teal-600 [&_.pagination_li.selected_a]:!border-transparent [&_.pagination_li.selected_a]:!text-white">
         <div className="flex items-center gap-4">
           <SelectDropdown data={tableRows} selected={selRows} setSelected={(v) => setFilters({ limitId: v.id, page: 1 })} hideClear classes="!h-10 !rounded-lg" />
-          <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page")}</span>
+          <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page", { ns: "translation" })}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
           <ReactPaginate

@@ -2,14 +2,13 @@ import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
-import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import CategoriesTable from "./CategoriesTable";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { tableRows, statusFilterOptions } from "global/constant";
+import { tableRows } from "global/constant";
 import {
   fetchCategories,
   showCategories,
@@ -20,8 +19,6 @@ import { useListFilters } from "hooks/useListFilters";
 
 const { add_customer, view_customer } = rafeeqi_role_ids;
 
-const STATUS_OPTS = statusFilterOptions;
-
 const Categories = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -30,11 +27,9 @@ const Categories = () => {
     page: 1,
     limitId: tableRows[0].id,
     search: "",
-    statusId: STATUS_OPTS[0].id,
   });
   const { page, search } = filters;
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
-  const selStatus = STATUS_OPTS.find((o) => o.id === filters.statusId) || STATUS_OPTS[0];
   const setPage = (v) => setFilters({ page: v });
 
   const categories = useSelector(showCategories);
@@ -45,13 +40,12 @@ const Categories = () => {
     page,
     limit: selRows.id,
     search: search || undefined,
-    status: selStatus.id || undefined,
   }));
 
   useEffect(() => {
     refreshList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, page, selRows.id, search, selStatus.id]);
+  }, [dispatch, page, selRows.id, search]);
 
   const totalPages = useMemo(() => Math.ceil((totalRecords || 0) / selRows.id) || 1, [totalRecords, selRows]);
 
@@ -95,15 +89,6 @@ const Categories = () => {
                     placeholder={`${t("search")}...`}
                     onSearch={(v) => setFilters({ search: v, page: 1 })}
                     initialValue={search}
-                  />
-                </div>
-                <div className="w-full sm:w-48">
-                  <SelectDropdown
-                    data={STATUS_OPTS}
-                    selected={selStatus}
-                    setSelected={(v) => setFilters({ statusId: (v || STATUS_OPTS[0]).id, page: 1 })}
-                    hideClear
-                    classes="!h-10 !rounded-lg"
                   />
                 </div>
               </div>

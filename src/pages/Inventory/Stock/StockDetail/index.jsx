@@ -1,14 +1,22 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import ReactPaginate from "react-paginate";
+import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
+import SelectDropdown from "components/SelectDropdown";
+import Table from "components/Table";
+import { tableRows } from "global/constant";
 import { fetchVariantById, showCurrentVariant, showCurrentVariantLoading, clearCurrentVariant } from "store/slices/variantSlice";
 import { fetchProductById, showCurrentProduct } from "store/slices/productSlice";
 import { fetchStock, showStock } from "store/slices/stockSlice";
-import { fetchStockBatches, showStockBatches } from "store/slices/stockBatchSlice";
+import { fetchStockBatches, showStockBatches, showStockBatchesTotal, showStockBatchesLoading } from "store/slices/stockBatchSlice";
 import { computeStatus, stockLocation } from "../stockHelpers";
+import BatchTableFilters from "../../BatchTableFilters";
+import { DEFAULT_BATCH_TABLE_FILTERS } from "../../batchTableHelpers";
+import TableState from "components/TableState";
 import { SkeletonDetail } from "components/Skeleton";
 
 const formatTs = (iso) => {
@@ -17,6 +25,20 @@ const formatTs = (iso) => {
     return new Date(iso).toLocaleString();
   } catch {
     return iso;
+  }
+};
+
+const formatDateOnly = (value) => {
+  if (!value) return "—";
+  try {
+    const str = String(value).slice(0, 10);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+      const [y, m, d] = str.split("-").map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString();
+    }
+    return new Date(value).toLocaleDateString();
+  } catch {
+    return value;
   }
 };
 
@@ -50,14 +72,33 @@ const StockDetail = () => {
   const product = useSelector(showCurrentProduct);
   const stock = useSelector(showStock);
   const batches = useSelector(showStockBatches);
+  const batchesTotal = useSelector(showStockBatchesTotal);
+  const batchesLoading = useSelector(showStockBatchesLoading);
+
+  const [batchPage, setBatchPage] = useState(1);
+  const [selBatchRows, setSelBatchRows] = useState(tableRows[0]);
+  const [batchFilters, setBatchFilters] = useState(DEFAULT_BATCH_TABLE_FILTERS);
 
   useEffect(() => {
     dispatch(fetchVariantById(id));
     dispatch(fetchStock({ variantId: id, limit: 1 }));
-    dispatch(fetchStockBatches({ variantId: id }));
+    setBatchPage(1);
+    setBatchFilters(DEFAULT_BATCH_TABLE_FILTERS);
     return () => dispatch(clearCurrentVariant());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    dispatch(fetchStockBatches({
+      variantId: id,
+      page: batchPage,
+      limit: selBatchRows.id,
+      warehouseId: batchFilters.warehouseId !== "all" ? batchFilters.warehouseId : undefined,
+      sortId: batchFilters.sortId || undefined,
+    }));
+  }, [dispatch, id, batchPage, selBatchRows.id, batchFilters.warehouseId, batchFilters.sortId]);
+
+  const batchTotalPages = Math.max(1, Math.ceil((batchesTotal || 0) / selBatchRows.id));
 
   useEffect(() => {
     if (variant?.productId) dispatch(fetchProductById(variant.productId));
@@ -229,43 +270,110 @@ const StockDetail = () => {
               </span>
             )}
           </div>
-          {batches.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-white/50">—</p>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
-              <table className="w-full text-sm min-w-[680px]">
+          <BatchTableFilters
+            batches={batches}
+            warehouseId={batchFilters.warehouseId}
+            onWarehouseChange={(whId) => {
+              setBatchFilters((f) => ({ ...f, warehouseId: whId }));
+              setBatchPage(1);
+            }}
+            sortId={batchFilters.sortId}
+            onSortChange={(sortId) => {
+              setBatchFilters((f) => ({ ...f, sortId }));
+              setBatchPage(1);
+            }}
+          />
+          <Table className="overflow-hidden">
+            <div className="min-w-[680px]">
+              <table className="w-full border-collapse text-sm mb-0">
                 <thead>
-                  <tr className="bg-slate-100 dark:bg-white/10 text-left">
-                    <th className="p-2.5 font-semibold">{t("product:adj_date")}</th>
-                    <th className="p-2.5 font-semibold">{t("product:warehouse")}</th>
-                    <th className="p-2.5 font-semibold">{t("product:stock_quantity")}</th>
-                    <th className="p-2.5 font-semibold">{t("product:cost_price")}</th>
-                    <th className="p-2.5 font-semibold">{t("product:batch_total_cost")}</th>
-                    <th className="p-2.5 font-semibold">{t("product:batch_expiry")}</th>
-                    <th className="p-2.5 font-semibold">{t("product:batch_source")}</th>
+                  <tr className="bg-[var(--color-teal-500)] border-none">
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pl-6 rounded-tl-md">
+                      {t("product:adj_date")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("product:warehouse")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("product:stock_quantity")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("product:cost_price")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("product:batch_total_cost")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("product:batch_expiry")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">
+                      {t("product:batch_source")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {batches.map((b) => (
-                    <tr key={b.id} className="border-t border-slate-100 dark:border-white/10">
-                      <td className="p-2.5 whitespace-nowrap">{formatTs(b.receivedDate)}</td>
-                      <td className="p-2.5 whitespace-nowrap">{b.warehouseName || "—"}</td>
-                      <td className="p-2.5 tabular-nums">
-                        {b.remainingQty} <span className="text-slate-400 dark:text-white/40">/ {b.qty}</span>
-                      </td>
-                      <td className="p-2.5 tabular-nums">{formatAmount(b.unitCost)}</td>
-                      <td className="p-2.5 tabular-nums font-medium">{formatAmount((Number(b.unitCost) || 0) * (Number(b.remainingQty) || 0))}</td>
-                      <td className="p-2.5 whitespace-nowrap">{b.expiryDate ? formatTs(b.expiryDate) : "—"}</td>
-                      <td className="p-2.5 whitespace-nowrap">
-                        {b.sourceType}
-                        {b.sourceRef ? ` — ${b.sourceRef}` : ""}
-                      </td>
-                    </tr>
-                  ))}
+                  <TableState loading={batchesLoading} data={batches} colSpan={7}>
+                    {batches.map((b) => (
+                      <tr
+                        key={b.id}
+                        className="transition-colors border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10 last:[&_td]:border-b-0"
+                      >
+                        <td className="px-4 py-4 align-middle text-slate-700 dark:text-white/90 pl-6 whitespace-nowrap">
+                          {formatTs(b.createdAt)}
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap">
+                          {b.warehouseName || "—"}
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 tabular-nums">
+                          {b.remainingQty}{" "}
+                          <span className="text-slate-400 dark:text-white/40">/ {b.qty}</span>
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 tabular-nums">
+                          {formatAmount(b.unitCost)}
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-900 dark:text-white/90 tabular-nums font-medium">
+                          {formatAmount((Number(b.unitCost) || 0) * (Number(b.remainingQty) || 0))}
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap">
+                          {formatDateOnly(b.expiryDate)}
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap pr-6">
+                          {b.sourceType}
+                          {b.sourceRef ? ` — ${b.sourceRef}` : ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </TableState>
                 </tbody>
               </table>
             </div>
-          )}
+          </Table>
+          <div className="flex items-center flex-wrap gap-4 mt-6 pt-5 border-t border-slate-200 dark:border-white/20 [&_.pagination_li.selected_a]:!bg-gradient-to-br [&_.pagination_li.selected_a]:!from-teal-500 [&_.pagination_li.selected_a]:!to-teal-600 [&_.pagination_li.selected_a]:!border-transparent [&_.pagination_li.selected_a]:!text-white [&_.pagination_li_a:hover]:!text-teal-600 [&_.pagination_li_a:hover]:!bg-teal-50 dark:[&_.pagination_li_a:hover]:!border-teal-500 dark:[&_.pagination_li_a:hover]:!text-teal-300 dark:[&_.pagination_li_a:hover]:!bg-teal-500/20">
+            <div className="flex items-center gap-4">
+              <SelectDropdown
+                data={tableRows}
+                selected={selBatchRows}
+                setSelected={(v) => { setSelBatchRows(v); setBatchPage(1); }}
+                hideClear
+                classes="!h-10 !rounded-lg"
+              />
+              <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page")}</span>
+            </div>
+            <div className="pagination ltr:ml-auto rtl:mr-auto">
+              <ReactPaginate
+                breakLabel="..."
+                nextLabel={<FaAngleRight />}
+                previousLabel={<FaAngleLeft />}
+                onPageChange={(e) => setBatchPage(e.selected + 1)}
+                pageRangeDisplayed={3}
+                marginPagesDisplayed={1}
+                pageCount={batchTotalPages}
+                forcePage={batchPage - 1}
+                renderOnZeroPageCount={null}
+                containerClassName="custom-pagination flex flex-row rtl:flex-row-reverse flex-wrap items-center gap-1 text-sm"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

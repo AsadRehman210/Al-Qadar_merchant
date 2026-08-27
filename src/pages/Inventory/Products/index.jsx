@@ -9,7 +9,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { tableRows, statusFilterOptions } from "global/constant";
+import { tableRows } from "global/constant";
 import { PRODUCT_TYPE_OPTIONS } from "../inventoryOptions";
 import {
   fetchProducts,
@@ -22,7 +22,6 @@ import { useListFilters } from "hooks/useListFilters";
 
 const { add_customer, view_customer } = rafeeqi_role_ids;
 
-const STATUS_OPTS = statusFilterOptions;
 const TYPE_OPTS = [{ title: "product:all_types", id: "" }, ...PRODUCT_TYPE_OPTIONS];
 
 const Products = () => {
@@ -33,12 +32,10 @@ const Products = () => {
     page: 1,
     limitId: tableRows[0].id,
     search: "",
-    statusId: STATUS_OPTS[0].id,
     typeId: TYPE_OPTS[0].id,
   });
   const { page, search } = filters;
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
-  const selStatus = STATUS_OPTS.find((o) => o.id === filters.statusId) || STATUS_OPTS[0];
   const selType = TYPE_OPTS.find((o) => o.id === filters.typeId) || TYPE_OPTS[0];
   const setPage = (v) => setFilters({ page: v });
 
@@ -50,21 +47,20 @@ const Products = () => {
     page,
     limit: selRows.id,
     search: search || undefined,
-    status: selStatus.id || undefined,
     productType: selType.id || undefined,
   }));
 
   useEffect(() => {
     refreshList();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch, page, selRows.id, search, selStatus.id, selType.id]);
+  }, [dispatch, page, selRows.id, search, selType.id]);
 
   const totalPages = useMemo(() => Math.ceil((totalRecords || 0) / selRows.id) || 1, [totalRecords, selRows]);
 
   const exportColumns = [
     { label: t("product:product_name"), key: "productName" },
     { label: t("product:category"), key: "categoryName" },
-    { label: t("product:status"), key: "status" },
+    { label: t("product:product_type"), key: "productType" },
   ];
 
   return (
@@ -121,15 +117,6 @@ const Products = () => {
                     data={TYPE_OPTS}
                     selected={selType}
                     setSelected={(v) => setFilters({ typeId: (v || TYPE_OPTS[0]).id, page: 1 })}
-                    hideClear
-                    classes="!h-10 !rounded-lg"
-                  />
-                </div>
-                <div className="w-full sm:w-48">
-                  <SelectDropdown
-                    data={STATUS_OPTS}
-                    selected={selStatus}
-                    setSelected={(v) => setFilters({ statusId: (v || STATUS_OPTS[0]).id, page: 1 })}
                     hideClear
                     classes="!h-10 !rounded-lg"
                   />

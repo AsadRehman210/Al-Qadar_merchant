@@ -325,7 +325,7 @@ const StockIssue = () => {
       <div className="flex items-center flex-wrap gap-4 pt-2 [&_.pagination_li.selected_a]:!bg-gradient-to-br [&_.pagination_li.selected_a]:!from-teal-500 [&_.pagination_li.selected_a]:!to-teal-600 [&_.pagination_li.selected_a]:!border-transparent [&_.pagination_li.selected_a]:!text-white">
         <div className="flex items-center gap-4">
           <SelectDropdown data={tableRows} selected={selRows} setSelected={(v) => setFilters({ limitId: v.id, page: 1 })} hideClear classes="!h-10 !rounded-lg" />
-          <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page")}</span>
+          <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page", { ns: "translation" })}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
           <ReactPaginate

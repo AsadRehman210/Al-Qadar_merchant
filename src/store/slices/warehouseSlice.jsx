@@ -3,12 +3,19 @@ import { erpUrls } from "global/config";
 import { erpGet, erpPost, erpPut, erpDelete, isEmptyListResponse, buildQuery } from "api/erpClient";
 import { DROPDOWN_PAGE_LIMIT } from "global/constant";
 
+const EMPTY_SUMMARY = { totalWarehouses: 0, activeWarehouses: 0, totalCapacity: 0, totalStockItems: 0 };
+
 const initialState = {
   list: [],
   totalRecords: 0,
   current: null,
   loading: false,
   error: null,
+
+  // Filter-aware stat cards — comes back as `misc_data` alongside the same
+  // paginated response, computed server-side over the same search/status
+  // query as the page itself (not a separate request, not tenant-wide).
+  summary: EMPTY_SUMMARY,
 
   dropdownOptions: [],
   dropdownPage: 1,
@@ -21,7 +28,7 @@ export const fetchWarehouses = createAsyncThunk(
   async (params, { rejectWithValue }) => {
     const query = buildQuery({ page: 1, limit: 1000, ...params });
     const response = await erpGet(`${erpUrls.warehouses}?${query}`);
-    if (isEmptyListResponse(response)) return { result: [], total_records: 0 };
+    if (isEmptyListResponse(response)) return { result: [], total_records: 0, misc_data: EMPTY_SUMMARY };
     if (!response?.success) return rejectWithValue(response?.message);
     return response;
   },
@@ -95,10 +102,12 @@ const warehouseSlice = createSlice({
         state.loading = false;
         state.list = action.payload.result || [];
         state.totalRecords = action.payload.total_records || 0;
+        state.summary = action.payload.misc_data || EMPTY_SUMMARY;
       })
       .addCase(fetchWarehouses.rejected, (state, action) => {
         state.loading = false;
         state.list = [];
+        state.summary = EMPTY_SUMMARY;
         state.error = action.payload;
       })
       .addCase(fetchWarehouseById.pending, (state) => {
@@ -142,6 +151,7 @@ export const { clearCurrentWarehouse } = warehouseSlice.actions;
 export const showWarehouses = (state) => state.warehouse.list;
 export const showWarehousesTotal = (state) => state.warehouse.totalRecords;
 export const showWarehousesLoading = (state) => state.warehouse.loading;
+export const showWarehousesSummary = (state) => state.warehouse.summary;
 export const showCurrentWarehouse = (state) => state.warehouse.current;
 export const showCurrentWarehouseLoading = (state) => state.warehouse.currentLoading;
 export const showWarehouseDropdownOptions = (state) => state.warehouse.dropdownOptions;

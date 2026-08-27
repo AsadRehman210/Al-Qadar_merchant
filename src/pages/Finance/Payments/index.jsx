@@ -126,9 +126,7 @@ const Payments = () => {
                       </td>
                       <td className="px-4 py-4 align-middle font-mono text-xs">{row.reference || "—"}</td>
                       <td className="px-4 py-4 align-middle text-xs pr-6">
-                        {row.invoiceId ? (
-                          <Link to={`/finance/invoices/${row.invoiceId}`} className="text-teal-700 hover:underline dark:text-teal-400">{allocationLabel(row)}</Link>
-                        ) : row.billId ? (
+                        {row.billId ? (
                           <Link to={`/finance/payable/${row.billId}`} className="text-teal-700 hover:underline dark:text-teal-400">{allocationLabel(row)}</Link>
                         ) : (
                           allocationLabel(row)

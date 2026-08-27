@@ -192,18 +192,16 @@ const SupplierForm = ({ existing }) => {
           labelClass="text-sm text-linkText font-medium"
           skipValidation
         />
-        <div className="md:col-span-2">
-          <FormInput
-            label={t("suppliers:address")}
-            labelClass="text-sm text-linkText font-medium"
-            placeholder={t("suppliers:address")}
-            type="text"
-            name="address"
-            register={register}
-            errors={errors}
-            maxLength={250}
-          />
-        </div>
+        <FormInput
+          label={t("suppliers:address")}
+          labelClass="text-sm text-linkText font-medium"
+          placeholder={t("suppliers:address")}
+          type="text"
+          name="address"
+          register={register}
+          errors={errors}
+          maxLength={250}
+        />
         <div>
           <PaginatedSelectBox
             label={t("suppliers:country")}

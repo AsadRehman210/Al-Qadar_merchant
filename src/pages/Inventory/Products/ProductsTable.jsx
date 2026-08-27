@@ -11,7 +11,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
 import Table from "components/Table";
-import { tableRows, activeInactiveBadgeClass } from "global/constant";
+import { tableRows } from "global/constant";
 import { deleteProduct } from "store/slices/productSlice";
 
 const formatTs = (iso) => {
@@ -31,10 +31,6 @@ const ProductsTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, 
   const list = data || [];
 
   const handlePageClick = (event) => setPage?.(event.selected + 1);
-
-  const getStatusClass = (status) => {
-    return activeInactiveBadgeClass[status] || "bg-slate-100 text-slate-700 dark:bg-slate-500/20";
-  };
 
   const onDelete = (row) => popupRef.current?.openModal?.(row);
   const onConfirmDelete = async (row) => {
@@ -68,9 +64,6 @@ const ProductsTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, 
                   {t("product:stock_title")}
                 </th>
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
-                  {t("product:status")}
-                </th>
-                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("product:updated_at")}
                 </th>
                 <th className="w-[120px] px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">
@@ -79,7 +72,7 @@ const ProductsTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, 
               </tr>
             </thead>
             <tbody>
-              <TableState loading={loading} data={list} colSpan={7}>
+              <TableState loading={loading} data={list} colSpan={6}>
                 {list.map((row) => (
                   <tr
                     key={row.id}
@@ -119,15 +112,6 @@ const ProductsTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, 
                           </span>
                         </>
                       )}
-                    </td>
-                    <td className="px-4 py-4 align-middle">
-                      <span
-                        className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusClass(row.status)}`}
-                      >
-                        {row.status === "Active"
-                          ? t("product:status_active")
-                          : t("product:status_inactive")}
-                      </span>
                     </td>
                     <td className="px-4 py-4 align-middle text-slate-500 dark:text-white/70 text-xs whitespace-nowrap">
                       {formatTs(row.updatedAt)}

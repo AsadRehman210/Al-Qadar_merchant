@@ -7,6 +7,7 @@ import { FiArrowLeft } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import { activeInactiveOptions as WAREHOUSE_STATUS_OPTS } from "global/constant";
 import {
@@ -75,7 +76,6 @@ const AddWarehouse = () => {
   };
 
   const labelCls    = "text-sm font-medium text-linkText mb-1 block";
-  const sectionHead = "text-lg font-semibold text-slate-900 dark:text-white pb-2 mb-6 border-b border-slate-200 dark:border-white/10";
 
   return (
     <div>
@@ -88,10 +88,10 @@ const AddWarehouse = () => {
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-white/10 rounded-3xl border border-slate-200 dark:border-white/20 p-8 border-l-4 !border-l-[var(--color-teal-500)]">
-        <h3 className={sectionHead}>{t("warehouse_info")}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <FormInput label={t("code")}     name="code"     register={register} errors={errors} placeholder="WH-001"
-            pattern={/[A-Za-z0-9\-_/]/} minLength={2} maxLength={20} />
+          {isEdit && (
+            <FormInput label={t("code")} name="code" register={register} errors={errors} disabled />
+          )}
           <FormInput label={t("name")}     name="name"     register={register} errors={errors} required={t("name_required")} placeholder={t("name")}
             pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
           <div>
@@ -113,12 +113,10 @@ const AddWarehouse = () => {
             <label className={labelCls}>{t("status")}</label>
             <SelectDropdown data={WAREHOUSE_STATUS_OPTS} selected={selStatus} setSelected={setSelStatus} hideClear classes="!h-[46px] !rounded-lg" />
           </div>
+          <FormInput label={t("location")} name="location" register={register} errors={errors} required={t("location_required")} placeholder={t("location_placeholder")}
+            pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
           <div className="md:col-span-2 lg:col-span-3">
-            <FormInput label={t("location")}    name="location"    register={register} errors={errors} required={t("location_required")} placeholder="City — Zone — Block"
-              pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
-          </div>
-          <div className="md:col-span-2 lg:col-span-3">
-            <FormInput label={t("description")} name="description" register={register} errors={errors} placeholder={t("description")} maxLength={500} />
+            <FormTextarea label={t("description")} name="description" register={register} errors={errors} placeholder={t("description_placeholder")} maxLength={500} rows={4} />
           </div>
         </div>
 

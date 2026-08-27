@@ -107,7 +107,7 @@ const AddPayment = () => {
       const result = await dispatch(createPayment(payload));
       if (result.error) throw new Error(result.payload || t("finance:save_failed"));
       toast.success(t("finance:save_success"));
-      navigate(invoiceId ? `/finance/invoices/${invoiceId}` : billId ? `/finance/payable/${billId}` : "/finance/payments");
+      navigate(billId ? `/finance/payable/${billId}` : "/finance/payments");
     } catch (err) {
       toast.error(err.message);
     } finally {

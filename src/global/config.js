@@ -62,7 +62,6 @@ export const erpUrls = {
   payments: "/finance/payment",
   incomeEntries: "/finance/income-entry",
   businessExpenses: "/finance/business-expense",
-  vatConfig: "/finance/vat-config",
   bankStatementLines: "/finance/bank-statement-line",
   reconciliationSessions: "/finance/reconciliation-session",
   budgets: "/finance/budget",
