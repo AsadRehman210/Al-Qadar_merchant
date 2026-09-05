@@ -13,11 +13,22 @@ import {
 
 const LIMIT = 10;
 
-/** A single chronological statement of every invoice (debit — increases what
- *  the customer owes) and every payment (credit — reduces it), oldest first,
- *  with a running balance — served by its own dedicated, paginated ledger
- *  endpoint (the running balance is computed once, server-side, off the
- *  complete history), not derived here off the Invoices tab's own data. */
+/** Invoice (debit), payment / applied credit note (credit), and customer
+ *  refund (debit after overpayment) — oldest first, running balance
+ *  computed server-side off the full history. */
+
+const ledgerTypeMeta = (type, t) => {
+  if (type === "Invoice") {
+    return { label: t("customers:ledger_invoice"), className: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300" };
+  }
+  if (type === "CreditNote") {
+    return { label: t("customers:ledger_credit_note"), className: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300" };
+  }
+  if (type === "Refund") {
+    return { label: t("customers:ledger_refund"), className: "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300" };
+  }
+  return { label: t("customers:ledger_payment"), className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300" };
+};
 const LedgerTab = ({ customer }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -86,15 +97,14 @@ const LedgerTab = ({ customer }) => {
                     {e.date ? String(e.date).slice(0, 10) : "-"}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        e.type === "Invoice"
-                          ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
-                          : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
-                      }`}
-                    >
-                      {e.type === "Invoice" ? t("customers:ledger_invoice") : t("customers:ledger_payment")}
-                    </span>
+                    {(() => {
+                      const typeMeta = ledgerTypeMeta(e.type, t);
+                      return (
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${typeMeta.className}`}>
+                          {typeMeta.label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-white/90">{e.reference || "-"}</td>
                   <td className="px-4 py-3 text-rose-600 dark:text-rose-400">

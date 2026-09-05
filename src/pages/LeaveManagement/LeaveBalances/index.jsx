@@ -71,8 +71,8 @@ const LeaveBalances = () => {
         </div>
 
         <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-4">
-          <label className="text-sm font-medium text-linkText mb-1 block">{t("leave:employee")}</label>
           <SelectDropdown
+            label={t("leave:employee")}
             data={employeeOpts}
             selected={selEmployee}
             setSelected={setSelEmployee}

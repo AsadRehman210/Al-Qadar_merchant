@@ -9,6 +9,7 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
+import { bankAccountTypeOptions } from "global/constant";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
   fetchBankAccounts,
@@ -18,11 +19,6 @@ import {
 } from "store/slices/financeSlice";
 
 const { add_customer, edit_customer } = rafeeqi_role_ids;
-
-const TYPE_OPTS = [
-  { id: "Bank", title: "Bank" },
-  { id: "Cash", title: "Cash" },
-];
 
 // A bank/cash account's type and opening balance are fixed at creation — its
 // backing Chart-of-Account entry (and the opening-balance journal entry, if
@@ -41,7 +37,7 @@ const AddBankAccount = () => {
 
   const existing = useMemo(() => accounts.find((a) => a.id === id), [id, accounts]);
 
-  const [selType, setSelType] = useState(TYPE_OPTS[0]);
+  const [selType, setSelType] = useState(bankAccountTypeOptions[0]);
   const [submitting, setSubmitting] = useState(false);
 
   const { register, handleSubmit, reset } = useForm({
@@ -63,8 +59,8 @@ const AddBankAccount = () => {
         openingBalance: existing.openingBalance,
         currency: existing.currency,
       });
-      const tp = TYPE_OPTS.find((x) => x.id === existing.type);
-      setSelType(tp || TYPE_OPTS[0]);
+      const tp = bankAccountTypeOptions.find((x) => x.id === existing.type);
+      setSelType(tp || bankAccountTypeOptions[0]);
     }
   }, [existing, reset]);
 
@@ -139,21 +135,19 @@ const AddBankAccount = () => {
         >
           <div className="grid md:grid-cols-2 gap-6">
             <FormInput label={t("finance:account_name")} name="name" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={150} register={register} required />
-            <div>
-              <label className="text-sm font-medium mb-1 block">{t("finance:acct_type")}</label>
-              <SelectDropdown
-                data={TYPE_OPTS}
-                selected={selType}
-                setSelected={setSelType}
-                hideClear
-                disabled={!!id}
-                classes="!h-[46px] !rounded-lg"
-              />
-            </div>
+            <SelectDropdown
+              label={t("finance:acct_type")}
+              data={bankAccountTypeOptions}
+              selected={selType}
+              setSelected={setSelType}
+              hideClear
+              disabled={!!id}
+              classes="!h-[46px] !rounded-lg"
+            />
             <FormInput label={t("finance:bank_name")} name="bankName" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={150} register={register} />
-            <FormInput label={t("finance:iban")} name="accountNumber" pattern={/[0-9]/} minLength={8} maxLength={20} register={register} />
+            <FormInput label={t("finance:iban")} name="accountNumber" pattern={/[A-Za-z0-9]/} minLength={8} maxLength={24} register={register} />
             <FormInput label={t("finance:balance")} name="openingBalance" type="number" min={0} decimal decimalPlaces={3} maxLength={10} register={register} disabled={!!id} />
-            <FormInput label={t("finance:currency")} name="currency" register={register} disabled={!!id} />
+            <FormInput label={t("finance:currency")} name="currency" pattern={/[A-Za-z]/} minLength={3} maxLength={3} register={register} required disabled={!!id} />
           </div>
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-200 dark:border-white/20">
             <Button type="button" title={t("cancel")} onClick={() => navigate("/finance/bank-cash")} />

@@ -1,21 +1,12 @@
 import { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
-import { lineTotal } from "../saleInvoiceHelpers";
-
-// A line's own tax rate if it's carrying an override, otherwise the shared
-// quote-level rate — mirrors the Add Quotation form / backend exactly.
-const effectiveLineTaxPercent = (line, invoiceTaxPercent) =>
-  line?.taxPercent !== undefined && line?.taxPercent !== null ? line.taxPercent : (Number(invoiceTaxPercent) || 0);
+import { lineTotal, effectiveLineTaxPercent, formatAmount } from "global/helper";
 
 const QuotationPreviewContent = forwardRef(function QuotationPreviewContent(
   { quote },
   ref,
 ) {
   const { t } = useTranslation();
-  const formatAmount = (v) => (parseFloat(v) || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 
   if (!quote) return null;
 

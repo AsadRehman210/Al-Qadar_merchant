@@ -8,7 +8,7 @@ import { FiX } from "react-icons/fi";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import Table from "components/Table";
-import { tableRows } from "global/constant";
+import { tableRows, salePaymentStatusBadge, saleDeliveryStatusBadge, customerDeliveryStatusFilterOptions, salePaymentStatusFilterOptions } from "global/constant";
 import { fetchCustomerInvoices, showCustomerInvoices, showCustomerInvoicesTotal, showSalesCustomerTabLoading } from "store/slices/salesCustomerSlice";
 import InvoicePreviewModal from "../../Sales/InvoicePreviewModal";
 import { DateRangePicker } from "components/DateRangePicker";
@@ -29,6 +29,8 @@ const OrdersInvoicesTab = ({ customer }) => {
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
   const [amount, setAmount] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [selDelivery, setSelDelivery] = useState(customerDeliveryStatusFilterOptions[0]);
+  const [selPayment, setSelPayment] = useState(salePaymentStatusFilterOptions[0]);
   const [previewInvoice, setPreviewInvoice] = useState(null);
 
   // Every filter is applied server-side via the query string, never
@@ -45,9 +47,11 @@ const OrdersInvoicesTab = ({ customer }) => {
         toDate: toIsoDate(dateRange.to),
         amount: amount !== "" ? amount : undefined,
         invoiceNumber: invoiceNumber || undefined,
+        deliveryStatus: selDelivery.id || undefined,
+        paymentStatus: selPayment.id || undefined,
       }),
     );
-  }, [dispatch, customer?.id, page, selRows, dateRange, amount, invoiceNumber]);
+  }, [dispatch, customer?.id, page, selRows, dateRange, amount, invoiceNumber, selDelivery, selPayment]);
 
   const totalPages = useMemo(() => Math.ceil((total || 0) / selRows.id) || 1, [total, selRows]);
 
@@ -55,12 +59,14 @@ const OrdersInvoicesTab = ({ customer }) => {
     setDateRange({ from: undefined, to: undefined });
     setAmount("");
     setInvoiceNumber("");
+    setSelDelivery(customerDeliveryStatusFilterOptions[0]);
+    setSelPayment(salePaymentStatusFilterOptions[0]);
     setPage(1);
   };
 
   if (!customer) return null;
 
-  const hasActiveFilters = !!(dateRange.from || dateRange.to || amount !== "" || invoiceNumber);
+  const hasActiveFilters = !!(dateRange.from || dateRange.to || amount !== "" || invoiceNumber || selDelivery.id || selPayment.id);
 
   return (
     <div>
@@ -98,6 +104,24 @@ const OrdersInvoicesTab = ({ customer }) => {
             placeholder={t("customers:filter_by_invoice")}
           />
         </div>
+        <div className="w-44">
+          <SelectDropdown
+            data={customerDeliveryStatusFilterOptions}
+            selected={selDelivery}
+            setSelected={(o) => { setSelDelivery(o || customerDeliveryStatusFilterOptions[0]); setPage(1); }}
+            hideClear
+            classes="!h-10 !rounded-md"
+          />
+        </div>
+        <div className="w-44">
+          <SelectDropdown
+            data={salePaymentStatusFilterOptions}
+            selected={selPayment}
+            setSelected={(o) => { setSelPayment(o || salePaymentStatusFilterOptions[0]); setPage(1); }}
+            hideClear
+            classes="!h-10 !rounded-md"
+          />
+        </div>
         {hasActiveFilters && (
           <button
             type="button"
@@ -122,7 +146,16 @@ const OrdersInvoicesTab = ({ customer }) => {
                 {t("customers:amount")}
               </th>
               <th className="px-4 py-3 text-start font-semibold text-slate-900 dark:text-white">
-                {t("customers:invoice_status")}
+                {t("customers:returned")}
+              </th>
+              <th className="px-4 py-3 text-start font-semibold text-slate-900 dark:text-white">
+                {t("customers:net_amount")}
+              </th>
+              <th className="px-4 py-3 text-start font-semibold text-slate-900 dark:text-white">
+                {t("sales:payment_status")}
+              </th>
+              <th className="px-4 py-3 text-start font-semibold text-slate-900 dark:text-white">
+                {t("sales:delivery_status")}
               </th>
               <th className="px-4 py-3 text-start font-semibold text-slate-900 dark:text-white w-16">
                 {t("customers:view_invoice")}
@@ -130,10 +163,13 @@ const OrdersInvoicesTab = ({ customer }) => {
             </tr>
           </thead>
           <tbody>
-            <TableState loading={loading} data={invoices} colSpan={5}>
+            <TableState loading={loading} data={invoices} colSpan={8}>
             {invoices.length > 0 ? (
               invoices.map((inv) => {
-                const status = inv.paymentStatus === "Cleared" ? "Paid" : inv.paymentStatus || "Pending";
+                const payStatus = inv.paymentStatus === "Cleared" ? "Paid" : inv.paymentStatus || "Pending";
+                const deliveryStatus = inv.deliveryStatus || "Pending";
+                const returned = Number(inv.creditedAmount) || 0;
+                const net = (Number(inv.total) || 0) - returned;
                 return (
                   <tr
                     key={inv.id}
@@ -148,15 +184,28 @@ const OrdersInvoicesTab = ({ customer }) => {
                     <td className="px-4 py-3 text-slate-600 dark:text-white/90">
                       {formatAmount(inv.total)} {customer.currency || "SAR"}
                     </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-white/90">
+                      {returned ? `${formatAmount(returned)} ${customer.currency || "SAR"}` : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-white/90">
+                      {formatAmount(net)} {customer.currency || "SAR"}
+                    </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
-                          status === "Paid"
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
-                            : "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
+                        className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          salePaymentStatusBadge[payStatus] || salePaymentStatusBadge.Pending
                         }`}
                       >
-                        {status}
+                        {payStatus}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                          saleDeliveryStatusBadge[deliveryStatus] || saleDeliveryStatusBadge.Pending
+                        }`}
+                      >
+                        {deliveryStatus === "InTransit" ? t("sales:in_transit") : deliveryStatus}
                       </span>
                     </td>
                     <td className="px-4 py-3">
@@ -175,7 +224,7 @@ const OrdersInvoicesTab = ({ customer }) => {
             ) : (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={8}
                   className="px-4 py-8 text-center text-slate-500 dark:text-white/60"
                 >
                   {t("no_record_found")}

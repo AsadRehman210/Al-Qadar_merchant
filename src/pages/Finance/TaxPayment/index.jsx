@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { fetchVatSummary, showVatSummary, showVatSummaryLoading } from "store/slices/financeSlice";
 import { SkeletonDetail } from "components/Skeleton";
 import FinancePage from "../FinancePage";
+import FormInput from "components/FormInput";
 
 const { view_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 // Collected tax (Output VAT, from Sales) minus recoverable tax (Input VAT,
 // from Purchases) for a date range — read live off the Ledger's VAT
@@ -37,24 +37,26 @@ const TaxPayment = () => {
       {checkRoleAuth(view_customer) && (
         <>
           <div className="flex flex-wrap gap-4 items-end mb-6 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
-            <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:from_date")}</label>
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                className="h-10 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:to_date")}</label>
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                className="h-10 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
+            <FormInput
+              label={t("finance:from_date")}
+              labelClass="!text-xs font-medium text-slate-500"
+              name="fromDate"
+              type="date"
+              value={fromDate}
+              onValueChange={setFromDate}
+              wrapperClass="min-w-[160px]"
+              inputClass="!h-10 !rounded-lg"
+            />
+            <FormInput
+              label={t("finance:to_date")}
+              labelClass="!text-xs font-medium text-slate-500"
+              name="toDate"
+              type="date"
+              value={toDate}
+              onValueChange={setToDate}
+              wrapperClass="min-w-[160px]"
+              inputClass="!h-10 !rounded-lg"
+            />
           </div>
 
           {vatSummaryLoading ? (
@@ -63,15 +65,15 @@ const TaxPayment = () => {
             <dl className="grid sm:grid-cols-3 gap-4">
               <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
                 <dt className="text-sm text-mutedForeground">{t("finance:vat_output")}</dt>
-                <dd className="text-2xl font-bold tabular-nums mt-1 text-emerald-700 dark:text-emerald-300">{fmt(vatSummary.outputVat)}</dd>
+                <dd className="text-2xl font-bold tabular-nums mt-1 text-emerald-700 dark:text-emerald-300">{formatAmount(vatSummary.outputVat)}</dd>
               </div>
               <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
                 <dt className="text-sm text-mutedForeground">{t("finance:vat_input")}</dt>
-                <dd className="text-2xl font-bold tabular-nums mt-1 text-blue-700 dark:text-blue-300">{fmt(vatSummary.inputVat)}</dd>
+                <dd className="text-2xl font-bold tabular-nums mt-1 text-blue-700 dark:text-blue-300">{formatAmount(vatSummary.inputVat)}</dd>
               </div>
               <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/10 p-4">
                 <dt className="text-sm text-mutedForeground">{t("finance:vat_net")}</dt>
-                <dd className={`text-2xl font-bold tabular-nums mt-1 ${vatSummary.netVat >= 0 ? "text-red-600" : "text-emerald-600"}`}>{fmt(vatSummary.netVat)}</dd>
+                <dd className={`text-2xl font-bold tabular-nums mt-1 ${vatSummary.netVat >= 0 ? "text-red-600" : "text-emerald-600"}`}>{formatAmount(vatSummary.netVat)}</dd>
               </div>
             </dl>
           )}

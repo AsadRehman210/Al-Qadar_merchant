@@ -21,20 +21,6 @@ const { add_customer } = rafeeqi_role_ids;
 
 const emptyLine = () => ({ key: `${Date.now()}-${Math.random()}`, account: null, debit: "", credit: "" });
 
-// Debit/credit are raw controlled <input>s (not FormInput/register), so the
-// money-precision rule (no negative, max 2dp) is applied by hand: strip
-// anything but digits/dot and cap the fractional part at 2 digits.
-const sanitizeAmount = (value) => {
-  let v = value.replace(/[^0-9.]/g, "");
-  const dot = v.indexOf(".");
-  if (dot !== -1) {
-    const whole = v.slice(0, dot);
-    const frac = v.slice(dot + 1).replace(/\./g, "").slice(0, 3);
-    v = frac.length || v.endsWith(".") ? `${whole}.${frac}` : whole;
-  }
-  return v.slice(0, 10);
-};
-
 // A manual journal entry is always created fresh, never edited afterward —
 // once posted it's part of the permanent ledger (see journal-service's
 // createJournalEntry), so correcting a mistake means posting a reversing
@@ -130,7 +116,7 @@ const AddJournal = () => {
           className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-8 border-l-4 !border-l-[var(--color-teal-500)]"
         >
           <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <FormInput label={t("finance:posted_date")} name="date" type="date" register={register} required />
+            <FormInput label={t("finance:posted_date")} name="date" type="date" register={register} required max={new Date().toISOString().slice(0, 10)} />
             <FormInput label={t("finance:memo")} name="memo" maxLength={500} register={register} />
           </div>
 
@@ -150,46 +136,43 @@ const AddJournal = () => {
           <div className="space-y-3">
             {lines.map((line) => (
               <div key={line.key} className="grid grid-cols-1 md:grid-cols-[1fr_140px_140px_36px] gap-3 items-end">
-                <div>
-                  <label className="text-xs font-medium mb-1 block">{t("finance:account_name")}</label>
-                  <SelectDropdown
-                    data={acctOpts}
-                    selected={line.account}
-                    setSelected={(opt) => updateLine(line.key, { account: opt })}
-                    hideClear
-                    classes="!h-[46px] !rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium mb-1 block">{t("finance:debit")}</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    maxLength={10}
-                    value={line.debit}
-                    onChange={(e) => {
-                      const v = sanitizeAmount(e.target.value);
-                      updateLine(line.key, { debit: v, credit: v ? "" : line.credit });
-                    }}
-                    className="h-[46px] w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium mb-1 block">{t("finance:credit")}</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    maxLength={10}
-                    value={line.credit}
-                    onChange={(e) => {
-                      const v = sanitizeAmount(e.target.value);
-                      updateLine(line.key, { credit: v, debit: v ? "" : line.debit });
-                    }}
-                    className="h-[46px] w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
+                <SelectDropdown
+                  label={t("finance:account_name")}
+                  labelClass="!text-xs"
+                  data={acctOpts}
+                  selected={line.account}
+                  setSelected={(opt) => updateLine(line.key, { account: opt })}
+                  hideClear
+                  classes="!h-[46px] !rounded-lg"
+                />
+                <FormInput
+                  label={t("finance:debit")}
+                  labelClass="!text-xs"
+                  name={`debit-${line.key}`}
+                  type="number"
+                  min={0}
+                  decimal
+                  decimalPlaces={3}
+                  maxLength={10}
+                  value={line.debit}
+                  onValueChange={(v) => updateLine(line.key, { debit: v, credit: v ? "" : line.credit })}
+                  wrapperClass="w-full"
+                  inputClass="!h-[46px] !rounded-lg"
+                />
+                <FormInput
+                  label={t("finance:credit")}
+                  labelClass="!text-xs"
+                  name={`credit-${line.key}`}
+                  type="number"
+                  min={0}
+                  decimal
+                  decimalPlaces={3}
+                  maxLength={10}
+                  value={line.credit}
+                  onValueChange={(v) => updateLine(line.key, { credit: v, debit: v ? "" : line.debit })}
+                  wrapperClass="w-full"
+                  inputClass="!h-[46px] !rounded-lg"
+                />
                 <button
                   type="button"
                   onClick={() => removeLine(line.key)}

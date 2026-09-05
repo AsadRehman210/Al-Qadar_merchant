@@ -14,6 +14,13 @@ import { erpGet, buildQuery } from "api/erpClient";
 import { erpUrls } from "global/config";
 import dayjs from "dayjs";
 import {
+  lineTotal,
+  lineProfit,
+  computeInvoiceProfit,
+  effectiveLineTaxPercent,
+} from "global/helper";
+import { salesTaxModeOptions } from "global/constant";
+import {
   fetchSalesCustomersDropdown,
   showSalesCustomerDropdownOptions,
   showSalesCustomerDropdownPage,
@@ -42,26 +49,9 @@ import {
   clearCurrentQuotation,
 } from "store/slices/quotationSlice";
 
-// Local helpers — same base-amount/tax/profit arithmetic Add Sale Invoice
-// uses. A quotation's batch pick is reference-only (costing/expiry) — never
-// reserved or consumed, since a quote never moves real stock.
+// Quotation batch pick is reference-only (costing/expiry) — never reserved
+// or consumed, since a quote never moves real stock.
 const defaultLine = () => ({ variantId: "", productName: "", qty: 1, price: 0, costPrice: 0, unit: "pcs", batchId: "", taxPercent: null });
-const lineTotal = (l) => (Number(l?.qty) || 0) * (Number(l?.price) || 0);
-const lineProfit = (l) => lineTotal(l) - (Number(l?.qty) || 0) * (Number(l?.costPrice) || 0);
-const computeInvoiceProfit = (lines) => (lines || []).reduce((sum, l) => sum + lineProfit(l), 0);
-
-// A line's own tax rate if it's carrying an override, otherwise the shared
-// quote-level rate — mirrors the backend's effectiveLineTaxPercent exactly,
-// same "same for all"/"different per product" flow as Sale Invoice.
-const effectiveLineTaxPercent = (line, invoiceTaxPercent) =>
-  line?.taxPercent !== undefined && line?.taxPercent !== null && line?.taxPercent !== ""
-    ? Number(line.taxPercent) || 0
-    : Number(invoiceTaxPercent) || 0;
-
-const TAX_MODE_OPTS = [
-  { title: "sales:tax_mode_same", id: "same" },
-  { title: "sales:tax_mode_different", id: "different" },
-];
 
 const DEFAULT_QUOTE_FORM = {
   customerId: "", date: dayjs().format("YYYY-MM-DD"), validUntil: dayjs().add(30, "day").format("YYYY-MM-DD"),
@@ -216,7 +206,7 @@ const AddQuotation = () => {
   // taxPercent is cleared so it falls back to the shared quote-level rate;
   // in "different" mode each line carries its own explicit override. The
   // backend computes totals with the exact same fallback rule.
-  const [taxMode, setTaxMode] = useState(TAX_MODE_OPTS[0]);
+  const [taxMode, setTaxMode] = useState(salesTaxModeOptions[0]);
 
   // Editing an existing quotation that already carries per-line overrides
   // (saved earlier in "different" mode) — detect that once the real lines
@@ -225,12 +215,12 @@ const AddQuotation = () => {
   useEffect(() => {
     if (hydratedModeRef.current || !watchedLines?.length) return;
     const hasOverride = watchedLines.some((l) => l?.taxPercent !== undefined && l?.taxPercent !== null && l?.taxPercent !== "");
-    if (hasOverride) setTaxMode(TAX_MODE_OPTS[1]);
+    if (hasOverride) setTaxMode(salesTaxModeOptions[1]);
     hydratedModeRef.current = true;
   }, [watchedLines]);
 
   const handleTaxModeChange = (opt) => {
-    const next = opt || TAX_MODE_OPTS[0];
+    const next = opt || salesTaxModeOptions[0];
     setTaxMode(next);
     if (next.id === "same") {
       fields.forEach((_, idx) => setValue(`lines.${idx}.taxPercent`, null));
@@ -299,8 +289,8 @@ const AddQuotation = () => {
             <h3 className="text-base font-bold mb-4">{t("sales:quote_info")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <div className="md:col-span-2">
-                <label className="text-sm font-medium text-linkText block mb-1">{t("sales:customer")} *</label>
                 <SearchablePaginatedDropdown
+                  label={`${t("sales:customer")} *`}
                   data={customerSource.data}
                   selected={selCustomer}
                   setSelected={setSelCustomer}
@@ -315,8 +305,8 @@ const AddQuotation = () => {
               <FormInput label={t("sales:date")} name="date" type="date" register={register} />
               <FormInput label={t("sales:valid_until")} name="validUntil" type="date" register={register} />
               <div>
-                <label className="text-sm font-medium text-linkText block mb-1">{t("sales:warehouse")}</label>
                 <SearchablePaginatedDropdown
+                  label={t("sales:warehouse")}
                   data={warehouseSource.data}
                   selected={selWarehouse}
                   setSelected={(opt) => {
@@ -350,7 +340,7 @@ const AddQuotation = () => {
               <div className="flex-1 min-w-[220px] max-w-xs">
                 <SelectDropdown
                   label={t("sales:tax_mode")}
-                  data={TAX_MODE_OPTS}
+                  data={salesTaxModeOptions}
                   selected={taxMode}
                   setSelected={handleTaxModeChange}
                   valueKey="id"

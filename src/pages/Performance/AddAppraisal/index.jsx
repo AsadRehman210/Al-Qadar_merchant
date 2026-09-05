@@ -1,6 +1,7 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight, FiPlus, FiTrash2 } from "react-icons/fi";
 import { toast } from "react-toastify";
@@ -9,14 +10,13 @@ import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { getAppraisalById, createAppraisal, updateAppraisal, CYCLE_OPTS, KPI_CATEGORIES } from "../performanceFakeData";
-import { getActiveEmployeeOptions } from "../../Employees/employeesFakeData";
-import { FAKE_DEPARTMENTS } from "../../Departments/departmentFakeData";
+import { getAppraisalById, createAppraisal, updateAppraisal } from "../performanceFakeData";
+import { appraisalCycleOptions, kpiCategoryOptions } from "global/constant";
+import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
+import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 
 const { add_employee } = rafeeqi_role_ids;
 
-const deptOpts = (FAKE_DEPARTMENTS || []).map((d) => ({ id: d.name, title: d.name }));
-const empOpts = getActiveEmployeeOptions();
 const yearOpts = [2024, 2025, 2026].map((y) => ({ id: y, title: String(y) }));
 
 const EDITABLE_STATUSES = ["Draft"];
@@ -24,15 +24,45 @@ const EDITABLE_STATUSES = ["Draft"];
 const AddAppraisal = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { id } = useParams();
   const isEdit = Boolean(id);
   const existing = useMemo(() => (id ? getAppraisalById(id) : null), [id]);
   const isRTL = i18n.language === "ar";
 
+  const employees = useSelector(showEmployees);
+  const departments = useSelector(showDepartments);
+
+  useEffect(() => {
+    dispatch(fetchEmployees());
+    dispatch(fetchDepartments());
+  }, [dispatch]);
+
+  const empOpts = useMemo(
+    () =>
+      (employees || [])
+        .filter((e) => e.status === "active")
+        .map((e) => ({
+          id: e.id || e._id,
+          title: `${e.first_name || ""} ${e.last_name || ""} (${e.employeeCode || e.employee_id || ""})`.trim(),
+          name: `${e.first_name || ""} ${e.last_name || ""}`.trim(),
+        })),
+    [employees],
+  );
+
+  const deptOpts = useMemo(
+    () =>
+      (departments || []).map((d) => ({
+        id: d.name || d.title,
+        title: d.name || d.title,
+      })),
+    [departments],
+  );
+
   const [selEmployee, setSelEmployee] = useState(null);
   const [selReviewer, setSelReviewer] = useState(null);
   const [selDept, setSelDept] = useState(null);
-  const [selCycle, setSelCycle] = useState(CYCLE_OPTS[0]);
+  const [selCycle, setSelCycle] = useState(appraisalCycleOptions[0]);
   const [selYear, setSelYear] = useState(yearOpts[1]);
   const [kpis, setKpis] = useState([
     { category: "Productivity", goal: "", targetScore: 5, weight: 20 },
@@ -49,11 +79,11 @@ const AddAppraisal = () => {
       setSelEmployee(empOpts.find((e) => e.id === existing.employeeId) || null);
       setSelReviewer(empOpts.find((e) => e.id === existing.reviewerId) || null);
       setSelDept(deptOpts.find((d) => d.id === existing.department) || null);
-      setSelCycle(CYCLE_OPTS.find((c) => c.id === existing.cycle) || CYCLE_OPTS[0]);
+      setSelCycle(appraisalCycleOptions.find((c) => c.id === existing.cycle) || appraisalCycleOptions[0]);
       setSelYear(yearOpts.find((y) => y.id === existing.year) || yearOpts[1]);
       if (existing.kpis?.length) setKpis(existing.kpis.map((k) => ({ category: k.category, goal: k.goal, targetScore: k.targetScore, weight: k.weight })));
     }
-  }, [existing, reset]);
+  }, [existing, reset, empOpts, deptOpts]);
 
   const addKpi = () => setKpis((p) => [...p, { category: "Productivity", goal: "", targetScore: 5, weight: 10 }]);
   const removeKpi = (i) => setKpis((p) => p.filter((_, idx) => idx !== i));
@@ -62,11 +92,16 @@ const AddAppraisal = () => {
   const totalWeight = kpis.reduce((s, k) => s + Number(k.weight || 0), 0);
   const weightValid = totalWeight === 100;
   const isSelfReview = selEmployee && selReviewer && selEmployee.id === selReviewer.id;
-  const canSubmit = !!selEmployee && weightValid && !isSelfReview;
+  const canSubmit = !!selEmployee && !!selReviewer && weightValid && !isSelfReview;
 
   const onSubmit = (data) => {
     if (!selEmployee) { toast.error(t("performance:err_select_employee")); return; }
+    if (!selReviewer) { toast.error(t("performance:err_select_reviewer", "Reviewer is required")); return; }
     if (isSelfReview) { toast.error(t("performance:err_self_review")); return; }
+    if (kpis.some((k) => !k.goal?.trim() || k.goal.trim().length < 5)) {
+      toast.error(t("performance:err_kpi_goal", "Each KPI goal is required (min 5 characters)"));
+      return;
+    }
     if (!weightValid) { toast.error(t("performance:err_weight_total", { total: totalWeight })); return; }
 
     const payload = {
@@ -96,8 +131,6 @@ const AddAppraisal = () => {
     navigate("/performance");
   };
 
-  const inputCls = "w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500";
-  const labelCls = "text-sm font-medium text-slate-700 dark:text-white/70 mb-1.5 block";
   const sH = "text-lg font-semibold text-slate-900 dark:text-white pb-2 mb-6 border-b border-slate-200 dark:border-white/10";
 
   if (!checkRoleAuth(add_employee)) return null;
@@ -118,28 +151,52 @@ const AddAppraisal = () => {
           <div className="bg-white dark:bg-white/10 rounded-3xl border border-slate-200 dark:border-white/20 p-8 border-l-4 !border-l-[var(--color-teal-500)]">
             <h3 className={sH}>{t("performance:appraisal_details")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <SelectDropdown
+                label={t("performance:employee_label")}
+                required
+                data={empOpts}
+                selected={selEmployee}
+                setSelected={setSelEmployee}
+                placeholder={t("performance:select_employee")}
+                classes="!h-[46px] !rounded-md"
+              />
               <div>
-                <label className={labelCls}>{t("performance:employee_label")} *</label>
-                <SelectDropdown data={empOpts} selected={selEmployee} setSelected={setSelEmployee} placeholder={t("performance:select_employee")} classes="!h-[46px] !rounded-md" />
-              </div>
-              <div>
-                <label className={labelCls}>{t("performance:reviewer_label")}</label>
-                <SelectDropdown data={empOpts} selected={selReviewer} setSelected={setSelReviewer} placeholder={t("performance:select_reviewer")} classes="!h-[46px] !rounded-md" />
+                <SelectDropdown
+                  label={t("performance:reviewer_label")}
+                  required
+                  data={empOpts}
+                  selected={selReviewer}
+                  setSelected={setSelReviewer}
+                  placeholder={t("performance:select_reviewer")}
+                  classes="!h-[46px] !rounded-md"
+                />
                 {isSelfReview && <p className="text-xs text-red-500 mt-1.5">{t("performance:err_self_review")}</p>}
               </div>
-              <div>
-                <label className={labelCls}>{t("performance:department_label")}</label>
-                <SelectDropdown data={deptOpts} selected={selDept} setSelected={setSelDept} placeholder={t("performance:select_department")} classes="!h-[46px] !rounded-md" />
-              </div>
-              <div>
-                <label className={labelCls}>{t("performance:cycle_label")}</label>
-                <SelectDropdown data={CYCLE_OPTS} selected={selCycle} setSelected={setSelCycle} hideClear classes="!h-[46px] !rounded-md" />
-              </div>
-              <div>
-                <label className={labelCls}>{t("performance:year_label")}</label>
-                <SelectDropdown data={yearOpts} selected={selYear} setSelected={setSelYear} hideClear classes="!h-[46px] !rounded-md" />
-              </div>
-              <FormInput label={t("performance:period_label")} name="period" register={register} errors={errors} maxLength={50} placeholder={t("performance:period_placeholder")} />
+              <SelectDropdown
+                label={t("performance:department_label")}
+                data={deptOpts}
+                selected={selDept}
+                setSelected={setSelDept}
+                placeholder={t("performance:select_department")}
+                classes="!h-[46px] !rounded-md"
+              />
+              <SelectDropdown
+                label={t("performance:cycle_label")}
+                data={appraisalCycleOptions}
+                selected={selCycle}
+                setSelected={setSelCycle}
+                hideClear
+                classes="!h-[46px] !rounded-md"
+              />
+              <SelectDropdown
+                label={t("performance:year_label")}
+                data={yearOpts}
+                selected={selYear}
+                setSelected={setSelYear}
+                hideClear
+                classes="!h-[46px] !rounded-md"
+              />
+              <FormInput label={t("performance:period_label")} name="period" register={register} errors={errors} pattern={/[a-zA-Z0-9\s.'-]/} maxLength={50} placeholder={t("performance:period_placeholder")} />
               <div className="md:col-span-2 lg:col-span-3">
                 <FormInput label={t("performance:self_comment_label")} name="selfComment" register={register} errors={errors} maxLength={500} placeholder={t("performance:self_comment_placeholder")} />
               </div>
@@ -156,27 +213,48 @@ const AddAppraisal = () => {
             <div className="space-y-4 mb-4">
               {kpis.map((kpi, i) => (
                 <div key={i} className="grid grid-cols-1 md:grid-cols-5 gap-4 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10">
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">{t("performance:category_label")}</label>
-                    <select value={kpi.category} onChange={(e) => updateKpi(i, "category", e.target.value)} className={inputCls}>
-                      {KPI_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">{t("performance:goal_label")}</label>
-                    <input value={kpi.goal} onChange={(e) => updateKpi(i, "goal", e.target.value)} placeholder={t("performance:goal_placeholder")} className={inputCls} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">{t("performance:target_label")}</label>
-                    <select value={kpi.targetScore} onChange={(e) => updateKpi(i, "targetScore", Number(e.target.value))} className={inputCls}>
-                      {[1, 2, 3, 4, 5].map((v) => <option key={v} value={v}>{v}</option>)}
-                    </select>
-                  </div>
+                  <SelectDropdown
+                    label={t("performance:category_label")}
+                    labelClass="!text-xs font-medium text-slate-500"
+                    data={kpiCategoryOptions}
+                    selected={kpiCategoryOptions.find((c) => c.id === kpi.category) || kpiCategoryOptions[0]}
+                    setSelected={(opt) => updateKpi(i, "category", opt?.id ?? kpiCategoryOptions[0].id)}
+                    hideClear
+                    classes="!h-10 !rounded-lg"
+                  />
+                  <FormInput
+                    wrapperClass="md:col-span-2"
+                    label={t("performance:goal_label")}
+                    labelClass="!text-xs font-medium text-slate-500"
+                    required
+                    minLength={5}
+                    maxLength={200}
+                    value={kpi.goal}
+                    onValueChange={(v) => updateKpi(i, "goal", v)}
+                    placeholder={t("performance:goal_placeholder")}
+                    inputClass="!h-10 !rounded-lg"
+                  />
+                  <SelectDropdown
+                    label={t("performance:target_label")}
+                    labelClass="!text-xs font-medium text-slate-500"
+                    data={[1, 2, 3, 4, 5].map((v) => ({ id: v, title: String(v) }))}
+                    selected={{ id: kpi.targetScore, title: String(kpi.targetScore) }}
+                    setSelected={(opt) => updateKpi(i, "targetScore", Number(opt?.id ?? 3))}
+                    hideClear
+                    classes="!h-10 !rounded-lg"
+                  />
                   <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <label className="text-xs font-medium text-slate-500 mb-1 block">{t("performance:weight_label")}</label>
-                      <input type="number" min={1} max={100} value={kpi.weight} onChange={(e) => updateKpi(i, "weight", Number(e.target.value))} className={inputCls} />
-                    </div>
+                    <FormInput
+                      wrapperClass="flex-1"
+                      label={t("performance:weight_label")}
+                      labelClass="!text-xs font-medium text-slate-500"
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={kpi.weight}
+                      onValueChange={(v) => updateKpi(i, "weight", Number(v))}
+                      inputClass="!h-10 !rounded-lg"
+                    />
                     <button type="button" onClick={() => removeKpi(i)} disabled={kpis.length === 1} className="h-10 w-10 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-100 disabled:opacity-30 shrink-0">
                       <FiTrash2 size={14} />
                     </button>

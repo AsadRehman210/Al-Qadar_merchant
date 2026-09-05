@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
@@ -8,12 +8,14 @@ import ReactPaginate from "react-paginate";
 import { LuPin, LuTrash2 } from "react-icons/lu";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import DataState from "components/DataState";
-import { cardRows } from "global/constant";
+import { cardRows, announcementCategoryOptions, announcementCategoryFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
@@ -24,7 +26,7 @@ import {
   createAnnouncement,
   deleteAnnouncement,
 } from "store/slices/announcementSlice";
-import { ANN_CATEGORIES, ANN_CATEGORY_BADGE } from "./announcementsFakeData";
+import { ANN_CATEGORY_BADGE } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
 
@@ -33,7 +35,7 @@ const Announcements = () => {
   const dispatch = useDispatch();
   const isHR = checkRoleAuth(add_employee);
   const [showForm, setShowForm] = useState(false);
-  const [selCat, setSelCat] = useState(ANN_CATEGORIES[0]);
+  const [selCat, setSelCat] = useState(announcementCategoryOptions[0]);
   const [pinned, setPinned] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [filters, setFilters] = useListFilters("hr-announcements", {
@@ -66,22 +68,23 @@ const Announcements = () => {
   const totalPages = Math.ceil((totalRecords || 0) / selRows.id) || 1;
   const handleRowsChange = (v) => setFilters({ limitId: v.id, page: 1 });
 
-  const catOpts = [
-    { id: "", title: t("hrhub:all_categories", "All Categories") },
-    ...ANN_CATEGORIES.map((c) => ({ id: c, title: c })),
-  ];
+  const catOpts = announcementCategoryFilterOptions;
 
   const catLabel = (c) =>
-    ({ General: t("hrhub:cat_general"), Policy: t("hrhub:cat_policy"), Event: t("hrhub:cat_event"), Urgent: t("hrhub:cat_urgent") }[c] || c);
+    announcementCategoryOptions.find((o) => o.id === c)?.title || c;
 
   const onSubmit = async (data) => {
+    if (!selCat?.id) {
+      toast.error(t("hrhub:category_required", "Category is required"));
+      return;
+    }
     setSubmitting(true);
     try {
-      await dispatch(createAnnouncement({ title: data.title, body: data.body, category: selCat, pinned })).unwrap();
+      await dispatch(createAnnouncement({ title: data.title, body: data.body, category: selCat.id, pinned })).unwrap();
       reset();
       setShowForm(false);
       setPinned(false);
-      setSelCat(ANN_CATEGORIES[0]);
+      setSelCat(announcementCategoryOptions[0]);
       refreshList();
     } finally {
       setSubmitting(false);
@@ -123,28 +126,27 @@ const Announcements = () => {
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <FormInput label={t("hrhub:ann_headline")} name="title" register={register} errors={errors} required
-                minLength={2} maxLength={150} />
+                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
               <SelectDropdown
                 label={t("hrhub:ann_category")}
-                data={ANN_CATEGORIES.map((c) => ({ id: c, title: catLabel(c) }))}
-                selected={{ id: selCat, title: catLabel(selCat) }}
-                setSelected={(v) => setSelCat(v?.id || selCat)}
+                data={announcementCategoryOptions}
+                selected={selCat}
+                setSelected={(v) => setSelCat(v || selCat)}
+                required
                 hideClear
               />
             </div>
-            <div className="mt-5">
-              <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                {t("hrhub:ann_body")} <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                rows={4}
-                {...register("body", { required: true, minLength: { value: 5, message: "Minimum length is 5 characters" }, maxLength: { value: 2000, message: "Maximum length is 2000 characters" } })}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-              />
-              {errors.body && errors.body.type !== "required" && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.body.message}</p>
-              )}
-            </div>
+            <FormTextarea
+              label={t("hrhub:ann_body")}
+              name="body"
+              register={register}
+              errors={errors}
+              required
+              rows={4}
+              minLength={{ value: 5, message: "Minimum length is 5 characters" }}
+              maxLength={{ value: 2000, message: "Maximum length is 2000 characters" }}
+              wrapperClass="mt-5"
+            />
             <div className="flex items-center justify-between mt-5">
               <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-white/80 cursor-pointer">
                 <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} className="h-4 w-4 accent-teal-500" />
@@ -208,7 +210,7 @@ const Announcements = () => {
                   <h3 className="text-lg font-bold text-slate-800 dark:text-white mt-2">{a.title}</h3>
                   <p className="text-sm text-slate-600 dark:text-white/70 mt-1.5 leading-relaxed">{a.body}</p>
                   <p className="text-xs text-slate-400 dark:text-white/40 mt-3">
-                    {t("hrhub:posted_by")} <span className="font-medium text-slate-500 dark:text-white/60">{t("hrhub:hr_department", "HR Department")}</span> · {a.createdAt ? dayjs(a.createdAt).format("DD MMM YYYY") : ""}
+                    {t("hrhub:posted_by")} <span className="font-medium text-slate-500 dark:text-white/60">{t("hrhub:hr_department", "HR Department")}</span> � {a.createdAt ? dayjs(a.createdAt).format("DD MMM YYYY") : ""}
                   </p>
                 </div>
               ))}

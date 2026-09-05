@@ -7,6 +7,7 @@ import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
@@ -228,6 +229,7 @@ const ApplyLeave = () => {
               register={register}
               errors={errors}
               required
+              min={fromDate}
             />
             <div>
               <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
@@ -245,7 +247,8 @@ const ApplyLeave = () => {
             </div>
 
             {/* Handover & Emergency */}
-            <FormInput label={t("leave:handover_to")} name="handoverTo" register={register} errors={errors} />
+            <FormInput label={t("leave:handover_to")} name="handoverTo" register={register} errors={errors}
+              pattern={/[a-zA-Z\s.'-]/} minLength={2} maxLength={150} />
             <FormInput
               label={t("leave:emergency_contact")}
               name="emergencyContact"
@@ -256,25 +259,18 @@ const ApplyLeave = () => {
               maxLength={20}
             />
 
-            {/* Reason */}
-            <div className="lg:col-span-3">
-              <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                {t("leave:reason")} <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                rows={4}
-                {...register("reason", {
-                  required: true,
-                  minLength: { value: 5, message: "Minimum length is 5 characters" },
-                  maxLength: { value: 500, message: "Maximum length is 500 characters" },
-                })}
-                placeholder={t("leave:reason_placeholder")}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-              />
-              {errors.reason?.message && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.reason.message}</p>
-              )}
-            </div>
+            <FormTextarea
+              label={t("leave:reason")}
+              name="reason"
+              register={register}
+              errors={errors}
+              required
+              rows={4}
+              minLength={{ value: 5, message: "Minimum length is 5 characters" }}
+              maxLength={{ value: 500, message: "Maximum length is 500 characters" }}
+              placeholder={t("leave:reason_placeholder")}
+              wrapperClass="lg:col-span-3"
+            />
           </div>
 
           <div className="flex flex-wrap gap-3 justify-end mt-7 pt-6 border-t border-slate-200 dark:border-white/20">

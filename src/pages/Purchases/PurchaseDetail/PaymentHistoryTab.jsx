@@ -4,21 +4,17 @@ import { toast } from "react-toastify";
 import { FiPlus } from "react-icons/fi";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
-
-const PAYMENT_METHOD_OPTS = [
-  { title: "purchase:cash", id: "Cash" },
-  { title: "purchase:bank_transfer", id: "Bank Transfer" },
-  { title: "purchase:other", id: "Other" },
-];
+import FormInput from "components/FormInput";
+import { purchasePaymentMethodOptions } from "global/constant";
+import { formatAmount } from "global/helper";
 
 const PaymentHistoryTab = ({ invoice, panelClass, onRefresh, onAddPayment }) => {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [amount, setAmount] = useState("");
-  const [selMethod, setSelMethod] = useState(PAYMENT_METHOD_OPTS[1]);
+  const [selMethod, setSelMethod] = useState(purchasePaymentMethodOptions[1]);
   const [reference, setReference] = useState("");
-
-  const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
   const handleSave = async () => {
     if (!amount || Number(amount) <= 0) {
@@ -27,12 +23,13 @@ const PaymentHistoryTab = ({ invoice, panelClass, onRefresh, onAddPayment }) => 
     }
     try {
       await onAddPayment({
-        date: new Date().toISOString().slice(0, 10),
+        date,
         amount: Number(amount),
         method: selMethod.id,
         reference,
       });
       toast.success(t("purchase:payment_recorded"));
+      setDate(new Date().toISOString().slice(0, 10));
       setAmount("");
       setReference("");
       setShowForm(false);
@@ -60,32 +57,50 @@ const PaymentHistoryTab = ({ invoice, panelClass, onRefresh, onAddPayment }) => 
       {showForm && (
         <div className="mb-5 p-4 rounded-2xl border border-teal-200 dark:border-teal-500/30 bg-teal-50/50 dark:bg-teal-500/5 flex flex-wrap items-end gap-3">
           <div>
-            <label className="text-xs font-medium text-linkText block mb-1">{t("amount")}</label>
-            <input
+            <FormInput
+              label={t("purchase:payment_date")}
+              labelClass="!text-xs"
+              name="paymentDate"
+              type="date"
+              value={date}
+              onValueChange={setDate}
+              inputClass="!h-9 !rounded-lg"
+            />
+          </div>
+          <div className="w-32">
+            <FormInput
+              label={t("amount")}
+              labelClass="!text-xs"
+              name="paymentAmount"
               type="number"
-              step="any"
+              min={0}
+              decimal
+              decimalPlaces={3}
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="h-9 w-32 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
+              onValueChange={setAmount}
+              inputClass="!h-9 !rounded-lg"
             />
           </div>
           <div className="w-40">
-            <label className="text-xs font-medium text-linkText block mb-1">{t("purchase:payment_method")}</label>
             <SelectDropdown
-              data={PAYMENT_METHOD_OPTS}
+              label={t("purchase:payment_method")}
+              labelClass="!text-xs"
+              data={purchasePaymentMethodOptions}
               selected={selMethod}
-              setSelected={(o) => setSelMethod(o || PAYMENT_METHOD_OPTS[1])}
+              setSelected={(o) => setSelMethod(o || purchasePaymentMethodOptions[1])}
               valueKey="id"
               hideClear
               classes="!h-9 !rounded-lg"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-linkText block mb-1">{t("purchase:reference")}</label>
-            <input
+            <FormInput
+              label={t("purchase:reference")}
+              labelClass="!text-xs"
+              name="paymentReference"
               value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              className="h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
+              onValueChange={setReference}
+              inputClass="!h-9 !rounded-lg"
             />
           </div>
           <button type="button" onClick={handleSave} className="h-9 px-4 rounded-lg bg-teal-500 text-white text-sm font-semibold">

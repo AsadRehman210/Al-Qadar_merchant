@@ -9,11 +9,7 @@ let _shifts = [
   { id: "shift-night", name: "Night", start: "22:00", end: "06:00", breakMinutes: 45 },
 ].map((s) => ({ ...s, workingHours: calcShiftWorkingHours(s.start, s.end, s.breakMinutes) }));
 
-export const FAKE_SHIFTS = _shifts;
-
 export const getShifts = () => [..._shifts];
-
-export const getShiftById = (id) => _shifts.find((s) => s.id === id) || null;
 
 export const addShift = (data) => {
   const shift = {

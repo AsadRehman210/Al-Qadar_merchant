@@ -10,10 +10,10 @@ import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import TableState from "components/TableState";
-import { tableRows } from "global/constant";
-import { checkRoleAuth } from "global/helper";
+import { RUN_STATUS_BADGE } from "global/constant";
+import { tableRows, payrollRunStatusFilterOptions } from "global/constant";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { RUN_STATUS, RUN_STATUS_BADGE } from "./payrollBatchFakeData";
 import { useListFilters } from "hooks/useListFilters";
 import {
   fetchPayrollRuns,
@@ -32,7 +32,6 @@ import dayjs from "dayjs";
 
 const { add_employee, view_employee } = rafeeqi_role_ids;
 
-const fmt = (n) => (n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const PayrollBatch = () => {
   const { t } = useTranslation();
@@ -71,10 +70,7 @@ const PayrollBatch = () => {
     createdAtLabel: r.createdAt ? dayjs(r.createdAt).format("YYYY-MM-DD") : "—",
   })), [runs]);
 
-  const statusOpts = [
-    { id: "all", title: t("payroll:all_statuses") },
-    ...Object.values(RUN_STATUS).map((v) => ({ id: v, title: v })),
-  ];
+  const statusOpts = payrollRunStatusFilterOptions;
 
   const monthOpts = [
     { id: "all", title: t("payroll:all_months") },
@@ -91,7 +87,7 @@ const PayrollBatch = () => {
     { label: t("payroll:total_runs"), value: summary.totalRuns, sub: t("payroll:all_time"), color: "from-slate-500 to-slate-600" },
     { label: t("payroll:pending_approval"), value: summary.pendingApproval, sub: t("payroll:awaiting_cfo"), color: "from-amber-500 to-amber-600" },
     { label: t("payroll:paid_runs"), value: summary.paidRuns, sub: t("payroll:completed"), color: "from-emerald-500 to-emerald-600" },
-    { label: t("payroll:total_disbursed"), value: `SAR ${fmt(summary.totalNetPaid)}`, sub: t("payroll:net_salary_paid"), color: "from-teal-500 to-teal-600" },
+    { label: t("payroll:total_disbursed"), value: `SAR ${formatAmount(summary.totalNetPaid)}`, sub: t("payroll:net_salary_paid"), color: "from-teal-500 to-teal-600" },
   ];
 
   if (!checkRoleAuth(view_employee)) return null;
@@ -184,10 +180,10 @@ const PayrollBatch = () => {
                         <p className="text-xs text-slate-500 dark:text-white/60">{run.createdAtLabel}</p>
                       </td>
                       <td className="px-4 py-4 text-center font-semibold">{run.totalEmployees}</td>
-                      <td className="px-4 py-4 text-slate-700 dark:text-white/80">SAR {fmt(run.totalGross)}</td>
-                      <td className="px-4 py-4 text-rose-600">SAR {fmt(run.totalDeductions)}</td>
-                      <td className="px-4 py-4 font-bold text-emerald-600">SAR {fmt(run.totalNet)}</td>
-                      <td className="px-4 py-4 text-slate-600 dark:text-white/70">SAR {fmt(run.totalEmployerCost)}</td>
+                      <td className="px-4 py-4 text-slate-700 dark:text-white/80">SAR {formatAmount(run.totalGross)}</td>
+                      <td className="px-4 py-4 text-rose-600">SAR {formatAmount(run.totalDeductions)}</td>
+                      <td className="px-4 py-4 font-bold text-emerald-600">SAR {formatAmount(run.totalNet)}</td>
+                      <td className="px-4 py-4 text-slate-600 dark:text-white/70">SAR {formatAmount(run.totalEmployerCost)}</td>
                       <td className="px-4 py-4">
                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${RUN_STATUS_BADGE[run.status] || ""}`}>
                           {run.status}

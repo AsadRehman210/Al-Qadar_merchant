@@ -97,15 +97,21 @@ const CustomerDetail = () => {
               {customer.customerType && (
                 <span className="text-mutedForeground text-sm">{customer.customerType}</span>
               )}
-              <span
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-                  (Number(customer.currentBalance) || 0) > 0
-                    ? "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300 ring-1 ring-inset ring-rose-200 dark:ring-rose-500/25"
-                    : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-500/25"
-                }`}
-              >
-                {t("customers:balance_due")}: {formatAmount(customer.currentBalance)} SAR
-              </span>
+              {(() => {
+                const bal = Number(customer.currentBalance) || 0;
+                const isRefund = bal < 0;
+                return (
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                      isRefund || bal === 0
+                        ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-500/25"
+                        : "bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-300 ring-1 ring-inset ring-rose-200 dark:ring-rose-500/25"
+                    }`}
+                  >
+                    {isRefund ? t("customers:refund_due") : t("customers:balance_due")}: {formatAmount(Math.abs(bal))} SAR
+                  </span>
+                );
+              })()}
             </div>
           </div>
           <Button

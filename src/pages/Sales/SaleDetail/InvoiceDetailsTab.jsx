@@ -1,13 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { lineTotal, lineProfit, computeInvoiceProfit } from "../saleInvoiceHelpers";
+import { lineTotal, lineProfit, computeInvoiceProfit } from "global/helper";
+import { salePaymentStatusBadge, saleDeliveryStatusBadge } from "global/constant";
 import DetailField from "./DetailField";
 import Table from "components/Table";
-
-const PAYMENT_STATUS_BADGE = {
-  Pending: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30",
-  Partial: "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300 ring-1 ring-inset ring-sky-200 dark:ring-sky-500/30",
-  Paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-500/30",
-};
 
 const InvoiceDetailsTab = ({
   invoice,
@@ -123,8 +118,7 @@ const InvoiceDetailsTab = ({
           {invoice.paymentStatus ? (
             <span
               className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                PAYMENT_STATUS_BADGE[invoice.paymentStatus] ||
-                "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300 ring-1 ring-inset ring-slate-200 dark:ring-slate-500/30"
+                salePaymentStatusBadge[invoice.paymentStatus] || salePaymentStatusBadge.Pending
               }`}
             >
               {invoice.paymentStatus}
@@ -141,15 +135,23 @@ const InvoiceDetailsTab = ({
           label={t("sales:transporter_name")}
           value={invoice.transporterName}
         />
-        <DetailField
-          label={t("sales:delivery_status")}
-          value={invoice.deliveryStatus}
-        />
+        <div>
+          <p className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-1">
+            {t("sales:delivery_status")}
+          </p>
+          <span
+            className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+              saleDeliveryStatusBadge[invoice.deliveryStatus] || saleDeliveryStatusBadge.Pending
+            }`}
+          >
+            {invoice.deliveryStatus || "Pending"}
+          </span>
+        </div>
       </div>
       <Table className="mt-8">
         <table className="w-full text-sm min-w-[1080px]">
           <thead>
-            <tr className="bg-slate-100 dark:bg-white/10 text-left">
+            <tr className="bg-[var(--color-teal-500)] text-left text-white/95 border-none">
               <th className="p-3 font-semibold w-12 text-center">
                 {t("sales:sr_no")}
               </th>

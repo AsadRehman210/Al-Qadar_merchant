@@ -8,7 +8,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { tableRows } from "global/constant";
+import { tableRows, assetStatusFilterOptions } from "global/constant";
 import {
   fetchAssets,
   fetchAssetCategories,
@@ -80,16 +80,7 @@ const AssetRegister = () => {
     return c ? `${c.code} — ${c.name}` : "—";
   };
 
-  const statusOptions = useMemo(
-    () => [
-      { id: "all", title: t("asset:filter_all") },
-      { id: "In use", title: t("asset:st_in_use") },
-      { id: "In storage", title: t("asset:st_storage") },
-      { id: "Maintenance", title: t("asset:st_maintenance") },
-      { id: "Disposed", title: t("asset:st_disposed") },
-    ],
-    [t],
-  );
+  const statusOptions = assetStatusFilterOptions;
 
   const categoryOptions = useMemo(
     () => [

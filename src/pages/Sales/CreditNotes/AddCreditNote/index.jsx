@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
 import {
@@ -33,22 +34,21 @@ import {
   showReturnableLoading,
 } from "store/slices/creditNoteSlice";
 import { SkeletonTable } from "components/Skeleton";
+import {
+  creditNoteReasonOptions,
+  salesReturnTypeOptions,
+} from "global/constant";
+import { effectiveLineTaxPercent } from "global/helper";
 
-const CN_REASONS = ["Damaged goods", "Wrong item delivered", "Overcharge", "Customer return", "Quality issue", "Expired", "Other"];
-const RETURN_TYPES = ["Full return", "Partial return"];
+const CN_REASONS = creditNoteReasonOptions.map((o) => o.id);
 
 // Only these reasons put the returned goods back on the shelf — mirrors
 // RESTOCK_REASONS in credit-note-service.ts exactly, so the hint shown here
 // never disagrees with what Applying the credit note will actually do.
-// Overcharge never restocks (nothing physical moved); Damaged/Quality
-// issue/Expired/Other never restock either (received back but written off).
+// "Wrong entry" is billing-only (nothing physical moved); Damaged/Expired/Other
+// are held as Not for sale instead of Available.
 const RESTOCK_REASONS = new Set(["Customer return", "Wrong item delivered"]);
-
-// A line's own tax rate if it's carrying one (snapshotted from the original
-// sale line), otherwise the credit note's own rate — mirrors the backend's
-// effectiveLineTaxPercent exactly.
-const effectiveLineTaxPercent = (line, cnTaxPercent) =>
-  line?.taxPercent !== undefined && line?.taxPercent !== null ? Number(line.taxPercent) || 0 : Number(cnTaxPercent) || 0;
+const BILLING_ONLY_REASONS = new Set(["Wrong entry"]);
 
 // Backend-driven search + infinite scroll, matching SearchablePaginatedDropdown's contract.
 const useDropdownSource = (fetchThunk, selectors, titleFn, extraParams, enabled = true) => {
@@ -96,7 +96,7 @@ const AddCreditNote = () => {
       originalInvoiceId: prefillInvoiceId,
       warehouseId: "",
       reason: CN_REASONS[0],
-      returnType: RETURN_TYPES[0],
+      returnType: salesReturnTypeOptions[0].id,
       taxPercent: 0,
       discount: 0,
       notes: "",
@@ -171,7 +171,7 @@ const AddCreditNote = () => {
   // Full always means "everything still returnable", Partial always starts
   // from zero so a stale full-return quantity never silently carries over.
   const handleReturnTypeChange = (opt) => {
-    const next = opt?.id || RETURN_TYPES[0];
+    const next = opt?.id || salesReturnTypeOptions[0].id;
     setValue("returnType", next);
     const current = getValues("products") || [];
     replace(current.map((l) => ({ ...l, qty: next === "Full return" ? l.maxReturnableQty : 0 })));
@@ -198,10 +198,12 @@ const AddCreditNote = () => {
   };
 
   const selReason = { id: watch("reason"), title: watch("reason") };
-  const reasonOpts = CN_REASONS.map((r) => ({ id: r, title: r }));
-  const selReturnType = { id: returnType, title: returnType };
-  const returnTypeOpts = RETURN_TYPES.map((r) => ({ id: r, title: r }));
+  const reasonOpts = creditNoteReasonOptions;
+  const selReturnType =
+    salesReturnTypeOptions.find((o) => o.id === returnType) || salesReturnTypeOptions[0];
+  const returnTypeOpts = salesReturnTypeOptions;
   const willRestock = RESTOCK_REASONS.has(watch("reason"));
+  const isBillingOnly = BILLING_ONLY_REASONS.has(watch("reason"));
 
   const watchedProducts = watch("products");
   const taxPercent = watch("taxPercent");
@@ -218,6 +220,8 @@ const AddCreditNote = () => {
     [JSON.stringify(watchedProducts), taxPercent],
   );
   const total = useMemo(() => subtotal - Number(discount || 0) + taxAmt, [subtotal, discount, taxAmt]);
+  const fmtMoney = (n) =>
+    Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const onSubmit = async (data) => {
     if (!data.customerId) { toast.error(t("sales:customer_required")); return; }
@@ -247,7 +251,6 @@ const AddCreditNote = () => {
   };
 
   const panelCls = "bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-rose-400";
-  const hasDifferentTax = (watchedProducts || []).some((l) => l.taxPercent !== null && l.taxPercent !== undefined);
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -266,8 +269,8 @@ const AddCreditNote = () => {
             <h3 className="text-base font-bold mb-4">{t("sales:return_info")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <div className="md:col-span-2">
-                <label className="text-sm font-medium text-linkText block mb-1">{t("sales:customer")} *</label>
                 <SearchablePaginatedDropdown
+                  label={`${t("sales:customer")} *`}
                   data={customerSource.data}
                   selected={selCustomer}
                   setSelected={handleCustomerChange}
@@ -281,8 +284,8 @@ const AddCreditNote = () => {
               </div>
               <FormInput label={t("sales:date")} name="date" type="date" register={register} />
               <div>
-                <label className="text-sm font-medium text-linkText block mb-1">{t("sales:original_invoice")}</label>
                 <SearchablePaginatedDropdown
+                  label={t("sales:original_invoice")}
                   data={invoiceOpts}
                   selected={selOriginalInvoice}
                   setSelected={handleInvoiceChange}
@@ -296,36 +299,42 @@ const AddCreditNote = () => {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-linkText block mb-1">{t("sales:reason")}</label>
-                <SelectDropdown data={reasonOpts} selected={selReason} setSelected={(o) => setValue("reason", o?.id || CN_REASONS[0])} hideClear />
+                <SelectDropdown label={t("sales:reason")} data={reasonOpts} selected={selReason} setSelected={(o) => setValue("reason", o?.id || CN_REASONS[0])} hideClear />
                 <p className={`mt-1 text-xs ${willRestock ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
                   {willRestock
-                    ? t("sales:restock_hint_yes", { defaultValue: "Stock will be added back to the warehouse once this credit note is Applied." })
-                    : t("sales:restock_hint_no", { defaultValue: "Stock will NOT be restocked once Applied — treated as a write-off." })}
+                    ? t("sales:restock_hint_yes")
+                    : isBillingOnly
+                      ? t("sales:restock_hint_billing")
+                      : t("sales:restock_hint_no")}
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-linkText block mb-1">{t("sales:return_type")}</label>
-                <SelectDropdown data={returnTypeOpts} selected={selReturnType} setSelected={handleReturnTypeChange} hideClear />
+                <SelectDropdown label={t("sales:return_type")} data={returnTypeOpts} selected={selReturnType} setSelected={handleReturnTypeChange} hideClear />
               </div>
               <div>
-                <label className="text-sm font-medium text-linkText block mb-1">{t("sales:warehouse")}</label>
-                <input
-                  disabled
+                <FormInput
+                  label={t("sales:warehouse")}
+                  name="warehouseDisplay"
                   value={returnableInvoice?.warehouseName || ""}
                   placeholder={t("sales:select_invoice_first", { defaultValue: "Select an original invoice first" })}
-                  className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-slate-100 dark:bg-white/5 px-3 text-sm opacity-70"
+                  disabled
+                  inputClass="!h-10 !rounded-lg opacity-70"
                 />
                 <p className="mt-1 text-xs text-slate-400 dark:text-white/40">
                   {t("sales:cn_warehouse_locked_hint", { defaultValue: "Locked to the original sale's own warehouse." })}
                 </p>
               </div>
-              <FormInput label={t("sales:tax_percent")} name="taxPercent" type="number" register={register} errors={errors} min={0} max={100} decimal decimalPlaces={2} />
+              <FormInput label={t("sales:tax_percent")} name="taxPercent" type="number" register={register} errors={errors} min={0} max={100} decimal decimalPlaces={2} disabled />
               <div className="lg:col-span-3">
-                <label className="text-sm font-medium text-linkText block mb-1">{t("sales:notes")}</label>
-                <textarea {...register("notes", { maxLength: { value: 500, message: "Maximum length is 500 characters" } })} rows={2}
-                  className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 py-2 text-sm focus:outline-0 focus:border-teal-500" />
-                {errors.notes && <p className="text-red text-xs mt-1 font-medium">{errors.notes.message}</p>}
+                <FormTextarea
+                  label={t("sales:notes")}
+                  name="notes"
+                  register={register}
+                  errors={errors}
+                  rows={2}
+                  maxLength={500}
+                  className="!rounded-lg"
+                />
               </div>
             </div>
           </div>
@@ -343,47 +352,51 @@ const AddCreditNote = () => {
               <p className="text-sm text-slate-400 dark:text-white/40 py-6 text-center">{t("no_record_found")}</p>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
-                <table className="w-full text-sm min-w-[900px]">
+                <table className="w-full text-sm min-w-[1200px]">
                   <thead>
                     <tr className="bg-rose-500">
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 w-12">{t("sales:sr_no")}</th>
                       <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:product")}</th>
-                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("sales:expiry_date", { defaultValue: "Expiry date" })}</th>
-                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:unit")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("sales:qty_to_return")}</th>
                       <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:price")}</th>
                       <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:cost")}</th>
-                      {hasDifferentTax && <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:tax_percent")}</th>}
-                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("sales:sold_qty", { defaultValue: "Sold qty" })}</th>
-                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("sales:already_credited", { defaultValue: "Already credited" })}</th>
-                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("sales:qty_to_return", { defaultValue: "Qty to return" })}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:unit")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("sales:expiry_date")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("sales:sold_qty")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("sales:already_credited")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:base_amount")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:tax_percent")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:tax_amount")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("sales:subtotal")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fields.map((field, idx) => {
                       const maxQty = field.maxReturnableQty ?? 0;
+                      const row = watchedProducts?.[idx] || field;
+                      const base = (Number(row.qty) || 0) * (Number(row.price) || 0);
+                      const rowTaxPct = effectiveLineTaxPercent(row, taxPercent);
+                      const rowTaxAmt = base * (rowTaxPct / 100);
                       return (
-                        <tr key={field.id} className="border-t border-slate-100 dark:border-white/5">
+                        <tr key={field.id} className="border-t border-slate-100 dark:border-white/5 align-top">
+                          <td className="p-2.5 tabular-nums text-slate-600 dark:text-white/70 font-medium">{idx + 1}</td>
                           <td className="p-2.5">{field.productName}</td>
-                          <td className="p-2.5 text-xs text-slate-500 whitespace-nowrap">{field.expiryDate ? String(field.expiryDate).slice(0, 10) : "—"}</td>
-                          <td className="p-2.5">{field.unit}</td>
-                          <td className="p-2.5 tabular-nums">{Number(field.price || 0).toLocaleString()}</td>
-                          <td className="p-2.5 tabular-nums text-slate-500">{Number(field.costPrice || 0).toLocaleString()}</td>
-                          {hasDifferentTax && (
-                            <td className="p-2.5">{field.taxPercent !== null && field.taxPercent !== undefined ? `${field.taxPercent}%` : "—"}</td>
-                          )}
-                          <td className="p-2.5 tabular-nums text-slate-500">{field.soldQty}</td>
-                          <td className="p-2.5 tabular-nums text-slate-500">{field.alreadyCreditedQty}</td>
                           <td className="p-2.5 w-32">
-                            <input
+                            <FormInput
+                              name={`products.${idx}.qty`}
                               type="number"
                               min={0}
                               max={maxQty}
-                              step="any"
+                              decimal
+                              decimalPlaces={3}
                               disabled={returnType === "Full return" || maxQty === 0}
-                              {...register(`products.${idx}.qty`, { valueAsNumber: true, max: maxQty, min: 0 })}
-                              className="w-24 rounded border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-2 py-1.5 text-sm disabled:opacity-60"
+                              register={register}
+                              errors={errors}
+                              wrapperClass="w-24"
+                              inputClass="!h-9 !px-2 !py-1.5 !rounded disabled:opacity-60"
                             />
                             {maxQty === 0 && (
-                              <p className="mt-1 text-[11px] text-slate-400">{t("sales:fully_credited", { defaultValue: "Fully credited" })}</p>
+                              <p className="mt-1 text-[11px] text-slate-400">{t("sales:fully_credited")}</p>
                             )}
                             <input type="hidden" {...register(`products.${idx}.variantId`)} />
                             <input type="hidden" {...register(`products.${idx}.productName`)} />
@@ -394,6 +407,25 @@ const AddCreditNote = () => {
                             <input type="hidden" {...register(`products.${idx}.unit`)} />
                             <input type="hidden" {...register(`products.${idx}.taxPercent`)} />
                           </td>
+                          <td className="p-2.5 tabular-nums">{fmtMoney(field.price)}</td>
+                          <td className="p-2.5 tabular-nums text-slate-500">{fmtMoney(field.costPrice)}</td>
+                          <td className="p-2.5">{field.unit}</td>
+                          <td className="p-2.5 text-xs text-slate-500 whitespace-nowrap">{field.expiryDate ? String(field.expiryDate).slice(0, 10) : "—"}</td>
+                          <td className="p-2.5 tabular-nums text-slate-500">{field.soldQty}</td>
+                          <td className="p-2.5 tabular-nums text-slate-500">{field.alreadyCreditedQty}</td>
+                          <td className="p-2.5 tabular-nums font-semibold">{fmtMoney(base)}</td>
+                          <td className="p-2.5">
+                            <FormInput
+                              name={`products.${idx}.taxPercentDisplay`}
+                              value={`${rowTaxPct}%`}
+                              disabled
+                              readonly
+                              wrapperClass="w-16"
+                              inputClass="!h-9 !px-2 !py-1.5 !rounded !bg-slate-50 dark:!bg-white/5 !text-slate-500 dark:!text-white/60 cursor-not-allowed"
+                            />
+                          </td>
+                          <td className="p-2.5 tabular-nums text-slate-500">{fmtMoney(rowTaxAmt)}</td>
+                          <td className="p-2.5 tabular-nums font-semibold">{fmtMoney(base + rowTaxAmt)}</td>
                         </tr>
                       );
                     })}
@@ -403,9 +435,9 @@ const AddCreditNote = () => {
             )}
             <div className="mt-4 flex justify-end">
               <dl className="text-sm space-y-1 min-w-[220px]">
-                <div className="flex justify-between gap-8"><dt className="text-slate-500">{t("sales:subtotal")}</dt><dd className="tabular-nums">{subtotal.toFixed(2)}</dd></div>
+                <div className="flex justify-between gap-8"><dt className="text-slate-500">{t("sales:subtotal")} {t("sales:without_tax")}</dt><dd className="tabular-nums">{subtotal.toFixed(2)}</dd></div>
                 <div className="flex justify-between gap-8"><dt className="text-slate-500">{t("sales:tax")}</dt><dd className="tabular-nums">{taxAmt.toFixed(2)}</dd></div>
-                <div className="flex justify-between gap-8 pt-1 border-t border-slate-200 dark:border-white/20 font-bold text-rose-600"><dt>{t("sales:credit_amount")}</dt><dd className="tabular-nums">{total.toFixed(2)}</dd></div>
+                <div className="flex justify-between gap-8 pt-1 border-t border-slate-200 dark:border-white/20 font-bold text-rose-600"><dt>{t("sales:credit_amount")} {t("sales:with_tax")}</dt><dd className="tabular-nums">{total.toFixed(2)}</dd></div>
               </dl>
             </div>
           </div>

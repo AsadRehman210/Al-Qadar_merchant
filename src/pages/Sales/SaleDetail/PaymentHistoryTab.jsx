@@ -4,16 +4,18 @@ import { toast } from "react-toastify";
 import { FiPlus } from "react-icons/fi";
 import Button from "components/Button";
 import Table from "components/Table";
+import SelectDropdown from "components/SelectDropdown";
+import FormInput from "components/FormInput";
+import { salesPaymentMethodOptions } from "global/constant";
+import { formatAmount } from "global/helper";
 
 const PaymentHistoryTab = ({ invoice, panelClass, onRefresh, onAddPayment }) => {
   const { t } = useTranslation();
   const [showForm, setShowForm] = useState(false);
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [amount, setAmount] = useState("");
-  const [method, setMethod] = useState("Bank Transfer");
+  const [selMethod, setSelMethod] = useState(salesPaymentMethodOptions[1]);
   const [reference, setReference] = useState("");
-
-  const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
   const handleSave = async () => {
     if (!amount || Number(amount) <= 0) {
@@ -26,7 +28,7 @@ const PaymentHistoryTab = ({ invoice, panelClass, onRefresh, onAddPayment }) => 
         // component to strip.
         date,
         amount: Number(amount),
-        method,
+        method: selMethod.id,
         reference,
       });
       toast.success(t("sales:payment_recorded"));
@@ -58,42 +60,50 @@ const PaymentHistoryTab = ({ invoice, panelClass, onRefresh, onAddPayment }) => 
       {showForm && (
         <div className="mb-5 p-4 rounded-2xl border border-teal-200 dark:border-teal-500/30 bg-teal-50/50 dark:bg-teal-500/5 flex flex-wrap items-end gap-3">
           <div>
-            <label className="text-xs font-medium text-linkText block mb-1">{t("sales:payment_date")}</label>
-            <input
+            <FormInput
+              label={t("sales:payment_date")}
+              labelClass="!text-xs"
+              name="paymentDate"
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="h-9 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
+              onValueChange={setDate}
+              inputClass="!h-9 !rounded-md"
             />
           </div>
-          <div>
-            <label className="text-xs font-medium text-linkText block mb-1">{t("amount")}</label>
-            <input
+          <div className="w-32">
+            <FormInput
+              label={t("amount")}
+              labelClass="!text-xs"
+              name="paymentAmount"
               type="number"
-              step="any"
+              min={0}
+              decimal
+              decimalPlaces={3}
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="h-9 w-32 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
+              onValueChange={setAmount}
+              inputClass="!h-9 !rounded-md"
+            />
+          </div>
+          <div className="w-44">
+            <SelectDropdown
+              label={t("sales:payment_method")}
+              labelClass="!text-xs"
+              data={salesPaymentMethodOptions}
+              selected={selMethod}
+              setSelected={(o) => setSelMethod(o || salesPaymentMethodOptions[1])}
+              valueKey="id"
+              hideClear
+              classes="!h-9 !rounded-md"
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-linkText block mb-1">{t("sales:payment_method")}</label>
-            <select
-              value={method}
-              onChange={(e) => setMethod(e.target.value)}
-              className="h-9 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
-            >
-              {["Cash", "Bank Transfer", "Other"].map((m) => (
-                <option key={m}>{m}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-linkText block mb-1">{t("sales:reference")}</label>
-            <input
+            <FormInput
+              label={t("sales:reference")}
+              labelClass="!text-xs"
+              name="paymentReference"
               value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              className="h-9 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
+              onValueChange={setReference}
+              inputClass="!h-9 !rounded-md"
             />
           </div>
           <button type="button" onClick={handleSave} className="h-9 px-4 rounded-md bg-teal-500 text-white text-sm font-semibold">
@@ -108,7 +118,7 @@ const PaymentHistoryTab = ({ invoice, panelClass, onRefresh, onAddPayment }) => 
       <Table>
         <table className="w-full text-sm min-w-[500px]">
           <thead>
-            <tr className="bg-slate-100 dark:bg-white/10 text-left">
+            <tr className="bg-[var(--color-teal-500)] text-left text-white/95 border-none">
               <th className="p-3 font-semibold">{t("sales:date")}</th>
               <th className="p-3 font-semibold">{t("amount")}</th>
               <th className="p-3 font-semibold">{t("sales:payment_method")}</th>

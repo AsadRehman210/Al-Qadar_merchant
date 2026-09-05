@@ -4,6 +4,7 @@ import SelectDropdown from "components/SelectDropdown";
 import PaginatedSelectBox from "components/PaginatedSelectBox";
 import { erpGet, buildQuery } from "api/erpClient";
 import { erpUrls } from "global/config";
+import { batchSortOptions } from "global/constant";
 
 const BatchTableFilters = ({
   batches = [],
@@ -48,17 +49,7 @@ const BatchTableFilters = ({
     };
   }, [warehouseId, warehouseOption, batches]);
 
-  const sortOptions = useMemo(
-    () => [
-      { id: "expiry_asc", title: t("product:batch_sort_expiry_asc") },
-      { id: "expiry_desc", title: t("product:batch_sort_expiry_desc") },
-      { id: "cost_asc", title: t("product:batch_sort_cost_asc") },
-      { id: "cost_desc", title: t("product:batch_sort_cost_desc") },
-      { id: "stock_asc", title: t("product:batch_sort_stock_asc") },
-      { id: "stock_desc", title: t("product:batch_sort_stock_desc") },
-    ],
-    [t],
-  );
+  const sortOptions = batchSortOptions;
 
   const selectedSort = sortId
     ? sortOptions.find((o) => o.id === sortId) ?? {}

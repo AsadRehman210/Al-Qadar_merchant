@@ -8,7 +8,7 @@ import { showSidebar, toggleSidebar } from "store/slices/headerSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { IoClose } from "react-icons/io5";
 import { menuSections } from "global/constant";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, hrefViewPermission } from "global/helper";
 import { logoutErp, showStatus } from "store/slices/authSlice";
 import { showUserData } from "store/slices/uniqueSlice";
 import { toast } from "react-toastify";
@@ -16,8 +16,16 @@ import ImageWithFallback from "./ImageWithFallback";
 import Logo from "assets/images/rafeeqi_logo_pdf.png";
 import { useSocket } from "../context/SocketContext";
 
-const visibleItemsOf = (section) =>
-  (section.items || []).filter((item) => (item.role ? checkRoleAuth(item.role) : true));
+// An item is visible when its explicit `role` passes, or — for the many items
+// still on a legacy placeholder role — when the permission derived from its
+// href passes. A parent with children defers to its visible children.
+const navItemVisible = (node) => {
+  if (node.children?.length) return true;
+  const perm = node.role || hrefViewPermission(node.href);
+  return perm ? checkRoleAuth(perm) : true;
+};
+
+const visibleItemsOf = (section) => (section.items || []).filter(navItemVisible);
 
 const collectHrefs = (blocks) =>
   blocks.flatMap((block) =>
@@ -49,6 +57,7 @@ const RAIL_GROUPS = [
   { key: "admin", sectionTitles: ["Merchants"] },
   { key: "finance", sectionTitles: ["Finance Management"] },
   { key: "reports", sectionTitles: ["Reports"] },
+  { key: "access", sectionTitles: ["Access Control"] },
   { key: "settings", sectionTitles: ["Settings"] },
 ];
 
@@ -175,9 +184,10 @@ export default function Sidebar() {
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(`${path}/`);
 
-  const visibleSections = menuSections.filter((section) =>
-    (section.role ? checkRoleAuth(section.role) : true) && visibleItemsOf(section).length,
-  );
+  // A section shows whenever it has at least one visible item — per-item
+  // (and href-derived) permission checks are the authority, not the section's
+  // own coarse `role` string.
+  const visibleSections = menuSections.filter((section) => visibleItemsOf(section).length);
 
   // Every section + its items are resolved once, up front, into plain data —
   // so the JSX below only ever renders, never decides. A section that ends
@@ -189,9 +199,7 @@ export default function Sidebar() {
       const itemNodes = visibleItemsOf(section)
         .map((item) => {
           if (item.children?.length) {
-            const visibleChildren = item.children.filter((child) =>
-              child.role ? checkRoleAuth(child.role) : true,
-            );
+            const visibleChildren = item.children.filter(navItemVisible);
             if (!visibleChildren.length) return null;
             groupAccentIdx += 1;
             return {

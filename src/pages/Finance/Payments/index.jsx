@@ -8,7 +8,7 @@ import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
@@ -19,7 +19,6 @@ import FinancePage from "../FinancePage";
 
 const { view_customer, add_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
 
 // A real combined feed of every cash-in/cash-out event — every Payment here
 // came from the same shared write path (invoice/bill "record payment" or a
@@ -122,7 +121,7 @@ const Payments = () => {
                           row.direction === "receipt" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
                         }`}
                       >
-                        {row.direction === "receipt" ? "+" : "-"}{fmt(row.amount)}
+                        {row.direction === "receipt" ? "+" : "-"}{formatAmount(row.amount)}
                       </td>
                       <td className="px-4 py-4 align-middle font-mono text-xs">{row.reference || "—"}</td>
                       <td className="px-4 py-4 align-middle text-xs pr-6">

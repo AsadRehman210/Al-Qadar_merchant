@@ -209,10 +209,8 @@ const AttendanceDetail = () => {
           {/* Filters */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 flex-wrap">
             <div className="min-w-[200px]">
-              <label className="text-sm font-medium text-slate-700 dark:text-white/90 mb-1 block">
-                {t("attendance:filter_by_employee")}
-              </label>
               <SelectDropdown
+                label={t("attendance:filter_by_employee")}
                 data={employeeOptions}
                 selected={selectedEmployee || {}}
                 setSelected={handleEmployeeChange}
@@ -220,10 +218,8 @@ const AttendanceDetail = () => {
               />
             </div>
             <div className="min-w-[140px]">
-              <label className="text-sm font-medium text-slate-700 dark:text-white/90 mb-1 block">
-                {t("attendance:filter_by_month")}
-              </label>
               <SelectDropdown
+                label={t("attendance:filter_by_month")}
                 data={monthOptions}
                 selected={monthOptions.find((m) => m.id === filterMonth) || monthOptions[0]}
                 setSelected={handleMonthChange}
@@ -231,10 +227,8 @@ const AttendanceDetail = () => {
               />
             </div>
             <div className="min-w-[120px]">
-              <label className="text-sm font-medium text-slate-700 dark:text-white/90 mb-1 block">
-                {t("attendance:filter_by_year")}
-              </label>
               <SelectDropdown
+                label={t("attendance:filter_by_year")}
                 data={yearOptions}
                 selected={yearOptions.find((y) => y.id === filterYear) || yearOptions[2]}
                 setSelected={handleYearChange}

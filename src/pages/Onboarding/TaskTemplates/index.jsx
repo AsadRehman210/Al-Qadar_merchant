@@ -1,15 +1,16 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { FiArrowLeft, FiArrowRight, FiEdit2, FiTrash2, FiArrowUp, FiArrowDown } from "react-icons/fi";
 import { IoAdd } from "react-icons/io5";
 import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import ActionPopup from "components/ActionPopup";
-import { TASK_CATEGORIES } from "../onboardingFakeData";
+import { onboardingTaskCategoryOptions } from "global/constant";
 import {
   fetchOnboardingTemplates,
   showOnboardingTemplates,
@@ -19,19 +20,21 @@ import {
   reorderOnboardingTemplates,
 } from "store/slices/onboardingSlice";
 
-const CATEGORY_OPTS = TASK_CATEGORIES.map((c) => ({ id: c.id, title: c.label }));
-
 const TaskTemplateForm = ({ existing, onDone }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const [selCategory, setSelCategory] = useState(
-    CATEGORY_OPTS.find((c) => c.id === existing?.category) || CATEGORY_OPTS[0],
+    onboardingTaskCategoryOptions.find((c) => c.id === existing?.category) || onboardingTaskCategoryOptions[0],
   );
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: { label: existing?.label || "" },
   });
 
   const onSubmit = async (data) => {
+    if (!selCategory?.id) {
+      toast.error(t("hrhub:category_required", "Category is required"));
+      return;
+    }
     const payload = { label: data.label, category: selCategory.id, required: data.required === true || data.required === "on" };
     if (existing) await dispatch(updateOnboardingTemplate({ id: existing.id, data: payload }));
     else await dispatch(createOnboardingTemplate(payload));
@@ -47,10 +50,11 @@ const TaskTemplateForm = ({ existing, onDone }) => {
         errors={errors}
         required
         className="md:col-span-2"
+        pattern={/[a-zA-Z0-9\s.'-]/}
         minLength={2}
         maxLength={150}
       />
-      <SelectDropdown label="hrhub:task_category" data={CATEGORY_OPTS} selected={selCategory} setSelected={(v) => setSelCategory(v || CATEGORY_OPTS[0])} />
+      <SelectDropdown label="hrhub:task_category" data={onboardingTaskCategoryOptions} selected={selCategory} setSelected={(v) => setSelCategory(v || onboardingTaskCategoryOptions[0])} required hideClear />
       <label className="flex items-center gap-2 cursor-pointer text-sm md:col-span-3">
         <input type="checkbox" {...register("required")} defaultChecked={existing?.required !== false} className="rounded accent-teal-500" />
         <span className="text-linkText">{t("hrhub:task_required")}</span>
@@ -148,7 +152,7 @@ const TaskTemplates = () => {
                     <td className="px-4 py-4 font-semibold text-slate-900 dark:text-white">{tpl.label}</td>
                     <td className="px-4 py-4">
                       <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70">
-                        {TASK_CATEGORIES.find((c) => c.id === tpl.category)?.label}
+                        {onboardingTaskCategoryOptions.find((c) => c.id === tpl.category)?.title}
                       </span>
                     </td>
                     <td className="px-4 py-4">

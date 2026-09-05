@@ -2,7 +2,7 @@ import { useDispatch } from "react-redux";
 import { Menu, MenuButton, MenuItems, MenuItem, Transition } from "@headlessui/react";
 import { FiChevronDown, FiCheck } from "react-icons/fi";
 import { toast } from "react-toastify";
-import { JOB_STATUS_OPTS } from "./recruitmentFakeData";
+import { jobStatusOptions } from "global/constant";
 import { updateJob } from "store/slices/recruitmentSlice";
 
 export const jobStatusColor = (s) => {
@@ -48,7 +48,7 @@ const JobStatusMenu = ({ jobId, status, onChanged, size = "sm" }) => {
           anchor="bottom start"
           className="z-50 w-40 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-gray-900 p-1.5 shadow-lg [--anchor-gap:6px]"
         >
-          {JOB_STATUS_OPTS.map((opt) => (
+          {jobStatusOptions.map((opt) => (
             <MenuItem key={opt.id}>
               <button
                 type="button"

@@ -12,22 +12,9 @@ import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import SingleAttendanceTab from "./SingleAttendanceTab";
 import BulkAttendanceTab from "./BulkAttendanceTab";
+import { attendanceStatusOptions, attendanceShiftOptions } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
-
-const STATUS_OPTIONS = [
-  { title: "attendance:present", id: "Present" },
-  { title: "attendance:absent", id: "Absent" },
-  { title: "attendance:leave", id: "Leave" },
-  { title: "attendance:holiday", id: "Holiday" },
-  { title: "attendance:half_day", id: "Half-day" },
-];
-
-const SHIFT_OPTIONS = [
-  { title: "attendance:day", id: "Day" },
-  { title: "attendance:night", id: "Night" },
-  { title: "attendance:flexible", id: "Flexible" },
-];
 
 const tabBtnClass = (active) =>
   `px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -42,8 +29,8 @@ const AddAttendance = () => {
   const dispatch = useDispatch();
   const [activeTab, setActiveTab] = useState("single");
   const [bulkTimeMode, setBulkTimeMode] = useState("same");
-  const [selStatus, setSelStatus] = useState(STATUS_OPTIONS[0]);
-  const [selShift, setSelShift] = useState(SHIFT_OPTIONS[0]);
+  const [selStatus, setSelStatus] = useState(attendanceStatusOptions[0]);
+  const [selShift, setSelShift] = useState(attendanceShiftOptions[0]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [employeeTimes, setEmployeeTimes] = useState({});
@@ -108,6 +95,36 @@ const AddAttendance = () => {
 
   const onSubmit = async (data) => {
     const isBulk = activeTab === "bulk";
+    if (!isBulk) {
+      if (selStatus?.id === "Present" && !data.check_in) {
+        toast.error(t("attendance:check_in_required_present", "Check-in is required when status is Present"));
+        return;
+      }
+      if (data.check_in && data.check_out && data.check_out < data.check_in) {
+        toast.error(t("attendance:checkout_after_checkin", "Check-out must be on or after check-in"));
+        return;
+      }
+    } else {
+      if (data.end_date && data.start_date && data.end_date < data.start_date) {
+        toast.error(t("attendance:end_after_start", "End date must be on or after start date"));
+        return;
+      }
+      if (bulkTimeMode === "same") {
+        if (data.check_in && data.check_out && data.check_out < data.check_in) {
+          toast.error(t("attendance:checkout_after_checkin", "Check-out must be on or after check-in"));
+          return;
+        }
+      } else {
+        const invalidEmp = selectedEmployees.find((emp) => {
+          const times = employeeTimes[emp._id] || {};
+          return times.checkIn && times.checkOut && times.checkOut < times.checkIn;
+        });
+        if (invalidEmp) {
+          toast.error(t("attendance:checkout_after_checkin", "Check-out must be on or after check-in"));
+          return;
+        }
+      }
+    }
     setSubmitting(true);
     try {
       if (isBulk) {
@@ -233,8 +250,8 @@ const AddAttendance = () => {
                 setSelStatus={setSelStatus}
                 selShift={selShift}
                 setSelShift={setSelShift}
-                statusOptions={STATUS_OPTIONS}
-                shiftOptions={SHIFT_OPTIONS}
+                statusOptions={attendanceStatusOptions}
+                shiftOptions={attendanceShiftOptions}
                 overtimeHours={overtimeHours}
               />
             ) : (
@@ -254,8 +271,9 @@ const AddAttendance = () => {
                 setSelStatus={setSelStatus}
                 selShift={selShift}
                 setSelShift={setSelShift}
-                statusOptions={STATUS_OPTIONS}
-                shiftOptions={SHIFT_OPTIONS}
+                statusOptions={attendanceStatusOptions}
+                shiftOptions={attendanceShiftOptions}
+                startDate={watch("start_date")}
               />
             )}
           </div>

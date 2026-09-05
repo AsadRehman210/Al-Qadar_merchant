@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from "react";
+import { formatAmount } from "global/helper";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HiOutlineGift } from "react-icons/hi2";
-import { SP_STATUS_BADGE } from "../../PayrollBatch/payrollBatchFakeData";
+import { SP_STATUS_BADGE } from "global/constant";
 import { fetchSpecialPayments, showSpecialPayments } from "store/slices/payrollBatchSlice";
 
 const SpecialPaymentsTab = ({ data }) => {
@@ -23,7 +24,6 @@ const SpecialPaymentsTab = ({ data }) => {
       .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
   }, [payments, employeeId]);
 
-  const fmt = (n) => (n || 0).toLocaleString();
 
   return (
     <div className="space-y-6">
@@ -78,7 +78,7 @@ const SpecialPaymentsTab = ({ data }) => {
                   >
                     <td className="py-2.5 px-4 text-slate-800 dark:text-white/90">{p.title}</td>
                     <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-white">
-                      SAR {fmt(p.myEntry?.amount)}
+                      SAR {formatAmount(p.myEntry?.amount)}
                     </td>
                     <td className="py-2.5 px-4">
                       <span

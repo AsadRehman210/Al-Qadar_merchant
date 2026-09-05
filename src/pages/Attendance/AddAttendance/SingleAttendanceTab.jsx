@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 
 const SingleAttendanceTab = ({
@@ -43,6 +44,7 @@ const SingleAttendanceTab = ({
         register={register}
         errors={errors}
         required
+        max={new Date().toISOString().split("T")[0]}
       />
       <SelectDropdown
         label={t("attendance:status")}
@@ -62,6 +64,7 @@ const SingleAttendanceTab = ({
         type="time"
         register={register}
         errors={errors}
+        required={selStatus?.id === "Present"}
       />
       <FormInput
         label={t("attendance:check_out")}
@@ -78,22 +81,16 @@ const SingleAttendanceTab = ({
           {overtimeHours} hrs
         </div>
       </div>
-      <div className="col-span-full">
-        <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-          {t("attendance:notes")}
-        </label>
-        <textarea
-          rows={3}
-          {...register("notes", {
-            maxLength: { value: 500, message: "Maximum length is 500 characters" },
-          })}
-          placeholder={t("attendance:notes")}
-          className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-        />
-        {errors?.notes?.message && (
-          <p className="text-red text-xs mt-1 font-medium">{errors.notes.message}</p>
-        )}
-      </div>
+      <FormTextarea
+        label={t("attendance:notes")}
+        name="notes"
+        register={register}
+        errors={errors}
+        rows={3}
+        maxLength={{ value: 500, message: "Maximum length is 500 characters" }}
+        placeholder={t("attendance:notes")}
+        wrapperClass="col-span-full"
+      />
     </>
   );
 };

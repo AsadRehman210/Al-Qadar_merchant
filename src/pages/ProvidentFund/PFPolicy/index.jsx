@@ -106,6 +106,7 @@ const PFPolicy = () => {
                 type="number"
                 step="0.1"
                 min={0}
+                max={5}
                 decimal
                 decimalPlaces={1}
                 register={register}
@@ -114,8 +115,8 @@ const PFPolicy = () => {
               />
               <p className="text-xs text-slate-400 dark:text-white/40 mt-1">{t("pf:employer_multiplier_hint")}</p>
             </div>
-            <FormInput label={t("pf:min_service_months")} name="minServiceMonths" type="number" min={0} register={register} errors={errors} required />
-            <FormInput label={t("pf:vesting_years")} name="vestingYears" type="number" min={0} register={register} errors={errors} required />
+            <FormInput label={t("pf:min_service_months")} name="minServiceMonths" type="number" min={0} max={600} register={register} errors={errors} required />
+            <FormInput label={t("pf:vesting_years")} name="vestingYears" type="number" min={0} max={50} register={register} errors={errors} required />
             <FormInput label={`${t("pf:interest_rate")} (% p.a.)`} name="interestRate" type="number" min={0} max={100} decimal decimalPlaces={2} register={register} errors={errors} required className="md:col-span-2" />
           </div>
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-200 dark:border-white/20">

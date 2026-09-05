@@ -2,9 +2,10 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { FiPlus, FiSearch } from "react-icons/fi";
+import { FiPlus } from "react-icons/fi";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
+import SearchInput from "components/SearchInput";
 import { tableRows } from "global/constant";
 import TableState from "components/TableState";
 import { useListFilters } from "hooks/useListFilters";
@@ -52,11 +53,12 @@ const CreditNotes = () => {
         </div>
 
         {/* Search */}
-        <div className="relative mb-5 max-w-sm">
-          <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
-          <input value={search} onChange={(e) => setFilters({ search: e.target.value, page: 1 })}
+        <div className="mb-5 max-w-sm">
+          <SearchInput
             placeholder={t("sales:search_cn")}
-            className="w-full h-10 pl-9 pr-3 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-0 focus:border-teal-500" />
+            onSearch={(v) => setFilters({ search: v, page: 1 })}
+            initialValue={search}
+          />
         </div>
 
         {/* Table */}

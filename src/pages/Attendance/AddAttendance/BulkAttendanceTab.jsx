@@ -28,6 +28,7 @@ const BulkAttendanceTab = ({
   setSelShift,
   statusOptions,
   shiftOptions,
+  startDate,
 }) => {
   const { t } = useTranslation();
 
@@ -89,6 +90,7 @@ const BulkAttendanceTab = ({
         register={register}
         errors={errors}
         required
+        min={startDate}
       />
       <SelectDropdown
         label={t("attendance:status")}
@@ -171,35 +173,35 @@ const BulkAttendanceTab = ({
                       {emp.title}
                     </td>
                     <td className="px-4 py-3">
-                      <input
+                      <FormInput
                         type="time"
                         value={employeeTimes[emp._id]?.checkIn ?? "09:00"}
-                        onChange={(e) =>
+                        onValueChange={(v) =>
                           setEmployeeTimes((prev) => ({
                             ...prev,
                             [emp._id]: {
                               ...prev[emp._id],
-                              checkIn: e.target.value,
+                              checkIn: v,
                             },
                           }))
                         }
-                        className="h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-slate-900 dark:text-white text-sm"
+                        inputClass="!h-10"
                       />
                     </td>
                     <td className="px-4 py-3">
-                      <input
+                      <FormInput
                         type="time"
                         value={employeeTimes[emp._id]?.checkOut ?? "18:00"}
-                        onChange={(e) =>
+                        onValueChange={(v) =>
                           setEmployeeTimes((prev) => ({
                             ...prev,
                             [emp._id]: {
                               ...prev[emp._id],
-                              checkOut: e.target.value,
+                              checkOut: v,
                             },
                           }))
                         }
-                        className="h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-slate-900 dark:text-white text-sm"
+                        inputClass="!h-10"
                       />
                     </td>
                   </tr>

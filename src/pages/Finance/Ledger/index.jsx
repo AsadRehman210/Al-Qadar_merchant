@@ -6,7 +6,7 @@ import ReactPaginate from "react-paginate";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount, formatSignedAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
@@ -31,11 +31,6 @@ import FinancePage from "../FinancePage";
 
 const { view_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
-const fmtSigned = (n) => {
-  const v = parseFloat(n) || 0;
-  return `${v < 0 ? "-" : ""}${Math.abs(v).toLocaleString()}`;
-};
 
 const Ledger = () => {
   const { t } = useTranslation();
@@ -90,8 +85,9 @@ const Ledger = () => {
         <>
           <div className="mb-6 flex flex-wrap gap-3 items-end">
             <div className="flex-1 min-w-[200px] max-w-xs">
-              <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:account_name")}</label>
               <SelectDropdown
+                label={t("finance:account_name")}
+                labelClass="!text-xs font-medium text-slate-500"
                 data={acctOpts}
                 selected={acctOpts.find((o) => o.id === accountId) || acctOpts[0]}
                 setSelected={(opt) => setSearchParams(opt?.id ? { accountId: opt.id } : {})}
@@ -114,7 +110,7 @@ const Ledger = () => {
             <div className="mb-6 grid sm:grid-cols-3 gap-4">
               <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
                 <dt className="text-sm text-mutedForeground">{t("finance:opening_balance")}</dt>
-                <dd className="text-xl font-bold tabular-nums mt-1">{fmtSigned(openingBalance)}</dd>
+                <dd className="text-xl font-bold tabular-nums mt-1">{formatSignedAmount(openingBalance)}</dd>
               </div>
               <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
                 <dt className="text-sm text-mutedForeground">{account.code} — {account.name}</dt>
@@ -122,7 +118,7 @@ const Ledger = () => {
               </div>
               <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10 p-4">
                 <dt className="text-sm text-mutedForeground">{t("finance:closing_balance")}</dt>
-                <dd className="text-xl font-bold tabular-nums mt-1 text-emerald-700 dark:text-emerald-300">{fmtSigned(closingBalance)}</dd>
+                <dd className="text-xl font-bold tabular-nums mt-1 text-emerald-700 dark:text-emerald-300">{formatSignedAmount(closingBalance)}</dd>
               </div>
             </div>
           )}
@@ -153,9 +149,9 @@ const Ledger = () => {
                     >
                       <td className="px-4 py-4 align-middle pl-6 whitespace-nowrap">{row.date ? new Date(row.date).toLocaleDateString() : ""}</td>
                       {!accountId && <td className="px-4 py-4 align-middle">{row.accountCode ? `${row.accountCode} — ${row.accountName}` : "—"}</td>}
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.debit ? fmt(row.debit) : "—"}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.credit ? fmt(row.credit) : "—"}</td>
-                      {accountId && <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold">{fmtSigned(row.balance)}</td>}
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.debit ? formatAmount(row.debit) : "—"}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.credit ? formatAmount(row.credit) : "—"}</td>
+                      {accountId && <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold">{formatSignedAmount(row.balance)}</td>}
                       <td className="px-4 py-4 align-middle font-mono text-xs">{row.ref}</td>
                       <td className="px-4 py-4 align-middle text-xs text-mutedForeground pr-6">{row.source}</td>
                     </tr>

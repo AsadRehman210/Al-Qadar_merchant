@@ -1,6 +1,6 @@
 import dayjs from "dayjs";
 import { WEEKLY_DAY_KEYS } from "../../Attendance/attendancePolicyStorage";
-import { DEFAULT_WEEKLY_SCHEDULE } from "../employeesFakeData";
+import { defaultWeeklySchedule } from "global/helper";
 
 const ATTENDANCE_STATUS_MAP = {
   present: "present",
@@ -110,7 +110,7 @@ export function buildEmployeeAttendanceMap(employee, monthDate, holidays, leaves
 export function getEmployeeWeeklySchedule(employee) {
   return employee?.weekly_schedule?.length
     ? employee.weekly_schedule
-    : DEFAULT_WEEKLY_SCHEDULE;
+    : defaultWeeklySchedule;
 }
 
 /**

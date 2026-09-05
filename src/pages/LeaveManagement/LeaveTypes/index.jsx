@@ -21,21 +21,14 @@ import {
   showLeaveTypes,
   showLeaveTypesLoading,
 } from "store/slices/leaveTypeSlice";
+import { leaveApplicableGenderOptions, activeInactiveOptions } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
-
-const GENDER_OPTS = [
-  { id: "all", title: "All" },
-  { id: "male", title: "Male Only" },
-  { id: "female", title: "Female Only" },
-];
-const STATUS_OPTS = [{ id: "Active", title: "Active" }, { id: "Inactive", title: "Inactive" }];
-
 const LeaveTypeForm = ({ existing, onDone }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const [selGender, setSelGender] = useState(GENDER_OPTS.find((g) => g.id === (existing?.applicableGender || "all")) || GENDER_OPTS[0]);
-  const [selStatus, setSelStatus] = useState(STATUS_OPTS.find((s) => s.id === (existing?.status || "Active")) || STATUS_OPTS[0]);
+  const [selGender, setSelGender] = useState(leaveApplicableGenderOptions.find((g) => g.id === (existing?.applicableGender || "all")) || leaveApplicableGenderOptions[0]);
+  const [selStatus, setSelStatus] = useState(activeInactiveOptions.find((s) => s.id === (existing?.status || "Active")) || activeInactiveOptions[0]);
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
@@ -78,7 +71,7 @@ const LeaveTypeForm = ({ existing, onDone }) => {
         errors={errors}
         required
         className="lg:col-span-2"
-        pattern={/[a-zA-Z\s.'-]/}
+        pattern={/[a-zA-Z0-9\s.'-]/}
         minLength={2}
         maxLength={100}
       />
@@ -119,8 +112,8 @@ const LeaveTypeForm = ({ existing, onDone }) => {
         min={1}
         max={365}
       />
-      <SelectDropdown label="leave:applicable_gender" data={GENDER_OPTS} selected={selGender} setSelected={(v) => setSelGender(v || GENDER_OPTS[0])} />
-      <SelectDropdown label="leave:status" data={STATUS_OPTS} selected={selStatus} setSelected={(v) => setSelStatus(v || STATUS_OPTS[0])} />
+      <SelectDropdown label="leave:applicable_gender" data={leaveApplicableGenderOptions} selected={selGender} setSelected={(v) => setSelGender(v || leaveApplicableGenderOptions[0])} />
+      <SelectDropdown label="leave:status" data={activeInactiveOptions} selected={selStatus} setSelected={(v) => setSelStatus(v || activeInactiveOptions[0])} />
       <div className="flex items-center gap-6 pt-2">
         <label className="flex items-center gap-2 cursor-pointer text-sm">
           <input type="checkbox" {...register("paid")} defaultChecked={existing?.paid !== false} className="rounded accent-teal-500" />

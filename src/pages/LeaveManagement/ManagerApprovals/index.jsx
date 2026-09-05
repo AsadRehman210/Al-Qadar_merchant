@@ -8,9 +8,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
+import FormTextarea from "components/FormTextarea";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { cardRows } from "global/constant";
+import { cardRows, leaveStatusBadge } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonCards } from "components/Skeleton";
 import {
@@ -21,7 +22,6 @@ import {
   managerApproveLeave,
   managerRejectLeave,
 } from "store/slices/leaveSlice";
-import { LEAVE_STATUS_BADGE } from "../leaveHelpers";
 
 const { add_employee } = rafeeqi_role_ids;
 
@@ -49,12 +49,12 @@ const QuickActionPanel = ({ leave, onDone }) => {
   if (open) {
     return (
       <div className="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
-        <textarea
+        <FormTextarea
           rows={2}
           value={comments}
-          onChange={(e) => setComments(e.target.value)}
+          onValueChange={setComments}
           placeholder={t("leave:comments_placeholder")}
-          className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-2 text-xs mb-2"
+          className="!text-xs !mb-2"
         />
         <div className="flex gap-2">
           <Button
@@ -165,7 +165,7 @@ const ManagerApprovals = () => {
                       <p className="text-xs text-slate-500 dark:text-white/60">{leave.employeeCode} · {leave.department}</p>
                     </div>
                     <div className="text-right">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${LEAVE_STATUS_BADGE[leave.status]}`}>
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${leaveStatusBadge[leave.status]}`}>
                         {leave.status}
                       </span>
                       <p className="text-xs text-slate-400 dark:text-white/40 mt-0.5">{leave.leaveNumber}</p>

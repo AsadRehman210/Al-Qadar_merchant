@@ -75,8 +75,6 @@ const AddWarehouse = () => {
     }
   };
 
-  const labelCls    = "text-sm font-medium text-linkText mb-1 block";
-
   return (
     <div>
       <div className="mb-7 flex flex-wrap items-center gap-4 dark:text-white">
@@ -95,8 +93,8 @@ const AddWarehouse = () => {
           <FormInput label={t("name")}     name="name"     register={register} errors={errors} required={t("name_required")} placeholder={t("name")}
             pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
           <div>
-            <label className={labelCls}>{t("manager")}</label>
             <SelectDropdown
+              label={t("manager")}
               data={employeeOptions}
               selected={selManager}
               setSelected={(opt) => {
@@ -107,12 +105,9 @@ const AddWarehouse = () => {
             />
             <input type="hidden" {...register("manager")} />
           </div>
-          <FormInput label={t("capacity")} name="capacity" register={register} errors={errors} placeholder="5000" type="number" min={0} decimal decimalPlaces={2} />
-          <FormInput label={t("unit")}     name="unit"     register={register} errors={errors} placeholder="sqm / pallets" pattern={/[a-zA-Z]/} maxLength={20} />
-          <div>
-            <label className={labelCls}>{t("status")}</label>
-            <SelectDropdown data={WAREHOUSE_STATUS_OPTS} selected={selStatus} setSelected={setSelStatus} hideClear classes="!h-[46px] !rounded-lg" />
-          </div>
+          <FormInput label={t("capacity")} name="capacity" register={register} errors={errors} placeholder="5000" type="number" min={0} decimal decimalPlaces={2} maxLength={10} />
+          <FormInput label={t("unit")}     name="unit"     register={register} errors={errors} placeholder="sqm / pallets" pattern={/[a-zA-Z0-9\s./-]/} maxLength={20} />
+          <SelectDropdown label={t("status")} data={WAREHOUSE_STATUS_OPTS} selected={selStatus} setSelected={setSelStatus} hideClear classes="!h-[46px] !rounded-lg" />
           <FormInput label={t("location")} name="location" register={register} errors={errors} required={t("location_required")} placeholder={t("location_placeholder")}
             pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
           <div className="md:col-span-2 lg:col-span-3">

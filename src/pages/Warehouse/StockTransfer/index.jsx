@@ -9,8 +9,9 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
+import FormInput from "components/FormInput";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
-import { tableRows, statusFilterOptions } from "global/constant";
+import { tableRows, stockTransferStatusFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import Block from "components/Skeleton";
 import {
@@ -110,8 +111,15 @@ const AddTransferForm = ({ onSaved, onCancel }) => {
     e.preventDefault();
     if (!fromWh || !toWh) { toast.error(t("select_warehouses_required", { defaultValue: "Select both warehouses" })); return; }
     if (fromWh?.id === toWh?.id) { toast.error(t("same_warehouse_error")); return; }
+    if (!date) { toast.error(t("date_required", { defaultValue: "Date is required" })); return; }
+    const today = new Date().toISOString().split("T")[0];
+    if (date > today) { toast.error(t("date_not_future", { defaultValue: "Date cannot be in the future" })); return; }
     const resolvedItems = items.filter((it) => it.variant?.id).map((it) => ({ variantId: it.variant.id, qty: Number(it.qty) }));
     if (!resolvedItems.length) { toast.error(t("select_item_required", { defaultValue: "Select at least one item" })); return; }
+    if (resolvedItems.some((it) => !(it.qty > 0))) {
+      toast.error(t("qty_required", { defaultValue: "Each item quantity must be greater than 0" }));
+      return;
+    }
     try {
       await dispatch(
         createStockTransfer({ fromWarehouseId: fromWh.id, toWarehouseId: toWh.id, date, notes, items: resolvedItems })
@@ -123,38 +131,49 @@ const AddTransferForm = ({ onSaved, onCancel }) => {
     }
   };
 
-  const inputCls = "w-full h-[40px] px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-900 dark:text-white";
-  const labelCls = "text-xs font-medium text-slate-600 dark:text-white/60 mb-1 block";
-
   return (
     <form onSubmit={handleSubmit} className="bg-white dark:bg-white/10 rounded-3xl border border-slate-200 dark:border-white/20 p-8 border-l-4 !border-l-[var(--color-teal-500)]">
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6 pb-2 border-b border-slate-200 dark:border-white/10">{t("transfer_details")}</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <SearchablePaginatedDropdown
+          label={`${t("from_warehouse")} *`}
+          labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+          data={warehouseSource.data} selected={fromWh} setSelected={setFromWh}
+          enableApiSearch onApiSearch={warehouseSource.onApiSearch} hasMore={warehouseSource.hasMore}
+          onLoadMore={warehouseSource.onLoadMore} paginationLoading={warehouseSource.paginationLoading}
+          loading={warehouseSource.loading} hideClear classes="!h-[46px] !rounded-lg"
+        />
+        <SearchablePaginatedDropdown
+          label={`${t("to_warehouse")} *`}
+          labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+          data={warehouseSource.data} selected={toWh} setSelected={setToWh}
+          enableApiSearch onApiSearch={warehouseSource.onApiSearch} hasMore={warehouseSource.hasMore}
+          onLoadMore={warehouseSource.onLoadMore} paginationLoading={warehouseSource.paginationLoading}
+          loading={warehouseSource.loading} hideClear classes="!h-[46px] !rounded-lg"
+        />
         <div>
-          <label className={labelCls}>{t("from_warehouse")} *</label>
-          <SearchablePaginatedDropdown
-            data={warehouseSource.data} selected={fromWh} setSelected={setFromWh}
-            enableApiSearch onApiSearch={warehouseSource.onApiSearch} hasMore={warehouseSource.hasMore}
-            onLoadMore={warehouseSource.onLoadMore} paginationLoading={warehouseSource.paginationLoading}
-            loading={warehouseSource.loading} hideClear classes="!h-[46px] !rounded-lg"
+          <FormInput
+            label={`${t("transfer_date")} *`}
+            labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+            name="transferDate"
+            type="date"
+            value={date}
+            onValueChange={setDate}
+            inputClass="!h-10 !rounded-lg"
+            max={new Date().toISOString().split("T")[0]}
           />
-        </div>
-        <div>
-          <label className={labelCls}>{t("to_warehouse")} *</label>
-          <SearchablePaginatedDropdown
-            data={warehouseSource.data} selected={toWh} setSelected={setToWh}
-            enableApiSearch onApiSearch={warehouseSource.onApiSearch} hasMore={warehouseSource.hasMore}
-            onLoadMore={warehouseSource.onLoadMore} paginationLoading={warehouseSource.paginationLoading}
-            loading={warehouseSource.loading} hideClear classes="!h-[46px] !rounded-lg"
-          />
-        </div>
-        <div>
-          <label className={labelCls}>{t("transfer_date")} *</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} required />
         </div>
         <div className="md:col-span-3">
-          <label className={labelCls}>{t("notes")}</label>
-          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className={inputCls} placeholder={t("notes_placeholder")} />
+          <FormInput
+            label={t("notes")}
+            labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+            name="notes"
+            value={notes}
+            onValueChange={setNotes}
+            placeholder={t("notes_placeholder")}
+            inputClass="!h-10 !rounded-lg"
+            maxLength={500}
+          />
         </div>
       </div>
 
@@ -163,8 +182,9 @@ const AddTransferForm = ({ onSaved, onCancel }) => {
         {items.map((item, i) => (
           <div key={i} className="grid grid-cols-1 md:grid-cols-5 gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/10">
             <div className="md:col-span-3">
-              <label className={labelCls}>{t("product")}</label>
               <SearchablePaginatedDropdown
+                label={t("product")}
+                labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
                 data={variantSource.data} selected={item.variant} setSelected={(v) => updateItem(i, "variant", v)}
                 enableApiSearch onApiSearch={variantSource.onApiSearch} hasMore={variantSource.hasMore}
                 onLoadMore={variantSource.onLoadMore} paginationLoading={variantSource.paginationLoading}
@@ -172,8 +192,19 @@ const AddTransferForm = ({ onSaved, onCancel }) => {
               />
             </div>
             <div>
-              <label className={labelCls}>{t("qty")}</label>
-              <input type="number" min={1} value={item.qty} onChange={(e) => updateItem(i, "qty", e.target.value)} className={inputCls} />
+              <FormInput
+                label={t("qty")}
+                labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+                name={`itemQty-${i}`}
+                type="number"
+                min={0.01}
+                decimal
+                decimalPlaces={2}
+                maxLength={10}
+                value={item.qty}
+                onValueChange={(v) => updateItem(i, "qty", v)}
+                inputClass="!h-10 !rounded-lg"
+              />
             </div>
             <div className="flex items-end">
               <button type="button" onClick={() => removeItem(i)} disabled={items.length === 1} className="h-10 w-10 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-100 disabled:opacity-30">
@@ -195,9 +226,7 @@ const AddTransferForm = ({ onSaved, onCancel }) => {
   );
 };
 
-const TRANSFER_STATUS_OPTS = statusFilterOptions.length
-  ? [{ id: "", title: "All Statuses" }, { id: "Pending", title: "Pending" }, { id: "Completed", title: "Completed" }, { id: "Cancelled", title: "Cancelled" }]
-  : [];
+const TRANSFER_STATUS_OPTS = stockTransferStatusFilterOptions;
 
 // ── Transfers List Page ───────────────────────────────────────────────────────
 const StockTransfer = () => {

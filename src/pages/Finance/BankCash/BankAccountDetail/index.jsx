@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { IoAdd } from "react-icons/io5";
 import Button from "components/Button";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
   fetchBankAccounts,
@@ -21,7 +21,6 @@ import EmptyState from "components/EmptyState";
 
 const { view_customer, add_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 // A thin wrapper around Ledger's per-account view (getByAccount) — a bank/
 // cash account's transaction history IS its chartAccountId's ledger, there
@@ -85,7 +84,7 @@ const BankAccountDetail = () => {
                 {t("finance:current_balance")}
               </p>
               <p className="text-2xl font-bold tabular-nums text-[var(--color-teal-500)]">
-                {fmt(closingBalance)} {account.currency}
+                {formatAmount(closingBalance)} {account.currency}
               </p>
               <p className="text-sm text-mutedForeground mt-1">
                 {account.type} · {t("finance:bank_ledger_hint")}
@@ -129,9 +128,9 @@ const BankAccountDetail = () => {
                       <td className="px-4 py-4 align-middle pl-6 whitespace-nowrap">{row.date ? new Date(row.date).toLocaleDateString() : ""}</td>
                       <td className="px-4 py-4 align-middle max-w-[220px]">{row.source}</td>
                       <td className="px-4 py-4 align-middle font-mono text-xs">{row.ref || "—"}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.debit ? fmt(row.debit) : "—"}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.credit ? fmt(row.credit) : "—"}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold pr-6">{fmt(row.balance)}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.debit ? formatAmount(row.debit) : "—"}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.credit ? formatAmount(row.credit) : "—"}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold pr-6">{formatAmount(row.balance)}</td>
                     </tr>
                   ))}
                 </tbody>

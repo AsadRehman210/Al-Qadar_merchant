@@ -5,6 +5,7 @@ import { FiArrowLeft, FiArrowRight, FiCheck, FiX } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Button from "components/Button";
+import FormTextarea from "components/FormTextarea";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
@@ -21,7 +22,7 @@ import {
 import { fetchLeaveTypes, showLeaveTypes } from "store/slices/leaveTypeSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
-import { LEAVE_STATUS_BADGE } from "../leaveHelpers";
+import { leaveStatusBadge } from "global/constant";
 import { SkeletonDetail } from "components/Skeleton";
 
 const { add_employee } = rafeeqi_role_ids;
@@ -45,12 +46,12 @@ const ApprovalActionPanel = ({ title, onApprove, onReject, color }) => {
         <p className="font-semibold text-sm mb-2">
           {confirm === "approve" ? t("leave:confirm_approve") : t("leave:confirm_reject")}
         </p>
-        <textarea
+        <FormTextarea
           rows={3}
           value={comments}
-          onChange={(e) => setComments(e.target.value)}
+          onValueChange={setComments}
           placeholder={t("leave:comments_placeholder")}
-          className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm mb-3"
+          wrapperClass="mb-3"
         />
         <div className="flex gap-2">
           <Button
@@ -217,7 +218,7 @@ const LeaveDetail = () => {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-3xl font-bold tracking-tight">{item.leaveNumber}</h1>
-              <span className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${LEAVE_STATUS_BADGE[item.status] || ""}`}>
+              <span className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${leaveStatusBadge[item.status] || ""}`}>
                 {item.status}
               </span>
             </div>

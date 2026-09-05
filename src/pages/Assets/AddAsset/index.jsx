@@ -7,9 +7,11 @@ import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, toDateInput } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { assetDepreciationMethodOptions } from "global/constant";
 import {
   fetchAssetCategories,
   fetchAssetById,
@@ -21,13 +23,6 @@ import {
 } from "store/slices/assetSlice";
 
 const { add_customer, edit_customer } = rafeeqi_role_ids;
-
-const DEPR_METHOD_OPTS = [
-  { id: "straight_line", title: "asset:straight_line" },
-  { id: "declining",     title: "asset:declining_balance" },
-];
-
-const toDateInput = (v) => (v ? String(v).slice(0, 10) : "");
 
 const AddAsset = () => {
   const { t, i18n } = useTranslation();
@@ -54,9 +49,10 @@ const AddAsset = () => {
   );
 
   const [selCategory, setSelCategory] = useState(null);
-  const [selDeprMethod, setSelDeprMethod] = useState(DEPR_METHOD_OPTS[0]);
+  const [selDeprMethod, setSelDeprMethod] = useState(assetDepreciationMethodOptions[0]);
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm({
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const { register, handleSubmit, reset, setValue, trigger, getValues, watch, formState: { errors } } = useForm({
     mode: "onChange",
     defaultValues: {
       name: "", categoryId: "", serialNumber: "", location: "",
@@ -91,7 +87,7 @@ const AddAsset = () => {
         notes: existing.notes || "",
       });
       setSelCategory(categoryOpts.find((o) => o.id === existing.categoryId) || null);
-      setSelDeprMethod(DEPR_METHOD_OPTS.find((o) => o.id === existing.depreciationMethod) || DEPR_METHOD_OPTS[0]);
+      setSelDeprMethod(assetDepreciationMethodOptions.find((o) => o.id === existing.depreciationMethod) || assetDepreciationMethodOptions[0]);
     }
   }, [id, existing, reset, categoryOpts]);
 
@@ -100,9 +96,26 @@ const AddAsset = () => {
     else if (!id && !checkRoleAuth(add_customer)) { toast.error(t("asset:not_authorized")); navigate("/assets"); }
   }, [id, navigate, t]);
 
+  const insuranceTouched = (d) =>
+    [d.insPolicyNo, d.insProvider, d.insStartDate, d.insExpiryDate, d.insPremium, d.insCoverage]
+      .some((x) => String(x ?? "").trim() !== "");
+  const purchaseDate = watch("purchaseDate");
+  const insStartDate = watch("insStartDate");
+  const requireIfInsurance = (v) => {
+    if (!insuranceTouched(getValues())) return true;
+    return String(v ?? "").trim()
+      ? true
+      : t("asset:insurance_fields_required", { defaultValue: "Required when insurance is filled" });
+  };
+
   const onSubmit = async (data) => {
     if (!selCategory?.id) { toast.error(t("asset:category_required")); return; }
+    if (!selDeprMethod?.id) { toast.error(t("asset:depr_method_required", { defaultValue: "Depreciation method is required" })); return; }
     if (!String(data.name || "").trim()) { toast.error(t("asset:name_required")); return; }
+    if (insuranceTouched(data) && (!String(data.insPolicyNo || "").trim() || !String(data.insProvider || "").trim() || !data.insStartDate || !data.insExpiryDate)) {
+      toast.error(t("asset:insurance_fields_required", { defaultValue: "Policy no, insurer and both dates are required when insurance is filled" }));
+      return;
+    }
 
     const payload = {
       name: data.name,
@@ -113,7 +126,7 @@ const AddAsset = () => {
       warrantyUntil: data.warrantyUntil || undefined,
       purchaseCost: data.purchaseCost === "" ? undefined : parseFloat(data.purchaseCost),
       currentValue: data.currentValue === "" ? undefined : parseFloat(data.currentValue),
-      currency: data.currency || "SAR",
+      currency: (data.currency || "SAR").toUpperCase(),
       depreciationMethod: selDeprMethod?.id || "straight_line",
       usefulLifeYears: data.usefulLifeYears === "" ? undefined : parseInt(data.usefulLifeYears, 10),
       salvageValue: data.salvageValue === "" ? undefined : parseFloat(data.salvageValue),
@@ -180,26 +193,42 @@ const AddAsset = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <FormInput label={t("asset:asset_name")} name="name" register={register} errors={errors} required
                 pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
-              <div>
-                <label className="text-sm font-medium text-linkText mb-1 block">{t("asset:category")}</label>
-                <SelectDropdown data={categoryOpts} selected={selCategory}
-                  setSelected={(opt) => { setSelCategory(opt || null); setValue("categoryId", opt?.id ?? ""); }}
-                  placeholder={t("asset:select_category")} hideClear classes="!h-[46px] !rounded-lg" />
-              </div>
+              <SelectDropdown
+                label={t("asset:category")}
+                data={categoryOpts}
+                selected={selCategory}
+                setSelected={(opt) => { setSelCategory(opt || null); setValue("categoryId", opt?.id ?? ""); }}
+                placeholder={t("asset:select_category")}
+                hideClear
+                classes="!h-[46px] !rounded-lg"
+                name="categoryId"
+                register={register}
+                setValue={setValue}
+                trigger={trigger}
+                errors={errors}
+                required
+                valueKey="id"
+              />
               <FormInput label={t("asset:serial_number")} name="serialNumber" register={register} errors={errors}
                 pattern={/[A-Za-z0-9\-_/]/} minLength={2} maxLength={100} />
               <FormInput label={t("asset:location")} name="location" register={register} errors={errors}
                 pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
-              <FormInput label={t("asset:purchase_date")} name="purchaseDate" type="date" register={register} />
-              <FormInput label={t("asset:warranty_until")} name="warrantyUntil" type="date" register={register} />
+              <FormInput label={t("asset:purchase_date")} name="purchaseDate" type="date" register={register} errors={errors}
+                required max={todayStr} />
+              <FormInput label={t("asset:warranty_until")} name="warrantyUntil" type="date" register={register} errors={errors}
+                min={purchaseDate || undefined}
+                validate={(v) => !v || !purchaseDate || v >= purchaseDate || t("asset:warranty_after_purchase", { defaultValue: "Must be on or after purchase date" })} />
               <FormInput label={t("asset:currency")} name="currency" register={register} errors={errors}
-                placeholder="SAR" pattern={/[A-Za-z]/} maxLength={3} />
-              <div className="md:col-span-2">
-                <label className="text-sm font-medium text-linkText mb-1 block">{t("asset:notes")}</label>
-                <textarea {...register("notes", { maxLength: { value: 500, message: t("asset:max_length_500", { defaultValue: "Maximum length is 500 characters" }) } })} rows={3}
-                  className="w-full rounded-lg border border-[#E0E5F2] bg-white px-3 py-2 text-sm text-black focus:border-[#ffba32] focus:outline-0 dark:bg-white/10 dark:border-white/20 dark:text-white" />
-                {errors.notes && <p className="text-red text-xs mt-1 font-medium">{errors.notes.message}</p>}
-              </div>
+                placeholder="SAR" pattern={/[A-Za-z]/} minLength={3} maxLength={3} required />
+              <FormTextarea
+                wrapperClass="md:col-span-2"
+                label={t("asset:notes")}
+                name="notes"
+                register={register}
+                errors={errors}
+                rows={3}
+                maxLength={{ value: 500, message: t("asset:max_length_500", { defaultValue: "Maximum length is 500 characters" }) }}
+              />
             </div>
           </div>
 
@@ -208,17 +237,33 @@ const AddAsset = () => {
             <h3 className="text-base font-bold text-slate-800 dark:text-white mb-5">{t("asset:valuation_depreciation")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <FormInput label={t("asset:purchase_cost")} name="purchaseCost" type="number" register={register} errors={errors}
-                placeholder="0" min={0} decimal decimalPlaces={3} maxLength={10} />
+                placeholder="0" min={0.01} decimal decimalPlaces={3} maxLength={10} required />
               <FormInput label={t("asset:current_value")} name="currentValue" type="number" register={register} errors={errors}
-                placeholder="0" min={0} decimal decimalPlaces={3} maxLength={10} />
-              <div>
-                <label className="text-sm font-medium text-linkText mb-1 block">{t("asset:depr_method")}</label>
-                <SelectDropdown data={DEPR_METHOD_OPTS} selected={selDeprMethod} setSelected={setSelDeprMethod} hideClear classes="!h-[46px] !rounded-lg" />
-              </div>
+                placeholder="0" min={0} decimal decimalPlaces={3} maxLength={10}
+                validate={(v) => {
+                  if (v === "" || v == null) return true;
+                  const cost = Number(getValues("purchaseCost"));
+                  if (!Number.isNaN(cost) && Number(v) > cost) return t("asset:value_exceeds_cost", { defaultValue: "Cannot exceed purchase cost" });
+                  return true;
+                }} />
+              <SelectDropdown
+                label={t("asset:depr_method")}
+                data={assetDepreciationMethodOptions}
+                selected={selDeprMethod}
+                setSelected={setSelDeprMethod}
+                hideClear
+                classes="!h-[46px] !rounded-lg"
+              />
               <FormInput label={t("asset:useful_life")} name="usefulLifeYears" type="number" register={register} errors={errors}
-                placeholder="5" min={1} max={50} />
+                placeholder="5" min={1} max={50} required />
               <FormInput label={t("asset:salvage_value")} name="salvageValue" type="number" register={register} errors={errors}
-                placeholder="0" min={0} decimal decimalPlaces={3} maxLength={10} />
+                placeholder="0" min={0} decimal decimalPlaces={3} maxLength={10}
+                validate={(v) => {
+                  if (v === "" || v == null) return true;
+                  const cost = Number(getValues("purchaseCost"));
+                  if (!Number.isNaN(cost) && Number(v) > cost) return t("asset:value_exceeds_cost", { defaultValue: "Cannot exceed purchase cost" });
+                  return true;
+                }} />
             </div>
             <div className="mt-4 p-3 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200 text-xs text-purple-700 dark:text-purple-300">
               {t("asset:depr_hint")}
@@ -236,15 +281,29 @@ const AddAsset = () => {
             <p className="text-sm text-mutedForeground mb-5">{t("asset:insurance_optional")}</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <FormInput label={t("asset:policy_no")}      name="insPolicyNo"  register={register} errors={errors}
-                pattern={/[A-Za-z0-9\-_/]/} minLength={2} maxLength={100} />
+                pattern={/[A-Za-z0-9\-_/]/} minLength={2} maxLength={100} validate={requireIfInsurance} />
               <FormInput label={t("asset:insurer")}         name="insProvider"  register={register} errors={errors}
-                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
-              <FormInput label={t("asset:policy_start")}    name="insStartDate" type="date" register={register} />
-              <FormInput label={t("asset:policy_expiry")}   name="insExpiryDate" type="date" register={register} />
+                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} validate={requireIfInsurance} />
+              <FormInput label={t("asset:policy_start")}    name="insStartDate" type="date" register={register} errors={errors}
+                validate={requireIfInsurance} />
+              <FormInput label={t("asset:policy_expiry")}   name="insExpiryDate" type="date" register={register} errors={errors}
+                min={insStartDate || undefined}
+                validate={(v) => {
+                  const insuranceReq = requireIfInsurance(v);
+                  if (insuranceReq !== true) return insuranceReq;
+                  if (!v || !insStartDate) return true;
+                  return v >= insStartDate || t("asset:expiry_after_start", { defaultValue: "Must be on or after start date" });
+                }} />
               <FormInput label={t("asset:premium_amount")}  name="insPremium"   type="number" register={register} errors={errors}
                 min={0} decimal decimalPlaces={3} maxLength={10} />
               <FormInput label={t("asset:coverage_amount")} name="insCoverage"  type="number" register={register} errors={errors}
-                min={0} decimal decimalPlaces={3} maxLength={10} />
+                min={0} decimal decimalPlaces={3} maxLength={10}
+                validate={(v) => {
+                  if (v === "" || v == null) return true;
+                  const prem = Number(getValues("insPremium"));
+                  if (!Number.isNaN(prem) && Number(v) < prem) return t("asset:coverage_below_premium", { defaultValue: "Coverage should be at least the premium" });
+                  return true;
+                }} />
             </div>
           </div>
 

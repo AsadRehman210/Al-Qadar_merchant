@@ -1,265 +1,315 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// ERP permission catalog (merchant portal). Keys here are the exact strings the
+// backend's `source/utility/helper/constants/permissions.ts` enforces — keep
+// the two in sync. `rafeeqi_role_ids` maps readable JS identifiers to those
+// strings (used by `menuSections` + page-level `checkRoleAuth`);
+// `rafeeqi_roles` is the module tree the Role builder renders as checkboxes.
+//
+// The Account owner (is_default_user) bypasses every check. A sub-user holds
+// exactly the strings their assigned Role grants.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const crud = (base) => ({
+  [`view_${key(base)}`]: `${base}.view`,
+  [`add_${key(base)}`]: `${base}.create`,
+  [`edit_${key(base)}`]: `${base}.edit`,
+  [`delete_${key(base)}`]: `${base}.delete`,
+});
+function key(base) {
+  return base.replace(/[.-]/g, "_");
+}
+
 export const rafeeqi_role_ids = {
-  view_dashboard: "681dbf6a766101d3fcc30b31",
-  push_notifications: "6826e75583ea4609fe395ccc",
-  view_notifications: "6826e7cf83ea4609fe395d42",
-  add_customer: "681dc688766101d3fcc30bc2",
-  delete_customer: "681dc694766101d3fcc30bc4",
-  edit_customer: "681dc6a3766101d3fcc30bc6",
-  view_customer: "681dc6b9766101d3fcc30bc8",
-  change_customer_status: "682341d532827fbae613c86f",
-  add_partner: "681dc6d5766101d3fcc30bca",
-  delete_partner: "681dc6e9766101d3fcc30bde",
-  edit_partner: "681dc6f4766101d3fcc30bf2",
-  view_partner: "681dc700766101d3fcc30bf4",
-  change_partner_status: "682327d6f45e85be4e865133",
-  add_user: "681dc73d766101d3fcc30c08",
-  delete_user: "681dc749766101d3fcc30c0a",
-  edit_user: "681dc752766101d3fcc30c0c",
-  view_user: "681dc75b766101d3fcc30c0e",
-  change_user_status: "6823442d32827fbae613cb41",
-  add_role: "681dc768766101d3fcc30c10",
-  delete_role: "681dc775766101d3fcc30c12",
-  edit_role: "681dc783766101d3fcc30c14",
-  view_role: "681dc78d766101d3fcc30c16",
-  change_role_status: "68234db9454f246b3716bedd",
-  view_inquiry: "6822fb429491292e2cf0c9c8",
-  delete_inquiry: "6822fbf39491292e2cf0c9e7",
-  view_employee: "emp001_view",
-  add_employee: "emp002_add",
-  edit_employee: "emp003_edit",
-  delete_employee: "emp004_delete",
+  // Access control
+  ...crud("user"),
+  ...crud("role"),
+
+  // Platform
+  view_dashboard: "dashboard.view",
+  view_reports: "reports.view",
+  view_settings: "settings.view",
+  edit_settings: "settings.edit",
+
+  // HR
+  ...crud("employee"),
+  ...crud("department"),
+  ...crud("designation"),
+  ...crud("attendance"),
+  ...crud("attendance-policy"),
+  ...crud("salary"),
+  ...crud("loan"),
+  approve_loan: "loan.approve",
+  ...crud("expense"),
+  approve_expense: "expense.approve",
+  ...crud("leave"),
+  approve_leave: "leave.approve",
+  ...crud("leave-type"),
+  ...crud("payroll-run"),
+  process_payroll_run: "payroll-run.process",
+  ...crud("special-payment"),
+  ...crud("special-payment-type"),
+  ...crud("provident-fund"),
+  ...crud("employee-request"),
+  approve_employee_request: "employee-request.approve",
+  ...crud("holiday"),
+  ...crud("announcement"),
+  ...crud("recruitment"),
+  ...crud("candidate"),
+  ...crud("onboarding"),
+  ...crud("onboarding-template"),
+  ...crud("offboarding"),
+  ...crud("performance"),
+
+  // Finance
+  ...crud("finance-coa"),
+  ...crud("finance-journal"),
+  view_finance_ledger: "finance-ledger.view",
+  view_finance_reports: "finance-reports.view",
+  ...crud("finance-bank"),
+  ...crud("finance-payable"),
+  ...crud("finance-receivable"),
+  ...crud("finance-payment"),
+  ...crud("finance-income"),
+  ...crud("finance-expense"),
+  ...crud("finance-vat"),
+  ...crud("finance-bank-statement"),
+  ...crud("finance-reconciliation"),
+  ...crud("finance-budget"),
+
+  // Inventory
+  ...crud("inventory-category"),
+  ...crud("inventory-product"),
+  import_inventory_product: "inventory-product.import",
+  ...crud("inventory-variant"),
+  ...crud("inventory-production"),
+  view_inventory_opening_stock: "inventory-opening-stock.view",
+  add_inventory_opening_stock: "inventory-opening-stock.create",
+  ...crud("inventory-quarantine"),
+  view_inventory_stock_batch: "inventory-stock-batch.view",
+
+  // Warehouse
+  ...crud("warehouse"),
+  ...crud("warehouse-stock"),
+  ...crud("warehouse-transfer"),
+  ...crud("warehouse-issue"),
+
+  // Sales
+  ...crud("sales-customer"),
+  ...crud("sales-invoice"),
+  status_sales_invoice: "sales-invoice.status",
+  ...crud("sales-quotation"),
+  status_sales_quotation: "sales-quotation.status",
+  ...crud("sales-credit-note"),
+  status_sales_credit_note: "sales-credit-note.status",
+
+  // Purchase
+  ...crud("purchase-supplier"),
+  ...crud("purchase-invoice"),
+  status_purchase_invoice: "purchase-invoice.status",
+  ...crud("purchase-debit-note"),
+  status_purchase_debit_note: "purchase-debit-note.status",
+
+  // Assets
+  ...crud("asset-category"),
+  ...crud("asset"),
+  import_asset: "asset.import",
+  ...crud("asset-request"),
+  approve_asset_request: "asset-request.approve",
+  ...crud("asset-audit"),
+
+  // Analytics
+  view_analytics_hr: "analytics-hr.view",
+  view_analytics_inventory: "analytics-inventory.view",
+  view_analytics_sales: "analytics-sales.view",
+
+  // ── Legacy universal placeholders ─────────────────────────────────────────
+  // Earlier partial-port pages gate every "Add"/"View" button on these four
+  // regardless of module. `checkRoleAuth` treats them as wildcards for a
+  // sub-user (defers to the sidebar + backend, which enforce per module), so
+  // these stay valid keys without over-hiding.
+  view_customer: "sales-customer.view",
+  add_customer: "sales-customer.create",
+  edit_customer: "sales-customer.edit",
+  delete_customer: "sales-customer.delete",
 };
 
+// Set of the legacy wildcard placeholder strings — consumed by
+// global/helper.js `checkRoleAuth`.
+export const LEGACY_WILDCARD_PERMISSIONS = new Set([
+  "sales-customer.view",
+  "sales-customer.create",
+  "sales-customer.edit",
+  "sales-customer.delete",
+]);
+
+const grp = (title, title_key, subs) => ({
+  title,
+  title_key,
+  sub_modules: subs.map(([id, t, tk]) => ({ id, title: t, title_key: tk })),
+});
+
+const section = (title, title_key, modules) => ({ title, title_key, modules });
+
+function crudRows(base, label) {
+  const k = key(base);
+  return [
+    [rafeeqi_role_ids[`view_${k}`], `View ${label}`, `view_${k}`],
+    [rafeeqi_role_ids[`add_${k}`], `Add ${label}`, `add_${k}`],
+    [rafeeqi_role_ids[`edit_${k}`], `Edit ${label}`, `edit_${k}`],
+    [rafeeqi_role_ids[`delete_${k}`], `Delete ${label}`, `delete_${k}`],
+  ];
+}
+
+// Nested: section → modules (each module has CRUD/status permissions).
 export const rafeeqi_roles = [
-  {
-    id: 1,
-    title: "Dashboard",
-    title_key: "dashboard",
-    is_active: false,
-    sub_modules: [
-      {
-        id: rafeeqi_role_ids.view_dashboard,
-        module_id: 1,
-        is_active: false,
-        title: "View Dashboard",
-        title_key: "view_dashboard",
-      },
-    ],
-  },
-  {
-    id: 18,
-    title: "Notifications",
-    title_key: "notifications",
-    is_active: false,
-    sub_modules: [
-      {
-        id: rafeeqi_role_ids.push_notifications,
-        module_id: 1,
-        is_active: false,
-        title: "Push Notifications",
-        title_key: "push_notifications",
-      },
-      {
-        id: rafeeqi_role_ids.view_notifications,
-        module_id: 1,
-        is_active: false,
-        title: "View Notifications",
-        title_key: "view_notifications",
-      },
-    ],
-  },
-  {
-    id: 10,
-    title: "Partner",
-    title_key: "partner",
-    is_active: false,
-    sub_modules: [
-      {
-        id: rafeeqi_role_ids.add_partner,
-        module_id: 10,
-        is_active: false,
-        title: "Add Partner",
-        title_key: "add_partner",
-      },
-      {
-        id: rafeeqi_role_ids.delete_partner,
-        module_id: 10,
-        is_active: false,
-        title: "Delete Partner",
-        title_key: "delete_partner",
-      },
-      {
-        id: rafeeqi_role_ids.edit_partner,
-        module_id: 10,
-        is_active: false,
-        title: "Edit Partner",
-        title_key: "edit_partner",
-      },
-      {
-        id: rafeeqi_role_ids.view_partner,
-        module_id: 10,
-        is_active: false,
-        title: "View Partner",
-        title_key: "view_partner",
-      },
-      {
-        id: rafeeqi_role_ids.change_partner_status,
-        module_id: 10,
-        is_active: false,
-        title: "Change Partner Status",
-        title_key: "change_partner_status",
-      },
-    ],
-  },
-  {
-    id: 17,
-    title: "Inquiry",
-    title_key: "inquiry",
-    is_active: false,
-    sub_modules: [
-      {
-        id: rafeeqi_role_ids.view_inquiry,
-        module_id: 17,
-        is_active: false,
-        title: "View Inquiry",
-        title_key: "view_inquiry",
-      },
-      {
-        id: rafeeqi_role_ids.delete_inquiry,
-        module_id: 17,
-        is_active: false,
-        title: "Delete Inquiry",
-        title_key: "delete_inquiry",
-      },
-    ],
-  },
-  {
-    id: 9,
-    title: "Customer",
-    title_key: "customer",
-    is_active: false,
-    sub_modules: [
-      {
-        id: rafeeqi_role_ids.add_customer,
-        module_id: 9,
-        is_active: false,
-        title: "Add Customer",
-        title_key: "add_customer",
-      },
-      {
-        id: rafeeqi_role_ids.delete_customer,
-        module_id: 9,
-        is_active: false,
-        title: "Delete Customer",
-        title_key: "delete_customer",
-      },
-      {
-        id: rafeeqi_role_ids.edit_customer,
-        module_id: 9,
-        is_active: false,
-        title: "Edit Customer",
-        title_key: "edit_customer",
-      },
-      {
-        id: rafeeqi_role_ids.view_customer,
-        module_id: 9,
-        is_active: false,
-        title: "View Customer",
-        title_key: "view_customer",
-      },
-      {
-        id: rafeeqi_role_ids.change_customer_status,
-        module_id: 9,
-        is_active: false,
-        title: "Change Customer Status",
-        title_key: "change_customer_status",
-      },
-    ],
-  },
-  {
-    id: 11,
-    title: "User",
-    title_key: "user",
-    is_active: false,
-    sub_modules: [
-      {
-        id: rafeeqi_role_ids.add_user,
-        module_id: 11,
-        is_active: false,
-        title: "Add User",
-        title_key: "add_user",
-      },
-      {
-        id: rafeeqi_role_ids.delete_user,
-        module_id: 11,
-        is_active: false,
-        title: "Delete User",
-        title_key: "delete_user",
-      },
-      {
-        id: rafeeqi_role_ids.edit_user,
-        module_id: 11,
-        is_active: false,
-        title: "Edit User",
-        title_key: "edit_user",
-      },
-      {
-        id: rafeeqi_role_ids.view_user,
-        module_id: 11,
-        is_active: false,
-        title: "View User",
-        title_key: "view_user",
-      },
-      {
-        id: rafeeqi_role_ids.change_user_status,
-        module_id: 11,
-        is_active: false,
-        title: "Change User Status",
-        title_key: "change_user_status",
-      },
-    ],
-  },
-  {
-    id: 12,
-    title: "Role",
-    title_key: "role",
-    is_active: false,
-    sub_modules: [
-      {
-        id: rafeeqi_role_ids.add_role,
-        module_id: 12,
-        is_active: false,
-        title: "Add Role",
-        title_key: "add_role",
-      },
-      {
-        id: rafeeqi_role_ids.delete_role,
-        module_id: 12,
-        is_active: false,
-        title: "Delete Role",
-        title_key: "delete_role",
-      },
-      {
-        id: rafeeqi_role_ids.edit_role,
-        module_id: 12,
-        is_active: false,
-        title: "Edit Role",
-        title_key: "edit_role",
-      },
-      {
-        id: rafeeqi_role_ids.view_role,
-        module_id: 12,
-        is_active: false,
-        title: "View Role",
-        title_key: "view_role",
-      },
-      {
-        id: rafeeqi_role_ids.change_role_status,
-        module_id: 12,
-        is_active: false,
-        title: "Change Role Status",
-        title_key: "change_role_status",
-      },
-    ],
-  },
+  section("MAIN", "sidebar_main", [
+    grp("Dashboard", "dashboard", [[rafeeqi_role_ids.view_dashboard, "View Dashboard", "view_dashboard"]]),
+  ]),
+  section("HR Management", "sidebar_hr", [
+    grp("Recruitment / Jobs", "sidebar_recruitment", crudRows("recruitment", "Job")),
+    grp("Candidates", "candidates", crudRows("candidate", "Candidate")),
+    grp("Onboarding", "sidebar_onboarding", crudRows("onboarding", "Onboarding")),
+    grp("Onboarding Templates", "onboarding_templates", crudRows("onboarding-template", "Onboarding Template")),
+    grp("Offboarding", "sidebar_offboarding", crudRows("offboarding", "Offboarding")),
+    grp("Performance", "sidebar_performance", crudRows("performance", "Appraisal")),
+    grp("Employees", "employees", crudRows("employee", "Employee")),
+    grp("Departments", "sidebar_departments", crudRows("department", "Department")),
+    grp("Designations", "sidebar_designations", crudRows("designation", "Designation")),
+    grp("Attendance", "sidebar_attendance", crudRows("attendance", "Attendance")),
+    grp("Attendance Policies", "sidebar_attendance_policies", crudRows("attendance-policy", "Attendance Policy")),
+    grp("Leave", "sidebar_leave_management", [
+      ...crudRows("leave", "Leave"),
+      [rafeeqi_role_ids.approve_leave, "Approve Leave", "approve_leave"],
+    ]),
+    grp("Leave Types", "leave_types", crudRows("leave-type", "Leave Type")),
+    grp("Holidays", "sidebar_holiday_calendar", crudRows("holiday", "Holiday")),
+    grp("Salary", "sidebar_salary", crudRows("salary", "Salary")),
+    grp("Payroll Runs", "sidebar_payroll_batch", [
+      ...crudRows("payroll-run", "Payroll Run"),
+      [rafeeqi_role_ids.process_payroll_run, "Process Payroll", "process_payroll_run"],
+    ]),
+    grp("Special Payments", "sidebar_special_payments", crudRows("special-payment", "Special Payment")),
+    grp("Special Payment Types", "special_payment_types", crudRows("special-payment-type", "Special Payment Type")),
+    grp("Provident Fund", "sidebar_provident_fund", crudRows("provident-fund", "Provident Fund")),
+    grp("Loans", "sidebar_loans", [
+      ...crudRows("loan", "Loan"),
+      [rafeeqi_role_ids.approve_loan, "Approve Loan", "approve_loan"],
+    ]),
+    grp("Expenses", "sidebar_expenses", [
+      ...crudRows("expense", "Expense"),
+      [rafeeqi_role_ids.approve_expense, "Approve Expense", "approve_expense"],
+    ]),
+    grp("Employee Requests", "sidebar_requests", [
+      ...crudRows("employee-request", "Employee Request"),
+      [rafeeqi_role_ids.approve_employee_request, "Approve Request", "approve_employee_request"],
+    ]),
+    grp("Announcements", "sidebar_announcements", crudRows("announcement", "Announcement")),
+  ]),
+  section("Asset Management", "sidebar_asset_management", [
+    grp("Assets", "sidebar_assets_register", [
+      ...crudRows("asset", "Asset"),
+      [rafeeqi_role_ids.import_asset, "Import Assets", "import_asset"],
+    ]),
+    grp("Asset Categories", "sidebar_asset_categories", crudRows("asset-category", "Asset Category")),
+    grp("Asset Requests", "sidebar_asset_requests", [
+      ...crudRows("asset-request", "Asset Request"),
+      [rafeeqi_role_ids.approve_asset_request, "Approve Asset Request", "approve_asset_request"],
+    ]),
+    grp("Asset Audits", "sidebar_asset_audits", crudRows("asset-audit", "Asset Audit")),
+  ]),
+  section("Products & Inventory", "sidebar_products_inventory", [
+    grp("Products", "sidebar_products", [
+      ...crudRows("inventory-product", "Product"),
+      [rafeeqi_role_ids.import_inventory_product, "Import Products", "import_inventory_product"],
+    ]),
+    grp("Categories", "sidebar_categories", crudRows("inventory-category", "Category")),
+    grp("Variants", "sidebar_variants", crudRows("inventory-variant", "Variant")),
+    grp("Production", "sidebar_production", crudRows("inventory-production", "Production")),
+    grp("Quarantine", "sidebar_quarantine", crudRows("inventory-quarantine", "Quarantine")),
+    grp("Stock Batches", "stock_batches", [
+      [rafeeqi_role_ids.view_inventory_stock_batch, "View Stock Batches", "view_inventory_stock_batch"],
+    ]),
+    grp("Opening Stock Import", "opening_stock_import", [
+      [rafeeqi_role_ids.view_inventory_opening_stock, "View Opening Stock Import", "view_inventory_opening_stock"],
+      [rafeeqi_role_ids.add_inventory_opening_stock, "Run Opening Stock Import", "add_inventory_opening_stock"],
+    ]),
+  ]),
+  section("Warehouse", "sidebar_warehouse", [
+    grp("Warehouses", "sidebar_warehouses", crudRows("warehouse", "Warehouse")),
+    grp("Warehouse Stock", "sidebar_stock", crudRows("warehouse-stock", "Stock")),
+    grp("Stock Transfers", "sidebar_stock_transfers", crudRows("warehouse-transfer", "Stock Transfer")),
+    grp("Stock Issues", "sidebar_stock_issues", crudRows("warehouse-issue", "Stock Issue")),
+  ]),
+  section("Clients & Vendors", "sidebar_clients_vendors", [
+    grp("Customers", "customers", crudRows("sales-customer", "Customer")),
+    grp("Suppliers", "suppliers", crudRows("purchase-supplier", "Supplier")),
+    grp("Sale Invoices", "sales", [
+      ...crudRows("sales-invoice", "Sale Invoice"),
+      [rafeeqi_role_ids.status_sales_invoice, "Change Sale Invoice Status", "status_sales_invoice"],
+    ]),
+    grp("Quotations", "sidebar_quotations", [
+      ...crudRows("sales-quotation", "Quotation"),
+      [rafeeqi_role_ids.status_sales_quotation, "Change Quotation Status", "status_sales_quotation"],
+    ]),
+    grp("Credit Notes", "sidebar_credit_notes", [
+      ...crudRows("sales-credit-note", "Credit Note"),
+      [rafeeqi_role_ids.status_sales_credit_note, "Change Credit Note Status", "status_sales_credit_note"],
+    ]),
+    grp("Purchase Invoices", "purchases", [
+      ...crudRows("purchase-invoice", "Purchase Invoice"),
+      [rafeeqi_role_ids.status_purchase_invoice, "Change Purchase Invoice Status", "status_purchase_invoice"],
+    ]),
+    grp("Debit Notes", "sidebar_debit_notes", [
+      ...crudRows("purchase-debit-note", "Debit Note"),
+      [rafeeqi_role_ids.status_purchase_debit_note, "Change Debit Note Status", "status_purchase_debit_note"],
+    ]),
+  ]),
+  section("Finance Management", "sidebar_finance_management", [
+    grp("Chart of Accounts", "sidebar_finance_coa", crudRows("finance-coa", "Chart of Accounts")),
+    grp("Journal Entries", "sidebar_finance_journal", crudRows("finance-journal", "Journal Entry")),
+    grp("Ledger", "sidebar_finance_ledger", [
+      [rafeeqi_role_ids.view_finance_ledger, "View Ledger", "view_finance_ledger"],
+    ]),
+    grp("Financial Reports", "sidebar_finance_reports", [
+      [rafeeqi_role_ids.view_finance_reports, "View Financial Reports", "view_finance_reports"],
+    ]),
+    grp("Bank & Cash", "sidebar_finance_bank", crudRows("finance-bank", "Bank & Cash")),
+    grp("Accounts Payable", "sidebar_finance_ap", crudRows("finance-payable", "Accounts Payable")),
+    grp("Accounts Receivable", "sidebar_finance_ar", crudRows("finance-receivable", "Accounts Receivable")),
+    grp("Payments", "sidebar_finance_payments", crudRows("finance-payment", "Payment")),
+    grp("Income", "sidebar_finance_income", crudRows("finance-income", "Income")),
+    grp("Business Expenses", "sidebar_finance_expenses_module", crudRows("finance-expense", "Business Expense")),
+    grp("VAT Config", "sidebar_finance_vat", crudRows("finance-vat", "VAT Config")),
+    grp("Bank Statements", "bank_statements", crudRows("finance-bank-statement", "Bank Statement")),
+    grp("Reconciliation", "sidebar_finance_reconciliation", crudRows("finance-reconciliation", "Reconciliation")),
+    grp("Budgets", "budgets", crudRows("finance-budget", "Budget")),
+  ]),
+  section("Reports", "sidebar_reports", [
+    grp("Reports Hub", "sidebar_reports_hub", [
+      [rafeeqi_role_ids.view_reports, "View Reports", "view_reports"],
+    ]),
+    grp("HR Analytics", "hr_analytics", [
+      [rafeeqi_role_ids.view_analytics_hr, "View HR Analytics", "view_analytics_hr"],
+    ]),
+    grp("Inventory Analytics", "inventory_analytics", [
+      [rafeeqi_role_ids.view_analytics_inventory, "View Inventory Analytics", "view_analytics_inventory"],
+    ]),
+    grp("Sales Analytics", "sales_analytics", [
+      [rafeeqi_role_ids.view_analytics_sales, "View Sales Analytics", "view_analytics_sales"],
+    ]),
+  ]),
+  section("Access Control", "sidebar_access_control", [
+    grp("Roles", "sidebar_roles", crudRows("role", "Role")),
+    grp("Users", "sidebar_users", crudRows("user", "User")),
+  ]),
+  section("Settings", "sidebar_settings_section", [
+    grp("Settings", "sidebar_settings", [
+      [rafeeqi_role_ids.view_settings, "View Settings", "view_settings"],
+      [rafeeqi_role_ids.edit_settings, "Edit Settings", "edit_settings"],
+    ]),
+  ]),
 ];
+
+export const flattenRoleModules = (sections = rafeeqi_roles) =>
+  sections.flatMap((s) => s.modules || []);
+

@@ -7,8 +7,10 @@ import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
+import SelectDropdown from "components/SelectDropdown";
 import ActionPopup from "components/ActionPopup";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
   fetchPfPolicy,
@@ -28,9 +30,9 @@ import {
 } from "store/slices/providentFundSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
+import { pfWithdrawalTypeOptions } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
-const fmt = (n) => (n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const WD_BADGE = {
   Pending: "bg-amber-100 text-amber-700",
@@ -38,8 +40,6 @@ const WD_BADGE = {
   Rejected: "bg-rose-100 text-rose-700",
   Paid: "bg-emerald-100 text-emerald-700",
 };
-
-const WITHDRAWAL_TYPES = [{ id: "Partial", title: "Partial" }, { id: "Full", title: "Full (Settlement)" }];
 
 const PFDetail = () => {
   const { t, i18n } = useTranslation();
@@ -76,7 +76,7 @@ const PFDetail = () => {
 
   const { register: regC, handleSubmit: hsC, reset: resetC, formState: { errors: errC } } = useForm();
   const { register: regW, handleSubmit: hsW, reset: resetW, formState: { errors: errW } } = useForm();
-  const [wdType, setWdType] = useState(WITHDRAWAL_TYPES[0]);
+  const [wdType, setWdType] = useState(pfWithdrawalTypeOptions[0]);
 
   if (!employee) {
     return (
@@ -110,6 +110,14 @@ const PFDetail = () => {
   };
 
   const onAddWithdrawal = async (data) => {
+    if (!wdType?.id) {
+      toast.error(t("pf:withdrawal_type_required", "Withdrawal type is required"));
+      return;
+    }
+    if (Number(data.amount) > (account?.currentBalance || 0)) {
+      toast.error(t("pf:amount_exceeds_balance", "Amount cannot exceed current balance"));
+      return;
+    }
     setSubmittingWd(true);
     try {
       await dispatch(applyPfWithdrawal({
@@ -196,10 +204,10 @@ const PFDetail = () => {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: t("pf:total_employee_contrib"), value: `SAR ${fmt(totalEmployeeContrib)}`, color: "text-blue-600" },
-            { label: t("pf:total_employer_contrib"), value: `SAR ${fmt(totalEmployerContrib)}`, color: "text-purple-600" },
-            { label: t("pf:total_contributions"), value: `SAR ${fmt(totalContrib)}`, color: "text-slate-700 dark:text-white" },
-            { label: t("pf:current_balance"), value: `SAR ${fmt(currentBalance)}`, color: "text-emerald-600 font-bold text-lg" },
+            { label: t("pf:total_employee_contrib"), value: `SAR ${formatAmount(totalEmployeeContrib)}`, color: "text-blue-600" },
+            { label: t("pf:total_employer_contrib"), value: `SAR ${formatAmount(totalEmployerContrib)}`, color: "text-purple-600" },
+            { label: t("pf:total_contributions"), value: `SAR ${formatAmount(totalContrib)}`, color: "text-slate-700 dark:text-white" },
+            { label: t("pf:current_balance"), value: `SAR ${formatAmount(currentBalance)}`, color: "text-emerald-600 font-bold text-lg" },
           ].map((c) => (
             <div key={c.label} className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-4">
               <p className="text-xs text-slate-500 dark:text-white/60 mb-1">{c.label}</p>
@@ -236,14 +244,17 @@ const PFDetail = () => {
             <>
               {showContribForm && (
                 <form onSubmit={hsC(onAddContrib)} className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 mb-5 rounded-2xl bg-teal-50 dark:bg-teal-500/10 border border-teal-200">
-                  <div>
-                    <label className="text-xs font-medium text-linkText mb-1 block">{t("pf:month")} *</label>
-                    <input type="month" {...regC("month", { required: true })} max={new Date().toISOString().slice(0, 7)}
-                      className="w-full h-[46px] rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:border-teal-500 focus:outline-0" />
-                    {errC.month && (
-                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">{t("pf:month_required")}</p>
-                    )}
-                  </div>
+                  <FormInput
+                    label={t("pf:month")}
+                    name="month"
+                    type="month"
+                    register={regC}
+                    errors={errC}
+                    required={t("pf:month_required")}
+                    max={new Date().toISOString().slice(0, 7)}
+                    inputClass="!h-[46px] !rounded-lg"
+                    labelClass="!text-xs"
+                  />
                   <FormInput label={`${t("pf:basic")} (${t("pf:optional")})`} name="basic" type="number" min={0} decimal decimalPlaces={3} maxLength={10} register={regC} errors={errC} placeholder={t("pf:basic_from_salary_hint")} />
                   <div className="flex items-end">
                     <p className="text-xs text-slate-400">
@@ -272,11 +283,11 @@ const PFDetail = () => {
                       <tr key={m.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10">
                         <td className="px-4 py-3 pl-5 text-slate-400 text-xs">{idx + 1}</td>
                         <td className="px-4 py-3 font-semibold text-slate-800 dark:text-white">{m.month}</td>
-                        <td className="px-4 py-3 text-slate-600 dark:text-white/70">SAR {fmt(m.basic)}</td>
-                        <td className="px-4 py-3 text-blue-600">SAR {fmt(m.employeeContribution)}</td>
-                        <td className="px-4 py-3 text-purple-600">SAR {fmt(m.employerContribution)}</td>
-                        <td className="px-4 py-3 font-semibold">SAR {fmt(m.totalContribution)}</td>
-                        <td className="px-4 py-3 font-bold text-emerald-600">SAR {fmt(m.balanceAfter)}</td>
+                        <td className="px-4 py-3 text-slate-600 dark:text-white/70">SAR {formatAmount(m.basic)}</td>
+                        <td className="px-4 py-3 text-blue-600">SAR {formatAmount(m.employeeContribution)}</td>
+                        <td className="px-4 py-3 text-purple-600">SAR {formatAmount(m.employerContribution)}</td>
+                        <td className="px-4 py-3 font-semibold">SAR {formatAmount(m.totalContribution)}</td>
+                        <td className="px-4 py-3 font-bold text-emerald-600">SAR {formatAmount(m.balanceAfter)}</td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${m.status === "Manual" ? "bg-amber-100 text-amber-700" : m.status === "Payroll" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"}`}>{m.status}</span>
                         </td>
@@ -292,27 +303,29 @@ const PFDetail = () => {
             <>
               {showWdForm && (
                 <form onSubmit={hsW(onAddWithdrawal)} className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 mb-5 rounded-2xl bg-rose-50 dark:bg-rose-500/10 border border-rose-200">
-                  <FormInput label={t("pf:withdrawal_amount")} name="amount" type="number" min={0} decimal decimalPlaces={3} maxLength={10} register={regW} errors={errW} required />
-                  <div>
-                    <label className="text-xs font-medium text-linkText mb-1 block">{t("pf:withdrawal_type")}</label>
-                    <div className="flex gap-2">
-                      {WITHDRAWAL_TYPES.map((opt) => (
-                        <button key={opt.id} type="button" onClick={() => setWdType(opt)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${wdType.id === opt.id ? "bg-rose-500 text-white border-rose-500" : "border-slate-200 text-slate-700 hover:border-rose-300"}`}>
-                          {opt.title}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-medium text-linkText mb-1 block">{t("pf:reason")} *</label>
-                    <textarea {...regW("reason", { required: true, minLength: { value: 5, message: "Minimum length is 5 characters" }, maxLength: { value: 500, message: "Maximum length is 500 characters" } })} rows={2}
-                      placeholder={t("pf:withdrawal_reason_placeholder")}
-                      className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm focus:border-teal-500 focus:outline-0" />
-                    {errW.reason && (
-                      <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errW.reason.type === "required" ? t("pf:reason_required") : errW.reason.message}</p>
-                    )}
-                  </div>
+                  <FormInput label={t("pf:withdrawal_amount")} name="amount" type="number" min={0.01} decimal decimalPlaces={3} maxLength={10} register={regW} errors={errW} required />
+                  <SelectDropdown
+                    label={t("pf:withdrawal_type")}
+                    data={pfWithdrawalTypeOptions}
+                    selected={wdType}
+                    setSelected={(v) => setWdType(v || pfWithdrawalTypeOptions[0])}
+                    required
+                    hideClear
+                    labelClass="!text-xs"
+                  />
+                  <FormTextarea
+                    label={t("pf:reason")}
+                    name="reason"
+                    register={regW}
+                    errors={errW}
+                    required={t("pf:reason_required")}
+                    rows={2}
+                    minLength={{ value: 5, message: "Minimum length is 5 characters" }}
+                    maxLength={{ value: 500, message: "Maximum length is 500 characters" }}
+                    placeholder={t("pf:withdrawal_reason_placeholder")}
+                    labelClass="!text-xs"
+                    wrapperClass="md:col-span-2"
+                  />
                   <div className="md:col-span-2 flex gap-2 justify-end">
                     <Button type="button" title={t("cancel")} onClick={() => setShowWdForm(false)} className="!rounded-lg !h-9 !px-4 !bg-slate-200 dark:!bg-white/20 !text-slate-700 dark:!text-white" />
                     <Button type="submit" title={t("pf:submit_request")} btn="primary" disabled={submittingWd} loading={submittingWd} className="!rounded-lg !h-9 !px-4 !bg-rose-500 !border-0" />
@@ -328,7 +341,7 @@ const PFDetail = () => {
                     <div key={wd.id} className="rounded-2xl border border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-white/5 p-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="font-bold text-slate-900 dark:text-white">SAR {fmt(wd.amount)} — {wd.type}</p>
+                          <p className="font-bold text-slate-900 dark:text-white">SAR {formatAmount(wd.amount)} — {wd.type}</p>
                           <p className="text-xs text-slate-500 dark:text-white/60 mt-0.5">{t("pf:requested")}: {wd.createdAt ? new Date(wd.createdAt).toLocaleDateString() : ""}</p>
                           <p className="text-sm text-slate-700 dark:text-white/80 mt-1">{wd.reason}</p>
                         </div>
@@ -367,11 +380,11 @@ const PFDetail = () => {
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {[
-                  { label: t("pf:total_employee_contrib"), value: `SAR ${fmt(totalEmployeeContrib)}`, color: "bg-blue-50 border-blue-200 text-blue-700" },
-                  { label: t("pf:total_employer_contrib"), value: `SAR ${fmt(totalEmployerContrib)}`, color: "bg-purple-50 border-purple-200 text-purple-700" },
-                  { label: t("pf:total_contributions"), value: `SAR ${fmt(totalContrib)}`, color: "bg-teal-50 border-teal-200 text-teal-700" },
-                  { label: t("pf:total_withdrawn"), value: `SAR ${fmt(account?.totalWithdrawn || 0)}`, color: "bg-rose-50 border-rose-200 text-rose-700" },
-                  { label: t("pf:current_balance"), value: `SAR ${fmt(currentBalance)}`, color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
+                  { label: t("pf:total_employee_contrib"), value: `SAR ${formatAmount(totalEmployeeContrib)}`, color: "bg-blue-50 border-blue-200 text-blue-700" },
+                  { label: t("pf:total_employer_contrib"), value: `SAR ${formatAmount(totalEmployerContrib)}`, color: "bg-purple-50 border-purple-200 text-purple-700" },
+                  { label: t("pf:total_contributions"), value: `SAR ${formatAmount(totalContrib)}`, color: "bg-teal-50 border-teal-200 text-teal-700" },
+                  { label: t("pf:total_withdrawn"), value: `SAR ${formatAmount(account?.totalWithdrawn || 0)}`, color: "bg-rose-50 border-rose-200 text-rose-700" },
+                  { label: t("pf:current_balance"), value: `SAR ${formatAmount(currentBalance)}`, color: "bg-emerald-50 border-emerald-200 text-emerald-700" },
                 ].map((c) => (
                   <div key={c.label} className={`p-5 rounded-2xl border ${c.color}`}>
                     <p className="text-xs opacity-70 mb-1">{c.label}</p>

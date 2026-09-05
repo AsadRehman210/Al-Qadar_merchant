@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { formatAmount } from "global/helper";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
@@ -30,7 +31,6 @@ const LoansTab = ({ data }) => {
     if (data?.id) dispatch(fetchLoansByEmployee(data.id));
   }, [data?.id, dispatch]);
 
-  const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
   const ACTIVE_STATUSES = ["Pending Manager", "Pending HR", "Pending", "Approved", "Ongoing"];
 

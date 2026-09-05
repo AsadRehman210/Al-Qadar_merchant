@@ -20,7 +20,17 @@ import { fetchStock, showStock, showStockLoading } from "store/slices/stockSlice
 import { fetchReceivables, showReceivables, showReceivablesLoading } from "store/slices/saleInvoiceSlice";
 import { fetchPayables, showPayables, showPayablesLoading } from "store/slices/purchaseInvoiceSlice";
 import { fetchExpiryBucketDetail } from "global/drilldownFetchers";
-import { tableRows } from "global/constant";
+import {
+  tableRows,
+  agingBucketLabels,
+  agingReportTypeOptions,
+  expiryBucketOrder,
+} from "global/constant";
+import {
+  agingBucketOf,
+  formatMoneyWithCurrency,
+  formatReportDate,
+} from "global/helper";
 import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 import SelectDropdown from "components/SelectDropdown";
@@ -31,8 +41,6 @@ const inputCls = "h-9 px-3 rounded-xl border border-slate-200 dark:border-white/
 const sectionTitle = "font-semibold text-slate-900 dark:text-white text-base mb-4";
 const TH = ({ children }) => <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-white/40">{children}</th>;
 const TD = ({ children, className = "" }) => <td className={`px-4 py-3 text-sm text-slate-700 dark:text-white/80 ${className}`}>{children}</td>;
-const fmtMoney = (n) => `${(parseFloat(n) || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} SAR`;
-const fmtDate = (v) => (v ? String(v).slice(0, 10) : "—");
 
 const SummaryCard = ({ label, value, sub, color = "teal" }) => {
   const clr = {
@@ -145,7 +153,7 @@ const InventoryReport = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard label="Total SKUs" value={overview?.totalSkus ?? "…"} color="teal" />
         <SummaryCard label="Total Units" value={(overview?.totalUnits ?? 0).toLocaleString()} color="blue" />
-        <SummaryCard label="Stock Value" value={fmtMoney(overview?.totalStockValue)} color="purple" sub="at cost price" />
+        <SummaryCard label="Stock Value" value={formatMoneyWithCurrency(overview?.totalStockValue)} color="purple" sub="at cost price" />
         <SummaryCard label="Low / Out" value={`${overview?.lowStockCount ?? 0} / ${overview?.outOfStockCount ?? 0}`} color={(overview?.outOfStockCount || 0) > 0 ? "red" : "amber"} />
       </div>
 
@@ -249,9 +257,9 @@ const ProfitLossReport = () => {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard label="Revenue" value={fmtMoney(sales?.totalRevenue)} color="teal" />
+        <SummaryCard label="Revenue" value={formatMoneyWithCurrency(sales?.totalRevenue)} color="teal" />
         <SummaryCard label="Invoices" value={sales?.totalInvoices ?? 0} color="blue" />
-        <SummaryCard label="Gross Profit" value={fmtMoney(sales?.totalProfit)} color={(sales?.totalProfit || 0) >= 0 ? "teal" : "red"} />
+        <SummaryCard label="Gross Profit" value={formatMoneyWithCurrency(sales?.totalProfit)} color={(sales?.totalProfit || 0) >= 0 ? "teal" : "red"} />
         <SummaryCard label="Gross Margin" value={`${grossMargin.toFixed(1)}%`} color={grossMargin >= 0 ? "blue" : "red"} />
       </div>
 
@@ -264,9 +272,9 @@ const ProfitLossReport = () => {
               {trend.map((m) => (
                 <tr key={m.month} className="border-b border-slate-50 dark:border-white/5">
                   <TD className="font-medium">{m.month}</TD>
-                  <td className="px-4 py-3 tabular-nums">{fmtMoney(m.revenue)}</td>
-                  <td className="px-4 py-3 tabular-nums text-slate-500">{fmtMoney(m.expenses)}</td>
-                  <td className={`px-4 py-3 tabular-nums font-semibold ${m.profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>{fmtMoney(m.profit)}</td>
+                  <td className="px-4 py-3 tabular-nums">{formatMoneyWithCurrency(m.revenue)}</td>
+                  <td className="px-4 py-3 tabular-nums text-slate-500">{formatMoneyWithCurrency(m.expenses)}</td>
+                  <td className={`px-4 py-3 tabular-nums font-semibold ${m.profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>{formatMoneyWithCurrency(m.profit)}</td>
                 </tr>
               ))}
             </tbody>
@@ -288,7 +296,7 @@ const ProfitLossReport = () => {
                   <div className="h-full bg-teal-400 rounded-full" style={{ width: `${Math.round((p.qtySold / maxQty) * 100)}%` }} />
                 </div>
                 <span className="text-sm font-semibold text-slate-900 dark:text-white w-16 text-right shrink-0">{p.qtySold}</span>
-                <span className="text-sm text-emerald-600 w-24 text-right shrink-0">{fmtMoney(p.profit)}</span>
+                <span className="text-sm text-emerald-600 w-24 text-right shrink-0">{formatMoneyWithCurrency(p.profit)}</span>
               </button>
             ))}
           </div>
@@ -302,8 +310,6 @@ const ProfitLossReport = () => {
 // Aged from each invoice's own date — this app has no separate payment-terms
 // due-date field yet, so "days outstanding since invoice date" is the real
 // number available, rather than fabricating a due date that doesn't exist.
-const ageBucket = (days) => (days <= 30 ? "0–30 days" : days <= 60 ? "31–60 days" : days <= 90 ? "61–90 days" : "90+ days");
-
 const AgingReport = () => {
   const dispatch = useDispatch();
   const receivables = useSelector(showReceivables);
@@ -326,11 +332,11 @@ const AgingReport = () => {
       .filter((r) => (r.balanceDue || 0) > 0)
       .map((r) => {
         const days = Math.max(0, Math.floor((now - new Date(r.date)) / 86400000));
-        return { ...r, days, bucket: ageBucket(days) };
+        return { ...r, days, bucket: agingBucketOf(days) };
       });
   }, [rows]);
 
-  const buckets = ["0–30 days", "31–60 days", "61–90 days", "90+ days"];
+  const buckets = agingBucketLabels;
   const bucketTotals = buckets.map((b) => ({
     label: b,
     total: ageRows.filter((r) => r.bucket === b).reduce((s, r) => s + (r.balanceDue || 0), 0),
@@ -343,9 +349,9 @@ const AgingReport = () => {
       <div className="flex items-center gap-4 mb-2">
         <h4 className="font-semibold text-slate-900 dark:text-white">Aging Report</h4>
         <div className="flex rounded-xl border border-slate-200 dark:border-white/20 overflow-hidden">
-          {["AR","AP"].map((t) => (
-            <button key={t} onClick={() => setTypeFilter(t)} className={`px-4 py-1.5 text-sm font-medium transition-colors ${typeFilter === t ? "bg-[var(--color-teal-500)] text-white" : "bg-white dark:bg-white/10 text-slate-600 dark:text-white/60 hover:bg-slate-50"}`}>
-              {t === "AR" ? "Accounts Receivable" : "Accounts Payable"}
+          {agingReportTypeOptions.map((opt) => (
+            <button key={opt.id} onClick={() => setTypeFilter(opt.id)} className={`px-4 py-1.5 text-sm font-medium transition-colors ${typeFilter === opt.id ? "bg-[var(--color-teal-500)] text-white" : "bg-white dark:bg-white/10 text-slate-600 dark:text-white/60 hover:bg-slate-50"}`}>
+              {opt.id === "AR" ? "Accounts Receivable" : "Accounts Payable"}
             </button>
           ))}
         </div>
@@ -353,14 +359,14 @@ const AgingReport = () => {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {bucketTotals.map(({ label, total, count }) => (
-          <SummaryCard key={label} label={label} value={fmtMoney(total)} sub={`${count} invoices`} color={label === "90+ days" ? "red" : label === "0–30 days" ? "teal" : "amber"} />
+          <SummaryCard key={label} label={label} value={formatMoneyWithCurrency(total)} sub={`${count} invoices`} color={label === "90+ days" ? "red" : label === "0–30 days" ? "teal" : "amber"} />
         ))}
       </div>
 
       <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
           <h4 className="font-semibold text-slate-900 dark:text-white text-sm">{typeFilter === "AR" ? "Outstanding Receivables" : "Outstanding Payables"}</h4>
-          <span className="text-sm font-bold text-teal-600">Total: {fmtMoney(grandTotal)}</span>
+          <span className="text-sm font-bold text-teal-600">Total: {formatMoneyWithCurrency(grandTotal)}</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -378,8 +384,8 @@ const AgingReport = () => {
                 <tr key={r.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
                   <TD className="font-mono text-xs text-blue-600">{r.invoiceNumber}</TD>
                   <TD className="font-medium">{typeFilter === "AR" ? r.customerName : r.supplierName}</TD>
-                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{fmtMoney(r.balanceDue)}</td>
-                  <TD className="text-slate-400">{fmtDate(r.date)}</TD>
+                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{formatMoneyWithCurrency(r.balanceDue)}</td>
+                  <TD className="text-slate-400">{formatReportDate(r.date)}</TD>
                   <TD className={r.days > 60 ? "text-red-600 font-semibold" : "text-slate-500"}>{r.days} days</TD>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.bucket === "0–30 days" ? "bg-emerald-100 text-emerald-700" : r.bucket === "90+ days" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{r.bucket}</span>
@@ -395,7 +401,7 @@ const AgingReport = () => {
 };
 
 // ── Stock Expiry Report Tab ────────────────────────────────────────────────────
-const EXPIRY_BUCKET_ORDER = ["expired", "within_1_month", "within_6_months", "within_1_year"];
+const EXPIRY_BUCKET_ORDER = expiryBucketOrder;
 
 const ExpiryReport = ({ initialBucket }) => {
   const navigate = useNavigate();

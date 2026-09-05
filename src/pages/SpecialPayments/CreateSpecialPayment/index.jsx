@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiSettings } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
@@ -12,6 +13,7 @@ import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { fetchSpTypes, showSpTypes, createSpecialPayment } from "store/slices/payrollBatchSlice";
+import { specialPaymentTargetOptions } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
 
@@ -38,15 +40,8 @@ const CreateSpecialPayment = () => {
     dispatch(fetchDepartments());
   }, [dispatch]);
 
-  const TARGET_OPTIONS = [
-    { id: "all", title: t("payroll:sp_target_all") },
-    { id: "department", title: t("payroll:sp_target_department") },
-    { id: "individual", title: t("payroll:sp_target_individual") },
-    { id: "custom", title: t("payroll:sp_target_custom") },
-  ];
-
   const [selType, setSelType] = useState(null);
-  const [target, setTarget] = useState(TARGET_OPTIONS[0]);
+  const [target, setTarget] = useState(specialPaymentTargetOptions[0]);
   const [selDept, setSelDept] = useState(null);
   const [selEmp, setSelEmp] = useState(null);
   const [selectedCustomIds, setSelectedCustomIds] = useState(new Set());
@@ -87,6 +82,10 @@ const CreateSpecialPayment = () => {
 
   const onSubmit = async (data) => {
     if (!selType) return;
+    if (targetEmps.length === 0) {
+      toast.error(t("payroll:sp_select_target", "Select at least one employee or department"));
+      return;
+    }
     setSubmitting(true);
     const result = await dispatch(createSpecialPayment({
       title: data.title,
@@ -148,24 +147,28 @@ const CreateSpecialPayment = () => {
             <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-5">{t("payroll:sp_basic_info")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <FormInput label={t("payroll:sp_title")} name="title" register={register} errors={errors} required
-                minLength={2} maxLength={100}
+                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={100}
                 placeholder="e.g. Eid ul-Fitr 2025 Bonus" className="md:col-span-2" />
 
               {/* Payment Type dropdown */}
-              <div>
-                <label className="text-sm font-medium text-linkText mb-1 block">{t("payroll:sp_type")} *</label>
-                {typeOptions.length === 0 ? (
+              {typeOptions.length === 0 ? (
+                <div>
+                  <p className="text-sm font-medium text-linkText leading-6 mb-1">
+                    {t("payroll:sp_type")} <span className="text-[#EC1212]">*</span>
+                  </p>
                   <div className="h-11 rounded-xl border-2 border-dashed border-slate-300 flex items-center px-4 text-sm text-slate-400">
                     {t("payroll:sp_no_types")}
                   </div>
-                ) : (
-                  <SelectDropdown
-                    data={typeOptions}
-                    selected={selType ? typeOptions.find((x) => x.id === selType.id) : null}
-                    setSelected={handleTypeChange}
-                  />
-                )}
-              </div>
+                </div>
+              ) : (
+                <SelectDropdown
+                  label={t("payroll:sp_type")}
+                  required
+                  data={typeOptions}
+                  selected={selType ? typeOptions.find((x) => x.id === selType.id) : null}
+                  setSelected={handleTypeChange}
+                />
+              )}
 
               {/* Amount rule pill — auto-set from type */}
               <div className="flex flex-col justify-end pb-0.5">
@@ -197,26 +200,33 @@ const CreateSpecialPayment = () => {
           <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-purple-500">
             <h3 className="font-bold text-lg text-slate-800 dark:text-white mb-5">{t("payroll:sp_target")}</h3>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
-              {TARGET_OPTIONS.map((opt) => (
+              {specialPaymentTargetOptions.map((opt) => (
                 <button key={opt.id} type="button" onClick={() => setTarget(opt)}
                   className={`p-4 rounded-2xl border-2 text-sm font-medium text-start transition-all ${target.id === opt.id ? "border-purple-400 bg-purple-50 dark:bg-purple-500/10 text-purple-700" : "border-slate-200 dark:border-white/10 text-slate-700 dark:text-white/80 hover:border-purple-300"}`}>
-                  {opt.title}
+                  {t(opt.title)}
                 </button>
               ))}
             </div>
 
             {target.id === "department" && (
               <div className="w-[240px]">
-                <label className="text-sm font-medium text-linkText mb-1 block">{t("payroll:department")}</label>
-                <SelectDropdown data={deptOptions} selected={deptOptions.find((x) => x.id === selDept) || null}
-                  setSelected={(v) => setSelDept(v.id)} />
+                <SelectDropdown
+                  label={t("payroll:department")}
+                  data={deptOptions}
+                  selected={deptOptions.find((x) => x.id === selDept) || null}
+                  setSelected={(v) => setSelDept(v.id)}
+                />
               </div>
             )}
 
             {target.id === "individual" && (
               <div className="w-[340px]">
-                <label className="text-sm font-medium text-linkText mb-1 block">{t("payroll:sp_select_employee")}</label>
-                <SelectDropdown data={empOptions} selected={selEmp} setSelected={setSelEmp} />
+                <SelectDropdown
+                  label={t("payroll:sp_select_employee")}
+                  data={empOptions}
+                  selected={selEmp}
+                  setSelected={setSelEmp}
+                />
               </div>
             )}
 

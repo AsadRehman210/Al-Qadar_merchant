@@ -5,9 +5,14 @@ import { useNavigate } from "react-router";
 import { FiArrowLeft, FiArrowRight, FiPlus, FiCheck, FiX, FiPackage } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
+import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import {
+  assetRequestStatusFilterOptions,
+  assetRequestPriorityOptions,
+} from "global/constant";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import {
   fetchAssetRequests,
@@ -25,9 +30,6 @@ import { SkeletonCards } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 
 const { add_customer, edit_customer } = rafeeqi_role_ids;
-
-const REQUEST_STATUS_OPTIONS = ["Pending", "Approved", "Rejected", "Fulfilled"];
-const REQUEST_PRIORITY_OPTIONS = ["Low", "Normal", "High", "Urgent"];
 
 const statusClass = (s) => {
   const m = {
@@ -80,10 +82,6 @@ const AssetRequests = () => {
     dispatch(fetchEmployees({ limit: 500 }));
   }, [dispatch]);
 
-  const statusOptions = useMemo(
-    () => [{ id: "all", title: t("asset:filter_all") }, ...REQUEST_STATUS_OPTIONS.map((s) => ({ id: s, title: s }))],
-    [t],
-  );
   const empOptions = useMemo(
     () => employees.filter((e) => e.status === "active").map((e) => ({ id: e.id, title: `${e.first_name || ""} ${e.last_name || ""} (${e.employeeCode || ""})`.trim() })),
     [employees],
@@ -92,7 +90,6 @@ const AssetRequests = () => {
     () => categories.filter((c) => c.status === "Active").map((c) => ({ id: c.id, title: `${c.code} — ${c.name}` })),
     [categories],
   );
-  const priorityOptions = useMemo(() => REQUEST_PRIORITY_OPTIONS.map((p) => ({ id: p, title: p })), []);
 
   const filteredRequests = statusFilter === "all" ? requests : requests.filter((r) => r.status === statusFilter);
 
@@ -107,11 +104,16 @@ const AssetRequests = () => {
 
   const handleCreate = async () => {
     if (!emp || !category) { toast.error(t("asset:request_fields_required")); return; }
+    const just = String(justification || "").trim();
+    if (just.length < 10) {
+      toast.error(t("asset:justification_required", { defaultValue: "Justification must be at least 10 characters" }));
+      return;
+    }
     try {
       await dispatch(createAssetRequest({
         employeeId: emp.id,
         categoryId: category.id,
-        justification,
+        justification: just,
         priority: priority?.id || "Normal",
       })).unwrap();
       toast.success(t("asset:request_submitted"));
@@ -124,6 +126,10 @@ const AssetRequests = () => {
 
   const openDecide = (id) => { setDecidingId(id); setDecisionNotes(""); };
   const handleDecide = async (id, status) => {
+    if (status === "Rejected" && !String(decisionNotes || "").trim()) {
+      toast.error(t("asset:decision_notes_required", { defaultValue: "Decision notes are required when rejecting" }));
+      return;
+    }
     try {
       await dispatch(decideAssetRequest({ id, data: { status, decisionNotes } })).unwrap();
       toast.success(status === "Approved" ? t("asset:request_approved") : t("asset:request_rejected"));
@@ -167,23 +173,41 @@ const AssetRequests = () => {
           <div className="mb-6 bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-7 space-y-4">
             <h3 className="text-base font-bold text-slate-800 dark:text-white">{t("asset:new_request")}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="text-xs font-medium text-linkText block mb-1">{t("asset:employee")} *</label>
-                <SelectDropdown data={empOptions} selected={emp} setSelected={setEmp} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-linkText block mb-1">{t("asset:category")} *</label>
-                <SelectDropdown data={categoryOptions} selected={category} setSelected={setCategory} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-linkText block mb-1">{t("asset:priority")}</label>
-                <SelectDropdown data={priorityOptions} selected={priority} setSelected={setPriority} hideClear />
-              </div>
-              <div className="sm:col-span-2 lg:col-span-3">
-                <label className="text-xs font-medium text-linkText block mb-1">{t("asset:justification")}</label>
-                <input value={justification} onChange={(e) => setJustification(e.target.value)}
-                  className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-              </div>
+              <SelectDropdown
+                label={t("asset:employee")}
+                labelClass="!text-xs"
+                required
+                data={empOptions}
+                selected={emp}
+                setSelected={setEmp}
+              />
+              <SelectDropdown
+                label={t("asset:category")}
+                labelClass="!text-xs"
+                required
+                data={categoryOptions}
+                selected={category}
+                setSelected={setCategory}
+              />
+              <SelectDropdown
+                label={t("asset:priority")}
+                labelClass="!text-xs"
+                data={assetRequestPriorityOptions}
+                selected={priority}
+                setSelected={setPriority}
+                hideClear
+              />
+              <FormInput
+                wrapperClass="sm:col-span-2 lg:col-span-3"
+                label={t("asset:justification")}
+                labelClass="!text-xs"
+                required
+                value={justification}
+                onValueChange={setJustification}
+                inputClass="!h-10 !rounded-lg"
+                minLength={10}
+                maxLength={500}
+              />
             </div>
             <div className="flex gap-2">
               <Button type="button" title={t("asset:submit_request")} onClick={handleCreate}
@@ -197,8 +221,8 @@ const AssetRequests = () => {
         <div className="bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7">
           <div className="mb-5 w-full sm:w-[220px]">
             <SelectDropdown
-              data={statusOptions}
-              selected={statusOptions.find((o) => o.id === statusFilter) || statusOptions[0]}
+              data={assetRequestStatusFilterOptions}
+              selected={assetRequestStatusFilterOptions.find((o) => o.id === statusFilter) || assetRequestStatusFilterOptions[0]}
               setSelected={(opt) => setStatusFilter(opt?.id ?? "all")}
               hideClear
               classes="!h-11 !rounded-lg"
@@ -248,9 +272,13 @@ const AssetRequests = () => {
 
                   {decidingId === r.id && (
                     <div className="mt-4 p-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-3">
-                      <input value={decisionNotes} onChange={(e) => setDecisionNotes(e.target.value)}
+                      <FormInput
+                        value={decisionNotes}
+                        onValueChange={setDecisionNotes}
                         placeholder={t("asset:decision_notes")}
-                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
+                        inputClass="!h-9 !rounded-lg"
+                        maxLength={500}
+                      />
                       <div className="flex gap-2">
                         <button type="button" onClick={() => handleDecide(r.id, "Approved")}
                           className="px-4 py-1.5 rounded-lg bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600 flex items-center gap-1.5">
@@ -270,8 +298,9 @@ const AssetRequests = () => {
 
                   {fulfillingId === r.id && (
                     <div className="mt-4 p-4 rounded-xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 space-y-3">
-                      <label className="text-xs font-medium text-linkText block mb-1">{t("asset:select_asset_to_assign")}</label>
                       <SelectDropdown
+                        label={t("asset:select_asset_to_assign")}
+                        labelClass="!text-xs"
                         data={availableAssetsFor(r.categoryId)}
                         selected={fulfillAsset}
                         setSelected={setFulfillAsset}

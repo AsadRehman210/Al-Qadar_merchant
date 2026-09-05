@@ -51,7 +51,6 @@ let _settings = {
   },
 };
 
-export const getSettings    = ()         => JSON.parse(JSON.stringify(_settings));
 export const getCompany     = ()         => ({ ..._settings.company });
 export const getFinancial   = ()         => ({ ..._settings.financial });
 export const getTaxRates    = ()         => [..._settings.taxRates];
@@ -74,34 +73,12 @@ export function updateTaxRate(id, data) {
 export function deleteTaxRate(id) {
   _settings.taxRates = _settings.taxRates.filter((t) => t.id !== id);
 }
+export {
+  settingsTaxTypeOptions as TAX_TYPE_OPTS,
+  settingsCurrencyOptions as CURRENCY_OPTS,
+  settingsDateFormatOptions as DATE_FORMAT_OPTS,
+  settingsTimezoneOptions as TIMEZONE_OPTS,
+  settingsLanguageOptions as LANGUAGE_OPTS,
+  settingsTimeFormatOptions as TIME_FORMAT_OPTS,
+} from "global/constant";
 
-export const TAX_TYPE_OPTS = [
-  { id: "VAT",         title: "VAT" },
-  { id: "Withholding", title: "Withholding Tax" },
-  { id: "Customs",     title: "Customs / Import Duty" },
-  { id: "Exempt",      title: "Exempt" },
-];
-
-export const CURRENCY_OPTS = [
-  { id: "SAR", title: "SAR — Saudi Riyal" },
-  { id: "USD", title: "USD — US Dollar" },
-  { id: "EUR", title: "EUR — Euro" },
-  { id: "AED", title: "AED — UAE Dirham" },
-  { id: "GBP", title: "GBP — British Pound" },
-  { id: "EGP", title: "EGP — Egyptian Pound" },
-  { id: "KWD", title: "KWD — Kuwaiti Dinar" },
-];
-
-export const DATE_FORMAT_OPTS = [
-  { id: "DD/MM/YYYY", title: "DD/MM/YYYY" },
-  { id: "MM/DD/YYYY", title: "MM/DD/YYYY" },
-  { id: "YYYY-MM-DD", title: "YYYY-MM-DD" },
-];
-
-export const TIMEZONE_OPTS = [
-  { id: "Asia/Riyadh",  title: "Asia/Riyadh (UTC+3)" },
-  { id: "Asia/Dubai",   title: "Asia/Dubai (UTC+4)" },
-  { id: "Asia/Amman",   title: "Asia/Amman (UTC+2)" },
-  { id: "Europe/London",title: "Europe/London (UTC+0)" },
-  { id: "UTC",          title: "UTC" },
-];

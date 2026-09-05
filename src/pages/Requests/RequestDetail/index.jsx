@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiX } from "react-icons/fi";
 import Button from "components/Button";
+import FormTextarea from "components/FormTextarea";
 import { SkeletonDetail } from "components/Skeleton";
 import { APPROVAL_STATUS_BADGE, APPROVAL_STATUS, stepIndex } from "global/approvalEngine";
 import { checkRoleAuth } from "global/helper";
@@ -46,19 +47,17 @@ const ActionForm = ({ stage, onApprove, onReject }) => {
 
   return (
     <div className="p-4 rounded-2xl border border-slate-200 dark:border-white/15 bg-slate-50 dark:bg-white/5">
-      <label className="text-sm font-medium text-slate-700 dark:text-white/80 mb-1 block">
-        {t("requests:decision_note")} <span className="text-red-500">*</span>
-      </label>
-      <textarea
+      <FormTextarea
+        label={t("requests:decision_note")}
+        name="comments"
+        required
         rows={2}
         value={comments}
-        onChange={(e) => setComments(e.target.value)}
+        onValueChange={setComments}
         placeholder={t("requests:decision_note_placeholder")}
-        className={`w-full rounded-lg border bg-white dark:bg-white/10 p-2 text-sm mb-1 ${touched && isEmpty ? "border-rose-400" : "border-slate-200 dark:border-white/20"}`}
+        className={touched && isEmpty ? "!border-rose-400" : ""}
+        errors={touched && isEmpty ? { comments: { message: t("requests:decision_note_required") } } : undefined}
       />
-      {touched && isEmpty && (
-        <p className="text-xs text-rose-500 mb-2">{t("requests:decision_note_required")}</p>
-      )}
       <div className="flex gap-2 mt-2">
         <Button
           type="button"

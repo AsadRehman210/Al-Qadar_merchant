@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import dayjs from "dayjs";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
 import {
@@ -33,21 +34,20 @@ import {
   showReturnableLoading,
 } from "store/slices/debitNoteSlice";
 import { SkeletonTable } from "components/Skeleton";
+import {
+  debitNoteReasonOptions,
+  purchaseReturnTypeOptions,
+} from "global/constant";
+import { effectiveLineTaxPercent } from "global/helper";
 
-const DN_REASONS = ["Damaged goods received", "Short shipment", "Price discrepancy", "Wrong items received", "Quality rejection", "Expired Product", "Other"];
-const RETURN_TYPES = ["Full return", "Partial return"];
+const DN_REASONS = debitNoteReasonOptions.map((o) => o.id);
 
 // Only these reasons mean stock physically leaves the warehouse back to the
 // supplier — mirrors NO_STOCK_MOVEMENT_REASONS in debit-note-service.ts
-// exactly. "Price discrepancy" is pure billing (nothing physical moved);
-// "Short shipment" means the goods were never received into stock at all.
-const NO_STOCK_MOVEMENT_REASONS = new Set(["Price discrepancy", "Short shipment"]);
-
-// A line's own tax rate if it's carrying one (snapshotted from the original
-// purchase line), otherwise the debit note's own rate — mirrors the
-// backend's effectiveLineTaxPercent exactly.
-const effectiveLineTaxPercent = (line, dnTaxPercent) =>
-  line?.taxPercent !== undefined && line?.taxPercent !== null ? Number(line.taxPercent) || 0 : Number(dnTaxPercent) || 0;
+// exactly. "Price discrepancy" / "Wrong entry" are pure billing (nothing
+// physical moved); "Short shipment" means the goods were never received
+// into stock at all.
+const NO_STOCK_MOVEMENT_REASONS = new Set(["Price discrepancy", "Short shipment", "Wrong entry"]);
 
 // Backend-driven search + infinite scroll, matching SearchablePaginatedDropdown's contract.
 const useDropdownSource = (fetchThunk, selectors, titleFn, extraParams, enabled = true) => {
@@ -95,7 +95,7 @@ const AddDebitNote = () => {
       originalInvoiceId: prefillInvoiceId,
       warehouseId: "",
       reason: DN_REASONS[0],
-      returnType: RETURN_TYPES[0],
+      returnType: purchaseReturnTypeOptions[0].id,
       taxPercent: 0,
       discount: 0,
       notes: "",
@@ -160,7 +160,7 @@ const AddDebitNote = () => {
   }, [returnableInvoice, returnableLines]);
 
   const handleReturnTypeChange = (opt) => {
-    const next = opt?.id || RETURN_TYPES[0];
+    const next = opt?.id || purchaseReturnTypeOptions[0].id;
     setValue("returnType", next);
     const current = getValues("products") || [];
     replace(current.map((l) => ({ ...l, qty: next === "Full return" ? l.maxReturnableQty : 0 })));
@@ -187,9 +187,10 @@ const AddDebitNote = () => {
   };
 
   const selReason = { id: watch("reason"), title: watch("reason") };
-  const reasonOpts = DN_REASONS.map((r) => ({ id: r, title: r }));
-  const selReturnType = { id: returnType, title: returnType };
-  const returnTypeOpts = RETURN_TYPES.map((r) => ({ id: r, title: r }));
+  const reasonOpts = debitNoteReasonOptions;
+  const selReturnType =
+    purchaseReturnTypeOptions.find((o) => o.id === returnType) || purchaseReturnTypeOptions[0];
+  const returnTypeOpts = purchaseReturnTypeOptions;
   const movesStock = !NO_STOCK_MOVEMENT_REASONS.has(watch("reason"));
 
   const watchedProducts = watch("products");
@@ -207,6 +208,8 @@ const AddDebitNote = () => {
     [JSON.stringify(watchedProducts), taxPercent],
   );
   const total = useMemo(() => subtotal - Number(discount || 0) + taxAmt, [subtotal, discount, taxAmt]);
+  const fmtMoney = (n) =>
+    Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const onSubmit = async (data) => {
     if (!data.supplierId) { toast.error(t("purchase:supplier_required")); return; }
@@ -235,7 +238,6 @@ const AddDebitNote = () => {
   };
 
   const panelCls = "bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-amber-400";
-  const hasDifferentTax = (watchedProducts || []).some((l) => l.taxPercent !== null && l.taxPercent !== undefined);
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -254,8 +256,8 @@ const AddDebitNote = () => {
             <h3 className="text-base font-bold mb-4">{t("purchase:return_info")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <div className="md:col-span-2">
-                <label className="text-sm font-medium text-linkText block mb-1">{t("purchase:supplier")} *</label>
                 <SearchablePaginatedDropdown
+                  label={`${t("purchase:supplier")} *`}
                   data={supplierSource.data}
                   selected={selSupplier}
                   setSelected={handleSupplierChange}
@@ -269,8 +271,8 @@ const AddDebitNote = () => {
               </div>
               <FormInput label={t("purchase:date")} name="date" type="date" register={register} />
               <div>
-                <label className="text-sm font-medium text-linkText block mb-1">{t("purchase:original_invoice")}</label>
                 <SearchablePaginatedDropdown
+                  label={t("purchase:original_invoice")}
                   data={invoiceOpts}
                   selected={selOriginalInvoice}
                   setSelected={handleInvoiceChange}
@@ -284,8 +286,7 @@ const AddDebitNote = () => {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-linkText block mb-1">{t("purchase:reason")}</label>
-                <SelectDropdown data={reasonOpts} selected={selReason} setSelected={(o) => setValue("reason", o?.id || DN_REASONS[0])} hideClear />
+                <SelectDropdown label={t("purchase:reason")} data={reasonOpts} selected={selReason} setSelected={(o) => setValue("reason", o?.id || DN_REASONS[0])} hideClear />
                 <p className={`mt-1 text-xs ${movesStock ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
                   {movesStock
                     ? t("purchase:stock_hint_yes", { defaultValue: "Stock will leave the warehouse (returned to supplier) once this debit note is Applied." })
@@ -293,27 +294,32 @@ const AddDebitNote = () => {
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium text-linkText block mb-1">{t("purchase:return_type")}</label>
-                <SelectDropdown data={returnTypeOpts} selected={selReturnType} setSelected={handleReturnTypeChange} hideClear />
+                <SelectDropdown label={t("purchase:return_type")} data={returnTypeOpts} selected={selReturnType} setSelected={handleReturnTypeChange} hideClear />
               </div>
               <div>
-                <label className="text-sm font-medium text-linkText block mb-1">{t("purchase:warehouse")}</label>
-                <input
-                  disabled
+                <FormInput
+                  label={t("purchase:warehouse")}
+                  name="warehouseDisplay"
                   value={returnableInvoice?.warehouseName || ""}
                   placeholder={t("purchase:select_invoice_first", { defaultValue: "Select an original invoice first" })}
-                  className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-slate-100 dark:bg-white/5 px-3 text-sm opacity-70"
+                  disabled
+                  inputClass="!h-10 !rounded-lg opacity-70"
                 />
                 <p className="mt-1 text-xs text-slate-400 dark:text-white/40">
                   {t("purchase:dn_warehouse_locked_hint", { defaultValue: "Locked to the original purchase's own warehouse." })}
                 </p>
               </div>
-              <FormInput label={t("purchase:tax_percent")} name="taxPercent" type="number" register={register} errors={errors} min={0} max={100} decimal decimalPlaces={2} />
+              <FormInput label={t("purchase:tax_percent")} name="taxPercent" type="number" register={register} errors={errors} min={0} max={100} decimal decimalPlaces={2} disabled />
               <div className="lg:col-span-3">
-                <label className="text-sm font-medium text-linkText block mb-1">{t("purchase:notes")}</label>
-                <textarea {...register("notes", { maxLength: { value: 500, message: "Maximum length is 500 characters" } })} rows={2}
-                  className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 py-2 text-sm focus:outline-0 focus:border-teal-500" />
-                {errors.notes && <p className="text-red text-xs mt-1 font-medium">{errors.notes.message}</p>}
+                <FormTextarea
+                  label={t("purchase:notes")}
+                  name="notes"
+                  register={register}
+                  errors={errors}
+                  rows={2}
+                  maxLength={500}
+                  className="!rounded-lg"
+                />
               </div>
             </div>
           </div>
@@ -331,42 +337,47 @@ const AddDebitNote = () => {
               <p className="text-sm text-slate-400 dark:text-white/40 py-6 text-center">{t("no_record_found")}</p>
             ) : (
               <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
-                <table className="w-full text-sm min-w-[900px]">
+                <table className="w-full text-sm min-w-[1200px]">
                   <thead>
                     <tr className="bg-amber-500">
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 w-12">{t("purchase:sr_no")}</th>
                       <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:product")}</th>
-                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:expiry_date", { defaultValue: "Expiry date" })}</th>
-                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:unit")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:qty_to_return", { defaultValue: "Qty to return" })}</th>
                       <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:price")}</th>
-                      {hasDifferentTax && <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:tax_percent")}</th>}
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:unit")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:expiry_date", { defaultValue: "Expiry date" })}</th>
                       <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:billed_qty", { defaultValue: "Billed qty" })}</th>
                       <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:already_debited", { defaultValue: "Already debited" })}</th>
-                      <th className="p-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:qty_to_return", { defaultValue: "Qty to return" })}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:base_amount")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:tax_percent")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:tax_amount")}</th>
+                      <th className="p-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:subtotal")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fields.map((field, idx) => {
                       const maxQty = field.maxReturnableQty ?? 0;
+                      const row = watchedProducts?.[idx] || field;
+                      const base = (Number(row.qty) || 0) * (Number(row.price) || 0);
+                      const rowTaxPct = effectiveLineTaxPercent(row, taxPercent);
+                      const rowTaxAmt = base * (rowTaxPct / 100);
                       return (
-                        <tr key={field.id} className="border-t border-slate-100 dark:border-white/5">
+                        <tr key={field.id} className="border-t border-slate-100 dark:border-white/5 align-top">
+                          <td className="p-2.5 tabular-nums text-slate-600 dark:text-white/70 font-medium">{idx + 1}</td>
                           <td className="p-2.5">{field.productName}</td>
-                          <td className="p-2.5 text-xs text-slate-500 whitespace-nowrap">{field.expiryDate ? String(field.expiryDate).slice(0, 10) : "—"}</td>
-                          <td className="p-2.5">{field.unit}</td>
-                          <td className="p-2.5 tabular-nums">{Number(field.price || 0).toLocaleString()}</td>
-                          {hasDifferentTax && (
-                            <td className="p-2.5">{field.taxPercent !== null && field.taxPercent !== undefined ? `${field.taxPercent}%` : "—"}</td>
-                          )}
-                          <td className="p-2.5 tabular-nums text-slate-500">{field.soldQty}</td>
-                          <td className="p-2.5 tabular-nums text-slate-500">{field.alreadyDebitedQty}</td>
                           <td className="p-2.5 w-32">
-                            <input
+                            <FormInput
+                              name={`products.${idx}.qty`}
                               type="number"
                               min={0}
                               max={maxQty}
-                              step="any"
+                              decimal
+                              decimalPlaces={3}
                               disabled={returnType === "Full return" || maxQty === 0}
-                              {...register(`products.${idx}.qty`, { valueAsNumber: true, max: maxQty, min: 0 })}
-                              className="w-24 rounded border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-2 py-1.5 text-sm disabled:opacity-60"
+                              register={register}
+                              errors={errors}
+                              wrapperClass="w-24"
+                              inputClass="!h-9 !px-2 !py-1.5 !rounded disabled:opacity-60"
                             />
                             {maxQty === 0 && (
                               <p className="mt-1 text-[11px] text-slate-400">{t("purchase:fully_debited", { defaultValue: "Fully debited" })}</p>
@@ -379,6 +390,24 @@ const AddDebitNote = () => {
                             <input type="hidden" {...register(`products.${idx}.unit`)} />
                             <input type="hidden" {...register(`products.${idx}.taxPercent`)} />
                           </td>
+                          <td className="p-2.5 tabular-nums">{fmtMoney(field.price)}</td>
+                          <td className="p-2.5">{field.unit}</td>
+                          <td className="p-2.5 text-xs text-slate-500 whitespace-nowrap">{field.expiryDate ? String(field.expiryDate).slice(0, 10) : "—"}</td>
+                          <td className="p-2.5 tabular-nums text-slate-500">{field.soldQty}</td>
+                          <td className="p-2.5 tabular-nums text-slate-500">{field.alreadyDebitedQty}</td>
+                          <td className="p-2.5 tabular-nums font-semibold">{fmtMoney(base)}</td>
+                          <td className="p-2.5">
+                            <FormInput
+                              name={`products.${idx}.taxPercentDisplay`}
+                              value={`${rowTaxPct}%`}
+                              disabled
+                              readonly
+                              wrapperClass="w-16"
+                              inputClass="!h-9 !px-2 !py-1.5 !rounded !bg-slate-50 dark:!bg-white/5 !text-slate-500 dark:!text-white/60 cursor-not-allowed"
+                            />
+                          </td>
+                          <td className="p-2.5 tabular-nums text-slate-500">{fmtMoney(rowTaxAmt)}</td>
+                          <td className="p-2.5 tabular-nums font-semibold">{fmtMoney(base + rowTaxAmt)}</td>
                         </tr>
                       );
                     })}
@@ -388,9 +417,9 @@ const AddDebitNote = () => {
             )}
             <div className="mt-4 flex justify-end">
               <dl className="text-sm space-y-1 min-w-[220px]">
-                <div className="flex justify-between gap-8"><dt className="text-slate-500">{t("purchase:subtotal")}</dt><dd className="tabular-nums">{subtotal.toFixed(2)}</dd></div>
+                <div className="flex justify-between gap-8"><dt className="text-slate-500">{t("purchase:subtotal")} {t("purchase:without_tax")}</dt><dd className="tabular-nums">{subtotal.toFixed(2)}</dd></div>
                 <div className="flex justify-between gap-8"><dt className="text-slate-500">{t("purchase:tax")}</dt><dd className="tabular-nums">{taxAmt.toFixed(2)}</dd></div>
-                <div className="flex justify-between gap-8 pt-1 border-t border-slate-200 dark:border-white/20 font-bold text-amber-700"><dt>{t("purchase:debit_amount")}</dt><dd className="tabular-nums">{total.toFixed(2)}</dd></div>
+                <div className="flex justify-between gap-8 pt-1 border-t border-slate-200 dark:border-white/20 font-bold text-amber-700"><dt>{t("purchase:debit_amount")} {t("purchase:with_tax")}</dt><dd className="tabular-nums">{total.toFixed(2)}</dd></div>
               </dl>
             </div>
           </div>

@@ -6,16 +6,21 @@ import {
   FiEdit2, FiTrash2, FiPlus, FiSave, FiCheck,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
+import FormInput from "components/FormInput";
 import {
   getCompany, getFinancial, getTaxRates, getNotifications, getSystemSettings,
   saveCompany, saveFinancial, saveNotifications, saveSystem,
   addTaxRate, updateTaxRate, deleteTaxRate,
   TAX_TYPE_OPTS, CURRENCY_OPTS, DATE_FORMAT_OPTS, TIMEZONE_OPTS,
+  LANGUAGE_OPTS, TIME_FORMAT_OPTS,
 } from "./settingsFakeData";
 
 const inputCls = "w-full h-[46px] px-3 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-900 dark:text-white";
+const formInputCls = "!h-[46px] !rounded-xl";
 const labelCls = "text-sm font-medium text-slate-700 dark:text-white/70 mb-1.5 block";
 const sectionHead = "text-base font-semibold text-slate-900 dark:text-white mb-4 pb-2 border-b border-slate-100 dark:border-white/10";
+const NAME_AMP = /[a-zA-Z0-9\s.'&,-]/;
+const NAME = /[a-zA-Z0-9\s.'-]/;
 
 const Toggle = ({ checked, onChange, label }) => (
   <label className="flex items-center justify-between gap-4 py-3 border-b border-slate-50 dark:border-white/5 last:border-0 cursor-pointer">
@@ -30,33 +35,36 @@ const Toggle = ({ checked, onChange, label }) => (
 const CompanyTab = () => {
   const [form, setForm] = useState(getCompany());
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-  const save = () => { saveCompany(form); toast.success("Company settings saved."); };
+  const save = () => {
+    if (!form.name?.trim()) {
+      toast.error("Company name is required.");
+      return;
+    }
+    const email = (form.email || "").trim();
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!email || !emailRegex.test(email)) {
+      toast.error("Please enter a valid email.");
+      return;
+    }
+    saveCompany(form);
+    toast.success("Company settings saved.");
+  };
 
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-6">
         <h3 className={sectionHead}>Company Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[
-            { key: "name",      label: "Company Name",    placeholder: "Rafeeqi Enterprise" },
-            { key: "legalName", label: "Legal Name",      placeholder: "Rafeeqi Enterprise Co. Ltd." },
-            { key: "email",     label: "Contact Email",   placeholder: "info@company.com" },
-            { key: "phone",     label: "Phone",           placeholder: "+966 XX XXX XXXX" },
-            { key: "website",   label: "Website",         placeholder: "https://example.com" },
-            { key: "taxNumber", label: "VAT / Tax Number",placeholder: "300XXXXXXXXX" },
-            { key: "crNumber",  label: "CR Number",       placeholder: "1010XXXXXX" },
-            { key: "country",   label: "Country",         placeholder: "Saudi Arabia" },
-            { key: "city",      label: "City",            placeholder: "Riyadh" },
-          ].map(({ key, label, placeholder }) => (
-            <div key={key}>
-              <label className={labelCls}>{label}</label>
-              <input value={form[key] || ""} onChange={(e) => set(key, e.target.value)} placeholder={placeholder} className={inputCls} />
-            </div>
-          ))}
-          <div className="md:col-span-2 lg:col-span-3">
-            <label className={labelCls}>Address</label>
-            <input value={form.address || ""} onChange={(e) => set("address", e.target.value)} placeholder="Full address" className={inputCls} />
-          </div>
+          <FormInput label="Company Name" required value={form.name || ""} onValueChange={(v) => set("name", v)} placeholder="Rafeeqi Enterprise" pattern={NAME_AMP} minLength={2} maxLength={150} inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput label="Legal Name" value={form.legalName || ""} onValueChange={(v) => set("legalName", v)} placeholder="Rafeeqi Enterprise Co. Ltd." pattern={NAME_AMP} minLength={2} maxLength={150} inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput label="Contact Email" required type="email" value={form.email || ""} onValueChange={(v) => set("email", v)} placeholder="info@company.com" inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput label="Phone" value={form.phone || ""} onValueChange={(v) => set("phone", v)} placeholder="+966 XX XXX XXXX" pattern={/[0-9+\-() ]/} minLength={7} maxLength={20} inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput label="Website" value={form.website || ""} onValueChange={(v) => set("website", v)} placeholder="https://example.com" pattern={/[a-zA-Z0-9:/.\-_?=&%]/} maxLength={200} inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput label="VAT / Tax Number" value={form.taxNumber || ""} onValueChange={(v) => set("taxNumber", v)} placeholder="300XXXXXXXXX" pattern={/[A-Za-z0-9-]/} minLength={3} maxLength={50} inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput label="CR Number" value={form.crNumber || ""} onValueChange={(v) => set("crNumber", v)} placeholder="1010XXXXXX" pattern={/[0-9]/} minLength={8} maxLength={15} inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput label="Country" value={form.country || ""} onValueChange={(v) => set("country", v)} placeholder="Saudi Arabia" pattern={NAME} minLength={2} maxLength={100} inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput label="City" value={form.city || ""} onValueChange={(v) => set("city", v)} placeholder="Riyadh" pattern={NAME} minLength={2} maxLength={100} inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput wrapperClass="md:col-span-2 lg:col-span-3" label="Address" value={form.address || ""} onValueChange={(v) => set("address", v)} placeholder="Full address" pattern={NAME} minLength={5} maxLength={255} inputClass={formInputCls} labelClass={labelCls} />
         </div>
       </div>
       <div className="flex justify-end">
@@ -85,24 +93,15 @@ const FinancialTab = () => {
               {CURRENCY_OPTS.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}
             </select>
           </div>
-          <div>
-            <label className={labelCls}>Fiscal Year Start</label>
-            <input type="text" value={form.fiscalYearStart} onChange={(e) => set("fiscalYearStart", e.target.value)} placeholder="MM-DD" className={inputCls} />
-          </div>
-          <div>
-            <label className={labelCls}>Fiscal Year End</label>
-            <input type="text" value={form.fiscalYearEnd} onChange={(e) => set("fiscalYearEnd", e.target.value)} placeholder="MM-DD" className={inputCls} />
-          </div>
+          <FormInput label="Fiscal Year Start" value={form.fiscalYearStart} onValueChange={(v) => set("fiscalYearStart", v)} placeholder="MM-DD" pattern={/[0-9-]/} maxLength={5} inputClass={formInputCls} labelClass={labelCls} />
+          <FormInput label="Fiscal Year End" value={form.fiscalYearEnd} onValueChange={(v) => set("fiscalYearEnd", v)} placeholder="MM-DD" pattern={/[0-9-]/} maxLength={5} inputClass={formInputCls} labelClass={labelCls} />
           <div>
             <label className={labelCls}>Decimal Places</label>
             <select value={form.decimalPlaces} onChange={(e) => set("decimalPlaces", Number(e.target.value))} className={inputCls}>
               {[0,1,2,3].map((d) => <option key={d} value={d}>{d} decimal places</option>)}
             </select>
           </div>
-          <div>
-            <label className={labelCls}>VAT Number</label>
-            <input type="text" value={form.vatNumber || ""} onChange={(e) => set("vatNumber", e.target.value)} placeholder="300XXXXXXXXX" className={inputCls} />
-          </div>
+          <FormInput label="VAT Number" value={form.vatNumber || ""} onValueChange={(v) => set("vatNumber", v)} placeholder="300XXXXXXXXX" pattern={/[A-Za-z0-9-]/} minLength={3} maxLength={50} inputClass={formInputCls} labelClass={labelCls} />
         </div>
         <div className="mt-5 space-y-1">
           <Toggle checked={form.autoJournalEntry} onChange={(v) => set("autoJournalEntry", v)} label="Auto-create journal entries on transactions" />
@@ -126,7 +125,16 @@ const TaxTab = () => {
   const setN = (k, v) => setNewRate((p) => ({ ...p, [k]: v }));
 
   const handleAdd = () => {
-    addTaxRate(newRate);
+    if (!String(newRate.name || "").trim()) {
+      toast.error("Name is required.");
+      return;
+    }
+    const rate = Number(newRate.rate);
+    if (Number.isNaN(rate) || rate < 0 || rate > 100) {
+      toast.error("Rate must be between 0 and 100.");
+      return;
+    }
+    addTaxRate({ ...newRate, rate });
     setRates(getTaxRates());
     setNewRate({ name: "", rate: 0, type: "VAT", status: "Active", isDefault: false });
     setShowAdd(false);
@@ -151,14 +159,30 @@ const TaxTab = () => {
         <div className="bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 rounded-2xl p-5">
           <h4 className="font-semibold text-slate-900 dark:text-white mb-4">New Tax Rate</h4>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className={labelCls}>Name *</label>
-              <input value={newRate.name} onChange={(e) => setN("name", e.target.value)} placeholder="e.g. Standard VAT" className={inputCls} />
-            </div>
-            <div>
-              <label className={labelCls}>Rate (%)</label>
-              <input type="number" min={0} max={100} step="0.01" value={newRate.rate} onChange={(e) => setN("rate", Number(e.target.value))} className={inputCls} />
-            </div>
+            <FormInput
+              label="Name"
+              required
+              value={newRate.name}
+              onValueChange={(v) => setN("name", v)}
+              placeholder="e.g. Standard VAT"
+              pattern={NAME}
+              minLength={2}
+              maxLength={100}
+              inputClass={formInputCls}
+              labelClass={labelCls}
+            />
+            <FormInput
+              label="Rate (%)"
+              type="number"
+              min={0}
+              max={100}
+              decimal
+              decimalPlaces={2}
+              value={newRate.rate}
+              onValueChange={(v) => setN("rate", v)}
+              inputClass={formInputCls}
+              labelClass={labelCls}
+            />
             <div>
               <label className={labelCls}>Type</label>
               <select value={newRate.type} onChange={(e) => setN("type", e.target.value)} className={inputCls}>
@@ -226,10 +250,16 @@ const NotificationsTab = () => {
     <div className="space-y-5">
       <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-6">
         <h3 className={sectionHead}>Alert Settings</h3>
-        <div className="mb-5">
-          <label className={labelCls}>Alert Email</label>
-          <input type="email" value={form.alertEmail || ""} onChange={(e) => set("alertEmail", e.target.value)} placeholder="alerts@company.com" className={inputCls + " max-w-sm"} />
-        </div>
+        <FormInput
+          type="email"
+          label="Alert Email"
+          value={form.alertEmail || ""}
+          onValueChange={(v) => set("alertEmail", v)}
+          placeholder="alerts@company.com"
+          wrapperClass="mb-5 max-w-sm"
+          inputClass={formInputCls}
+          labelClass={labelCls}
+        />
         <Toggle checked={form.emailAlerts}     onChange={(v) => set("emailAlerts", v)}     label="Enable Email Alerts" />
         <Toggle checked={form.lowStockAlert}   onChange={(v) => set("lowStockAlert", v)}   label="Low Stock Alerts (when items fall below reorder level)" />
         <Toggle checked={form.paymentDueAlert} onChange={(v) => set("paymentDueAlert", v)} label="Payment Due Reminders (invoices & subscriptions)" />
@@ -261,8 +291,7 @@ const SystemTab = () => {
           <div>
             <label className={labelCls}>Language</label>
             <select value={form.language} onChange={(e) => set("language", e.target.value)} className={inputCls}>
-              <option value="en">English</option>
-              <option value="ar">العربية</option>
+              {LANGUAGE_OPTS.map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}
             </select>
           </div>
           <div>
@@ -280,8 +309,7 @@ const SystemTab = () => {
           <div>
             <label className={labelCls}>Time Format</label>
             <select value={form.timeFormat} onChange={(e) => set("timeFormat", e.target.value)} className={inputCls}>
-              <option value="12h">12-hour (AM/PM)</option>
-              <option value="24h">24-hour</option>
+              {TIME_FORMAT_OPTS.map((o) => <option key={o.id} value={o.id}>{o.title}</option>)}
             </select>
           </div>
         </div>

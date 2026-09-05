@@ -8,7 +8,7 @@ import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { tableRows } from "global/constant";
 import { fetchBankAccounts, showBankAccounts, showBankAccountsTotal, showBankAccountsLoading } from "store/slices/financeSlice";
@@ -21,7 +21,6 @@ import { useListFilters } from "hooks/useListFilters";
 
 const { view_customer, add_customer, edit_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
 
 const BankCash = () => {
   const { t } = useTranslation();
@@ -106,7 +105,7 @@ const BankCash = () => {
                       </td>
                       <td className="px-4 py-4 align-middle">{row.type}</td>
                       <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold">
-                        {fmt(row.currentBalance)} {row.currency}
+                        {formatAmount(row.currentBalance)} {row.currency}
                       </td>
                       <td className="px-4 py-4 align-middle pr-6">
                         <div className="flex items-center justify-end gap-3">

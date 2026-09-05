@@ -26,13 +26,13 @@ const statusBadge = (s) => {
 
 const stockStatusBadge = (qty, minQty) => {
   if (qty <= 0)        return "bg-red-100 text-red-700";
-  if (qty <= minQty)   return "bg-amber-100 text-amber-700";
+  if (minQty > 0 && qty < minQty)   return "bg-amber-100 text-amber-700";
   return "bg-emerald-100 text-emerald-700";
 };
 
 const stockStatusLabel = (qty, minQty) => {
   if (qty <= 0)      return "Out of Stock";
-  if (qty <= minQty) return "Low Stock";
+  if (minQty > 0 && qty < minQty) return "Low Stock";
   return "In Stock";
 };
 
@@ -111,7 +111,7 @@ const WarehouseDetail = () => {
   }
 
   const totalQty    = stock.reduce((s, r) => s + r.totalQty, 0);
-  const lowCount    = stock.filter((r) => r.totalQty > 0 && r.totalQty <= r.minQty).length;
+  const lowCount    = stock.filter((r) => r.totalQty > 0 && r.minQty > 0 && r.totalQty < r.minQty).length;
   const outCount    = stock.filter((r) => r.totalQty <= 0).length;
   const pendingTxfr = transfers.filter((t) => t.status === "Pending").length;
 
@@ -184,7 +184,6 @@ const WarehouseDetail = () => {
                   {[
                     { icon: FiTruck,       label: t("new_transfer"),  href: `/warehouse_transfers/add?from=${id}`, color: "text-blue-500" },
                     { icon: FiLogOut,      label: t("new_issue"),      href: `/warehouse_issues/add?wh=${id}`,     color: "text-rose-500" },
-                    { icon: FiPlus,        label: t("adjust_stock"),   href: `/inventory/stock/adjust`,            color: "text-purple-500" },
                   ].map(({ icon: Icon, label, href, color }) => (
                     <button key={href} onClick={() => navigate(href)} className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-white/5 text-left transition-colors">
                       <Icon size={16} className={color} />
@@ -327,9 +326,8 @@ const WarehouseDetail = () => {
           {/* Stock Adjustments */}
           <TabPanel>
             <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20">
-              <div className="px-6 py-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
+              <div className="px-6 py-4 border-b border-slate-100 dark:border-white/10">
                 <h3 className="font-semibold text-slate-900 dark:text-white">{t("tab_adjustments")}</h3>
-                <button onClick={() => navigate("/inventory/stock/adjust")} className="text-sm text-teal-600 dark:text-teal-400 hover:underline">{t("adjust_stock")}</button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">

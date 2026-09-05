@@ -10,7 +10,6 @@ import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { DESIGNATION_LEVELS, DESIGNATION_GRADES } from "../designationFakeData";
 import {
   fetchDesignationById,
   createDesignation,
@@ -20,10 +19,13 @@ import {
 } from "store/slices/designationSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { showUserData } from "store/slices/uniqueSlice";
+import {
+  activeInactiveOptions as STATUS_OPTS,
+  designationLevelOptions,
+  designationGradeOptions,
+} from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
-
-import { activeInactiveOptions as STATUS_OPTS } from "global/constant";
 
 const AddDesignation = () => {
   const { t, i18n } = useTranslation();
@@ -48,8 +50,8 @@ const AddDesignation = () => {
     [departments],
   );
 
-  const [selLevel, setSelLevel] = useState(DESIGNATION_LEVELS[4]);
-  const [selGrade, setSelGrade] = useState(DESIGNATION_GRADES[3]);
+  const [selLevel, setSelLevel] = useState(designationLevelOptions[4]);
+  const [selGrade, setSelGrade] = useState(designationGradeOptions[3]);
   const [selStatus, setSelStatus] = useState(STATUS_OPTS[0]);
   const [selDept, setSelDept] = useState(null);
 
@@ -88,9 +90,9 @@ const AddDesignation = () => {
         maxSalary: existing.maxSalary || "",
         overtimeRate: existing.overtimeRate || "",
       });
-      const lvl = DESIGNATION_LEVELS.find((l) => l.id === existing.level);
+      const lvl = designationLevelOptions.find((l) => l.id === existing.level);
       if (lvl) setSelLevel(lvl);
-      const grd = DESIGNATION_GRADES.find((g) => g.id === existing.grade);
+      const grd = designationGradeOptions.find((g) => g.id === existing.grade);
       if (grd) setSelGrade(grd);
       const st = STATUS_OPTS.find((s) => s.id === existing.status);
       if (st) setSelStatus(st);
@@ -100,6 +102,11 @@ const AddDesignation = () => {
   }, [existing, id, reset, deptOpts]);
 
   const onSubmit = async (data) => {
+    if (data.minSalary !== "" && data.maxSalary !== ""
+      && Number(data.maxSalary) < Number(data.minSalary)) {
+      toast.error(t("designation:max_gte_min", "Max salary must be greater than or equal to min salary"));
+      return;
+    }
     const payload = {
       ...data,
       minSalary: data.minSalary === "" ? 0 : Number(data.minSalary),
@@ -125,8 +132,6 @@ const AddDesignation = () => {
   };
 
   if (!checkRoleAuth(add_employee)) return null;
-
-  const labelCls = "text-sm font-medium text-linkText mb-1 block";
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -175,7 +180,7 @@ const AddDesignation = () => {
               errors={errors}
               required
               placeholder="e.g. Finance Manager"
-              pattern={/[a-zA-Z\s.'-]/}
+              pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
               maxLength={100}
             />
@@ -187,7 +192,7 @@ const AddDesignation = () => {
               placeholder="e.g. FM"
               pattern={/[A-Za-z0-9\-_]/}
               minLength={2}
-              maxLength={100}
+              maxLength={20}
             />
 
             <SelectDropdown
@@ -242,16 +247,14 @@ const AddDesignation = () => {
               maxLength={10}
             />
 
-            <div>
-              <label className={labelCls}>{t("designation:status")}</label>
-              <SelectDropdown
-                data={STATUS_OPTS}
-                selected={selStatus}
-                setSelected={setSelStatus}
-                hideClear
-                classes="!h-[46px] !rounded-lg"
-              />
-            </div>
+            <SelectDropdown
+              label={t("designation:status")}
+              data={STATUS_OPTS}
+              selected={selStatus}
+              setSelected={setSelStatus}
+              hideClear
+              classes="!h-[46px] !rounded-lg"
+            />
 
           </div>
 

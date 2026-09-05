@@ -7,7 +7,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
@@ -22,7 +22,6 @@ import FinancePage from "../FinancePage";
 
 const { view_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const CollectedTax = () => {
   const { t } = useTranslation();
@@ -49,7 +48,7 @@ const CollectedTax = () => {
           <div className="mb-6 max-w-xs">
             <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/20">
               <p className="text-xs text-slate-500">{t("finance:total_collected_tax")}</p>
-              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{fmt(totalAmount)}</p>
+              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalAmount)}</p>
             </div>
           </div>
 
@@ -77,8 +76,8 @@ const CollectedTax = () => {
                       </td>
                       <td className="px-4 py-4 align-middle">{row.customerName}</td>
                       <td className="px-4 py-4 align-middle">{row.date ? String(row.date).slice(0, 10) : "—"}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{fmt(row.subtotal)} {row.currency}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold pr-6">{fmt(row.taxAmount)} {row.currency}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{formatAmount(row.subtotal)} {row.currency}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold pr-6">{formatAmount(row.taxAmount)} {row.currency}</td>
                     </tr>
                   ))}
                 </TableState>

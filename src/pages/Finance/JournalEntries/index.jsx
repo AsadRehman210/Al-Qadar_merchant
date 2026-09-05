@@ -8,9 +8,9 @@ import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { tableRows } from "global/constant";
+import { financeJournalStatusBadge, tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonCards } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
@@ -19,7 +19,6 @@ import FinancePage from "../FinancePage";
 
 const { view_customer, add_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
 
 const JournalEntries = () => {
   const { t } = useTranslation();
@@ -87,11 +86,7 @@ const JournalEntries = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <span
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          j.status === "Posted"
-                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20"
-                            : "bg-slate-200 text-slate-700 dark:bg-white/10"
-                        }`}
+                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${financeJournalStatusBadge[j.status] || ""}`}
                       >
                         {j.status === "Posted" ? t("finance:posted") : t("finance:draft")}
                       </span>
@@ -111,10 +106,10 @@ const JournalEntries = () => {
                         <tr key={idx}>
                           <td className="py-1">{ln.accountCode ? `${ln.accountCode} — ${ln.accountName}` : "—"}</td>
                           <td className="py-1 text-end tabular-nums">
-                            {ln.debit ? fmt(ln.debit) : "—"}
+                            {ln.debit ? formatAmount(ln.debit) : "—"}
                           </td>
                           <td className="py-1 text-end tabular-nums">
-                            {ln.credit ? fmt(ln.credit) : "—"}
+                            {ln.credit ? formatAmount(ln.credit) : "—"}
                           </td>
                         </tr>
                       ))}

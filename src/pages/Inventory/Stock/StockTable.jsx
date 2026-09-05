@@ -62,9 +62,6 @@ const StockTable = ({ data = [], loading, page = 1, setPage, selRows, setSelRows
                   {t("product:stock_quantity")}
                 </th>
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
-                  {t("product:stock_min_level")}
-                </th>
-                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("product:stock_stock_status")}
                 </th>
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
@@ -76,7 +73,7 @@ const StockTable = ({ data = [], loading, page = 1, setPage, selRows, setSelRows
               </tr>
             </thead>
             <tbody>
-              <TableState loading={loading} data={data} colSpan={10}>
+              <TableState loading={loading} data={data} colSpan={9}>
                 {data.map((row) => (
                   <tr
                     key={row.variantId}
@@ -101,9 +98,6 @@ const StockTable = ({ data = [], loading, page = 1, setPage, selRows, setSelRows
                     </td>
                     <td className="px-4 py-4 align-middle text-slate-700 dark:text-white/90 tabular-nums font-medium">
                       {row.totalQty ?? "—"}
-                    </td>
-                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 tabular-nums">
-                      {row.minQty ?? "—"}
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <span

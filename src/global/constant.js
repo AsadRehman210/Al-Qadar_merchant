@@ -6,7 +6,6 @@ import {
   FileText,
   User,
   Home,
-  Shield,
   Building2,
   Briefcase,
   Truck,
@@ -48,6 +47,7 @@ import {
   Sparkles,
   Network,
   ShieldAlert,
+  KeyRound,
   CalendarOff,
   Calculator,
   BadgeDollarSign,
@@ -55,7 +55,6 @@ import {
   Stamp,
   PackageSearch,
   ScanLine,
-  SlidersHorizontal,
   FilePenLine,
   FileMinus,
   FilePlus,
@@ -71,6 +70,7 @@ import {
   BarChart3,
   HardDrive,
   PackageCheck,
+  PackageX,
 } from "lucide-react";
 
 export const language = [
@@ -90,6 +90,9 @@ const {
   add_user,
   edit_user,
   delete_user,
+  view_role,
+  view_reports,
+  view_settings,
   view_employee,
   add_employee,
   edit_employee,
@@ -391,17 +394,17 @@ export const menuSections = [
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
       {
+        name: "Not for sale",
+        nameKey: "sidebar_quarantine",
+        href: "/inventory/quarantine",
+        icon: PackageX,
+        role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
+      },
+      {
         name: "Production",
         nameKey: "sidebar_production",
         href: "/inventory/production",
         icon: Factory,
-        role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
-      },
-      {
-        name: "Stock Adjustment",
-        nameKey: "sidebar_stock_adjust",
-        href: "/inventory/stock/adjust",
-        icon: SlidersHorizontal,
         role: `${view_customer},${add_customer},${edit_customer},${delete_customer}`,
       },
     ],
@@ -584,18 +587,28 @@ export const menuSections = [
     title: "Reports",
     titleKey: "sidebar_reports",
     icon: BarChart2,
-    role: `${view_user}`,
+    role: `${view_reports}`,
     items: [
-      { name: "Reports Hub",      nameKey: "sidebar_reports_hub",     href: "/reports",              icon: BarChart2, role: `${view_user}` },
+      { name: "Reports Hub",      nameKey: "sidebar_reports_hub",     href: "/reports",              icon: BarChart2, role: `${view_reports}` },
+    ],
+  },
+  {
+    title: "Access Control",
+    titleKey: "sidebar_access_control",
+    icon: KeyRound,
+    role: `${view_user},${view_role}`,
+    items: [
+      { name: "Roles",            nameKey: "sidebar_roles",           href: "/roles",                icon: ShieldAlert, role: `${view_role}` },
+      { name: "Users",            nameKey: "sidebar_users",           href: "/users",                icon: UserCheck, role: `${view_user}` },
     ],
   },
   {
     title: "Settings",
     titleKey: "sidebar_settings_section",
     icon: Settings,
-    role: `${view_user}`,
+    role: `${view_settings}`,
     items: [
-      { name: "Settings",         nameKey: "sidebar_settings",        href: "/settings",             icon: Settings,  role: `${view_user}` },
+      { name: "Settings",         nameKey: "sidebar_settings",        href: "/settings",             icon: Settings,  role: `${view_settings}` },
     ],
   },
 ];
@@ -737,9 +750,9 @@ export const breadcrumbs = [
     description: "Stock levels",
   },
   {
-    title: "sidebar_stock_adjust",
-    url: "/inventory/stock/adjust",
-    description: "Manual stock adjustment",
+    title: "sidebar_quarantine",
+    url: "/inventory/quarantine",
+    description: "Not-for-sale returned stock",
   },
   {
     title: "sidebar_production",
@@ -885,6 +898,41 @@ export const breadcrumbs = [
     title: "sidebar_settings",
     url: "/settings",
     description: "Company profile and system preferences",
+  },
+  {
+    title: "sidebar_roles",
+    url: "/roles",
+    description: "Manage roles and permissions",
+  },
+  {
+    title: "add_role",
+    url: "/roles/add",
+    description: "Create a new role",
+  },
+  {
+    title: "edit_role",
+    url: "/roles/edit",
+    description: "Edit role",
+  },
+  {
+    title: "sidebar_users",
+    url: "/users",
+    description: "Manage portal users",
+  },
+  {
+    title: "add_user",
+    url: "/users/add",
+    description: "Create a new user",
+  },
+  {
+    title: "edit_user",
+    url: "/users/edit",
+    description: "Edit user",
+  },
+  {
+    title: "view_user",
+    url: "/users/detail",
+    description: "User details",
   },
   {
     title: "sidebar_leave_management",
@@ -1393,12 +1441,35 @@ export const quotationStatusBadge = {
   Converted: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
 };
 
+// Purchase invoice lifecycle (Draft → Received) pill classes.
+export const purchaseStatusBadge = {
+  Draft: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300 ring-1 ring-inset ring-slate-200 dark:ring-slate-500/30",
+  Ordered: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30",
+  Transit: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 ring-1 ring-inset ring-indigo-200 dark:ring-indigo-500/30",
+  Received: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-500/30",
+};
+
 // Shared Pending/Partial/Cleared payment-status pill classes — Purchase
 // Invoice and Sale Invoice both use this exact same three-value enum.
 export const paymentStatusBadge = {
-  Pending: "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70",
-  Partial: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
-  Cleared: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  Pending: "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70 ring-1 ring-inset ring-slate-200 dark:ring-white/15",
+  Partial: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 ring-1 ring-inset ring-blue-200 dark:ring-blue-500/25",
+  Cleared: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-500/25",
+};
+
+// Sale invoice payment-status pills (Pending / Partial / Paid).
+export const salePaymentStatusBadge = {
+  Pending: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30",
+  Partial: "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300 ring-1 ring-inset ring-sky-200 dark:ring-sky-500/30",
+  Paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-500/30",
+};
+
+// Sale invoice delivery-status pills.
+export const saleDeliveryStatusBadge = {
+  Pending: "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70 ring-1 ring-inset ring-slate-200 dark:ring-white/15",
+  InTransit: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300 ring-1 ring-inset ring-blue-200 dark:ring-blue-500/25",
+  Delivered: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-500/25",
+  Cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 ring-1 ring-inset ring-rose-200 dark:ring-rose-500/25",
 };
 
 // Finance payable (vendor bill) status pill classes.
@@ -1420,6 +1491,47 @@ export const loanStatusBadge = {
   Completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
   Rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
 };
+
+export const LOAN_STATUS = {
+  PENDING_MANAGER: "Pending Manager",
+  PENDING_HR: "Pending HR",
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  ONGOING: "Ongoing",
+  COMPLETED: "Completed",
+  REJECTED: "Rejected",
+};
+
+// Expense approval lifecycle + known expense-type ids.
+export const EXPENSE_STATUS = {
+  PENDING_MANAGER: "Pending Manager",
+  PENDING_HR: "Pending HR",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
+export const EXPENSE_TYPE_IDS = [
+  "travel_transportation",
+  "office_supplies",
+  "meals_refreshments",
+  "equipment_machinery",
+  "miscellaneous_operational",
+  "client_entertainment",
+  "travel_lodging",
+  "mobile_internet_allowance",
+  "marketing_promotion",
+  "gifts_incentives",
+  "training_certification",
+  "hardware_purchase",
+  "software_licenses",
+  "cloud_hosting",
+  "bank_charges",
+  "accounting_software",
+  "travel_audit_finance",
+  "communication_costs",
+  "travel_client_visits",
+  "training_workshops",
+];
 
 // Payroll allowance / deduction field keys — Add Employee salary tab & Employee detail salary tab.
 export const salaryAllowanceKeys = [
@@ -1480,3 +1592,1013 @@ export const assetStatusBadge = {
 
 // Credit note / debit note lifecycle statuses.
 export const noteStatusList = ["Draft", "Approved", "Applied", "Voided"];
+
+// ─── Operations — shared dropdown options (titles ready for SelectDropdown t()) ───
+
+export const yesNoOptions = [
+  { id: "yes", title: "yes" },
+  { id: "no", title: "no" },
+];
+
+export const salesTaxModeOptions = [
+  { id: "same", title: "sales:tax_mode_same" },
+  { id: "different", title: "sales:tax_mode_different" },
+];
+export const purchaseTaxModeOptions = [
+  { id: "same", title: "purchase:tax_mode_same" },
+  { id: "different", title: "purchase:tax_mode_different" },
+];
+export const taxModeOptions = salesTaxModeOptions;
+
+export const productTypeOptions = [
+  { id: "Finished Product", title: "product:finished_product" },
+  { id: "Raw Material", title: "product:raw_material" },
+];
+export const productTypeFilterOptions = [
+  { id: "", title: "product:all_types" },
+  ...productTypeOptions,
+];
+
+export const purchaseLineTypeOptions = [
+  { id: "raw_material", title: "purchase:raw_material" },
+  { id: "final_product", title: "purchase:final_product" },
+];
+
+export const purchaseLineTypeToProductType = {
+  raw_material: "Raw Material",
+  final_product: "Finished Product",
+};
+
+export const purchaseStatusOptions = [
+  { id: "Draft", title: "purchase:st_draft" },
+  { id: "Ordered", title: "purchase:st_ordered" },
+  { id: "Transit", title: "purchase:st_transit" },
+  { id: "Received", title: "purchase:st_received" },
+];
+
+export const salePaymentStatusOptions = [
+  { id: "Pending", title: "sales:pending" },
+  { id: "Partial", title: "sales:partial" },
+  { id: "Paid", title: "sales:paid" },
+];
+
+export const salePaymentStatusFilterOptions = [
+  { id: "", title: "customers:all_payment_status" },
+  ...salePaymentStatusOptions,
+];
+
+export const purchasePaymentStatusOptions = [
+  { id: "Pending", title: "Pending" },
+  { id: "Partial", title: "Partial" },
+  { id: "Cleared", title: "Paid" },
+];
+
+export const paidUnpaidOptions = [
+  { id: "Paid", title: "sales:paid" },
+  { id: "Unpaid", title: "sales:unpaid" },
+];
+
+export const deliveryStatusOptions = [
+  { id: "Pending", title: "sales:pending" },
+  { id: "InTransit", title: "sales:in_transit" },
+  { id: "Delivered", title: "sales:delivered" },
+];
+
+export const deliveryCancelledOption = { id: "Cancelled", title: "sales:cancelled" };
+
+export const deliveryStatusFilterOptions = [
+  ...deliveryStatusOptions,
+  deliveryCancelledOption,
+];
+
+export const customerDeliveryStatusFilterOptions = [
+  { id: "", title: "customers:all_delivery_status" },
+  ...deliveryStatusFilterOptions,
+];
+
+export const salesPaymentMethodOptions = [
+  { id: "Cash", title: "sales:cash" },
+  { id: "Bank Transfer", title: "sales:bank_transfer" },
+  { id: "Other", title: "sales:other" },
+];
+export const purchasePaymentMethodOptions = [
+  { id: "Cash", title: "purchase:cash" },
+  { id: "Bank Transfer", title: "purchase:bank_transfer" },
+  { id: "Other", title: "purchase:other" },
+];
+// English titles — reusable for filters that don't need a namespace prefix.
+export const cashBankOtherPaymentOptions = [
+  { id: "Cash", title: "Cash" },
+  { id: "Bank Transfer", title: "Bank Transfer" },
+  { id: "Other", title: "Other" },
+];
+
+export const invoiceTemplateOptions = [
+  { id: "Standard", title: "sales:template_standard" },
+  { id: "Modern", title: "sales:template_modern" },
+  { id: "Corporate", title: "sales:template_corporate" },
+];
+
+export const purchaseTaxRecoverableOptions = [
+  { id: "yes", title: "purchase:tax_recoverable_yes" },
+  { id: "no", title: "purchase:tax_recoverable_no" },
+];
+
+export const quotationStatusList = ["Draft", "Sent", "Accepted", "Rejected", "Expired", "Converted"];
+
+export const quotationStatusOptions = quotationStatusList.map((s) => ({ id: s, title: s }));
+
+export const quotationStatusFilterOptions = [
+  { id: "", title: "sales:all_status" },
+  ...quotationStatusOptions,
+];
+
+export const noteStatusOptions = noteStatusList.map((s) => ({ id: s, title: s }));
+
+export const noteNextStatusMap = {
+  Draft: ["Approved", "Voided"],
+  Approved: ["Applied", "Voided"],
+};
+
+export const returnTypeOptions = [
+  { id: "Full return", title: "Full return" },
+  { id: "Partial return", title: "Partial return" },
+];
+
+export const salesReturnTypeOptions = [
+  { id: "Full return", title: "sales:full_return" },
+  { id: "Partial return", title: "sales:partial_return" },
+];
+
+export const purchaseReturnTypeOptions = [
+  { id: "Full return", title: "purchase:full_return" },
+  { id: "Partial return", title: "purchase:partial_return" },
+];
+
+export const creditNoteReasonOptions = [
+  { id: "Damaged goods", title: "Damaged goods" },
+  { id: "Wrong item delivered", title: "Wrong item delivered" },
+  { id: "Customer return", title: "Customer return" },
+  { id: "Expired", title: "Expired" },
+  { id: "Wrong entry", title: "Wrong entry" },
+  { id: "Other", title: "Other" },
+];
+
+export const debitNoteReasonOptions = [
+  { id: "Damaged goods received", title: "Damaged goods received" },
+  { id: "Short shipment", title: "Short shipment" },
+  { id: "Price discrepancy", title: "Price discrepancy" },
+  { id: "Wrong items received", title: "Wrong items received" },
+  { id: "Quality rejection", title: "Quality rejection" },
+  { id: "Expired Product", title: "Expired Product" },
+  { id: "Wrong entry", title: "Wrong entry" },
+  { id: "Other", title: "Other" },
+];
+
+export const stockIssueTypeOptions = [
+  { id: "Internal Use", title: "Internal Use" },
+  { id: "Sample", title: "Sample" },
+  { id: "Damage", title: "Damage" },
+  { id: "Other", title: "Other" },
+];
+
+export const stockIssueTypeFilterOptions = [
+  { id: "", title: "All Types" },
+  ...stockIssueTypeOptions,
+];
+
+export const stockAdjustTypeOptions = [
+  { id: "add", title: "product:adj_add" },
+  { id: "subtract", title: "product:adj_subtract" },
+  { id: "set", title: "product:adj_set" },
+];
+
+export const stockTransferStatusFilterOptions = [
+  { id: "", title: "All Statuses" },
+  { id: "Pending", title: "Pending" },
+  { id: "Completed", title: "Completed" },
+  { id: "Cancelled", title: "Cancelled" },
+];
+
+export const batchSortOptions = [
+  { id: "expiry_asc", title: "product:batch_sort_expiry_asc" },
+  { id: "expiry_desc", title: "product:batch_sort_expiry_desc" },
+  { id: "cost_asc", title: "product:batch_sort_cost_asc" },
+  { id: "cost_desc", title: "product:batch_sort_cost_desc" },
+  { id: "stock_asc", title: "product:batch_sort_stock_asc" },
+  { id: "stock_desc", title: "product:batch_sort_stock_desc" },
+];
+
+export const stockLevelFilterOptions = [
+  { id: "all", title: "product:stock_filter_all" },
+  { id: "in_stock", title: "product:stock_status_in_stock" },
+  { id: "low_stock", title: "product:stock_status_low_stock" },
+  { id: "out_of_stock", title: "product:stock_status_out_of_stock" },
+];
+
+export const quarantineStatusFilterOptions = [
+  { id: "all", title: "product:quarantine_filter_all" },
+  { id: "Open", title: "product:quarantine_st_open" },
+  { id: "Partial", title: "product:quarantine_st_partial" },
+  { id: "Consumed", title: "product:quarantine_st_consumed" },
+];
+
+export const productionStatusFilterOptions = [
+  { id: "all", title: "production:filter_all" },
+  { id: "Draft", title: "production:st_draft" },
+  { id: "InProgress", title: "production:st_in_progress" },
+  { id: "Completed", title: "production:st_completed" },
+  { id: "Cancelled", title: "production:st_cancelled" },
+  { id: "Reversed", title: "production:st_reversed" },
+];
+
+export const assetStatusFilterOptions = [
+  { id: "all", title: "asset:filter_all" },
+  { id: "In use", title: "asset:st_in_use" },
+  { id: "In storage", title: "asset:st_storage" },
+  { id: "Maintenance", title: "asset:st_maintenance" },
+  { id: "Disposed", title: "asset:st_disposed" },
+];
+
+export const assetDepreciationMethodOptions = [
+  { id: "straight_line", title: "asset:straight_line" },
+  { id: "declining", title: "asset:declining_balance" },
+];
+
+export const assetActiveInactiveOptions = [
+  { id: "Active", title: "asset:active" },
+  { id: "Inactive", title: "asset:inactive" },
+];
+
+export const assetActiveInactiveFilterOptions = [
+  { id: "all", title: "asset:filter_all" },
+  ...assetActiveInactiveOptions,
+];
+
+export const assetRequestStatusOptions = [
+  { id: "Pending", title: "Pending" },
+  { id: "Approved", title: "Approved" },
+  { id: "Rejected", title: "Rejected" },
+  { id: "Fulfilled", title: "Fulfilled" },
+];
+
+export const assetRequestStatusFilterOptions = [
+  { id: "all", title: "asset:filter_all" },
+  ...assetRequestStatusOptions,
+];
+
+export const assetRequestPriorityOptions = [
+  { id: "Low", title: "Low" },
+  { id: "Normal", title: "Normal" },
+  { id: "High", title: "High" },
+  { id: "Urgent", title: "Urgent" },
+];
+
+export const assetAuditResultOptions = [
+  { id: "Pending", title: "Pending" },
+  { id: "Verified", title: "Verified" },
+  { id: "Missing", title: "Missing" },
+  { id: "Damaged", title: "Damaged" },
+];
+export const assetAuditResultList = assetAuditResultOptions.map((o) => o.id);
+
+export const assetMaintenanceTypeOptions = [
+  { id: "Scheduled", title: "Scheduled" },
+  { id: "Breakdown", title: "Breakdown" },
+  { id: "Inspection", title: "Inspection" },
+  { id: "Upgrade", title: "Upgrade" },
+];
+
+export const assetMaintenanceStatusOptions = [
+  { id: "Planned", title: "Planned" },
+  { id: "In Progress", title: "In Progress" },
+  { id: "Completed", title: "Completed" },
+];
+
+export const assetDisposalMethodOptions = [
+  { id: "Sold", title: "Sold" },
+  { id: "Scrapped", title: "Scrapped" },
+  { id: "Donated", title: "Donated" },
+  { id: "Written Off", title: "Written Off" },
+];
+
+export const assetDocumentTypeOptions = [
+  { id: "Invoice", title: "Invoice" },
+  { id: "Warranty Card", title: "Warranty Card" },
+  { id: "Manual", title: "Manual" },
+  { id: "Photo", title: "Photo" },
+  { id: "Other", title: "Other" },
+];
+
+export const customerSegmentOptions = [
+  { id: "Retail", title: "customers:retail" },
+  { id: "Wholesale", title: "customers:wholesale" },
+  { id: "Corporate", title: "customers:corporate" },
+];
+
+export const customerTypeOptions = [
+  { id: "Individual", title: "customers:individual" },
+  { id: "Business", title: "customers:business" },
+];
+
+export const customerStatusOptions = [
+  { id: "Active", title: "customers:active" },
+  { id: "Inactive", title: "customers:inactive" },
+];
+
+export const supplierTypeOptions = [
+  { id: "Company", title: "suppliers:company" },
+  { id: "Individual", title: "suppliers:individual" },
+];
+
+export const supplierStatusOptions = [
+  { id: "Active", title: "suppliers:active" },
+  { id: "Inactive", title: "suppliers:inactive" },
+];
+
+export const partyTypeOptions = [
+  { id: "Individual", title: "Individual" },
+  { id: "Business", title: "Business" },
+  { id: "Company", title: "Company" },
+];
+
+// ─── HR / Employee Management dropdown options ───────────────────────────────
+
+export const employeeStatusOptions = [
+  { id: "probation", title: "Probation" },
+  { id: "active", title: "Active" },
+  { id: "resigned", title: "Resigned" },
+  { id: "retired", title: "Retired" },
+  { id: "terminated", title: "Terminated" },
+  { id: "absconding", title: "Absconding" },
+];
+
+export const employeeStatusBadge = {
+  probation: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+  active: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  resigned: "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70",
+  retired: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  terminated: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
+  absconding: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+};
+
+export const employeeStatusFilterOptions = [
+  { id: "all", title: "All Status" },
+  ...employeeStatusOptions,
+];
+
+export const nationalityOptions = [
+  { id: "Saudi", title: "Saudi" },
+  { id: "Expatriate", title: "Expatriate" },
+];
+
+export const genderOptions = [
+  { id: "male", title: "Male" },
+  { id: "female", title: "Female" },
+];
+
+export const bloodGroupOptions = [
+  { id: "A+", title: "A+" },
+  { id: "A-", title: "A−" },
+  { id: "B+", title: "B+" },
+  { id: "B-", title: "B−" },
+  { id: "AB+", title: "AB+" },
+  { id: "AB-", title: "AB−" },
+  { id: "O+", title: "O+" },
+  { id: "O-", title: "O−" },
+];
+
+export const maritalStatusOptions = [
+  { id: "single", title: "Single" },
+  { id: "married", title: "Married" },
+];
+
+export const employmentTypeOptions = [
+  { id: "permanent", title: "Permanent" },
+  { id: "contract", title: "Contract" },
+  { id: "trainee", title: "Trainee" },
+];
+
+export const noManagerOption = { id: "", title: "— None (top of chain) —" };
+
+export const skillProficiencyOptions = [
+  { id: "beginner", title: "Beginner" },
+  { id: "intermediate", title: "Intermediate" },
+  { id: "advanced", title: "Advanced" },
+  { id: "expert", title: "Expert" },
+];
+
+export const skillTypeOptions = [
+  { id: "technical", title: "Technical" },
+  { id: "soft_skill", title: "Soft Skill" },
+  { id: "language", title: "Language" },
+];
+
+export const salaryPaymentStatusOptions = [
+  { id: "pending", title: "Pending" },
+  { id: "processing", title: "Processing" },
+  { id: "paid", title: "Paid" },
+];
+
+export const departmentStatusOptions = [
+  { id: "Active", title: "department:status_active" },
+  { id: "Inactive", title: "department:status_inactive" },
+];
+
+export const designationLevelOptions = [
+  { id: "C-Level", title: "C-Level" },
+  { id: "Director", title: "Director" },
+  { id: "Manager", title: "Manager" },
+  { id: "Supervisor", title: "Supervisor" },
+  { id: "Staff", title: "Staff" },
+  { id: "Intern", title: "Intern" },
+];
+
+export const designationLevelFilterOptions = [
+  { id: "", title: "All Levels" },
+  ...designationLevelOptions,
+];
+
+export const designationGradeOptions = [
+  { id: "G-1", title: "Grade 1" },
+  { id: "G-2", title: "Grade 2" },
+  { id: "G-3", title: "Grade 3" },
+  { id: "G-4", title: "Grade 4" },
+  { id: "G-5", title: "Grade 5" },
+];
+
+export const attendanceStatusOptions = [
+  { id: "Present", title: "attendance:present" },
+  { id: "Absent", title: "attendance:absent" },
+  { id: "Leave", title: "attendance:leave" },
+  { id: "Holiday", title: "attendance:holiday" },
+  { id: "Half-day", title: "attendance:half_day" },
+];
+
+export const attendanceStatusFilterOptions = [
+  { id: "all", title: "attendance:all_status" },
+  ...attendanceStatusOptions,
+];
+
+export const attendanceShiftOptions = [
+  { id: "Day", title: "attendance:day" },
+  { id: "Night", title: "attendance:night" },
+  { id: "Flexible", title: "attendance:flexible" },
+];
+
+export const leaveStatusOptions = [
+  { id: "Draft", title: "Draft" },
+  { id: "Pending Manager", title: "Pending Manager" },
+  { id: "Pending HR", title: "Pending HR" },
+  { id: "Approved", title: "Approved" },
+  { id: "Rejected", title: "Rejected" },
+  { id: "Cancelled", title: "Cancelled" },
+];
+
+export const leaveStatusBadge = {
+  "Pending Manager": "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+  "Pending HR": "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  Approved: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  Rejected: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+  Cancelled: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
+  Draft: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
+};
+
+export const leaveStatusFilterOptions = [
+  { id: "all", title: "All Status" },
+  ...leaveStatusOptions,
+];
+
+export const leaveApplicableGenderOptions = [
+  { id: "all", title: "All" },
+  { id: "male", title: "Male Only" },
+  { id: "female", title: "Female Only" },
+];
+
+export const leaveHalfDayOptions = [
+  { id: "full", title: "Full Day" },
+  { id: "first_half", title: "First Half" },
+  { id: "second_half", title: "Second Half" },
+];
+
+export const loanTypeOptions = [
+  { id: "Advance Salary", title: "loans:advance_salary" },
+  { id: "EMI Loan", title: "loans:emi_loan" },
+];
+
+export const loanTypeFilterOptions = [
+  { id: "all", title: "loans:all_types" },
+  ...loanTypeOptions,
+];
+
+export const loanPurposeOptions = [
+  { id: "House", title: "loans:house" },
+  { id: "Vehicle", title: "loans:vehicle" },
+  { id: "Personal", title: "loans:personal" },
+  { id: "Education", title: "loans:education" },
+  { id: "Medical", title: "loans:medical" },
+];
+
+export const loanStatusFilterOptions = [
+  { id: "all", title: "loans:all_status" },
+  { id: "Pending Manager", title: "requests:step_manager" },
+  { id: "Pending HR", title: "requests:step_hr" },
+  { id: "Pending", title: "loans:pending" },
+  { id: "Approved", title: "loans:approved" },
+  { id: "Ongoing", title: "loans:ongoing" },
+  { id: "Completed", title: "loans:completed" },
+];
+
+export const jobStatusOptions = [
+  { id: "Open", title: "Open" },
+  { id: "On Hold", title: "On Hold" },
+  { id: "Closed", title: "Closed" },
+];
+
+export const recruitmentStageOptions = [
+  { id: "Applied", title: "Applied" },
+  { id: "Screening", title: "Screening" },
+  { id: "Interview", title: "Interview" },
+  { id: "Offer", title: "Offer" },
+  { id: "Hired", title: "Hired" },
+  { id: "Rejected", title: "Rejected" },
+];
+
+export const jobExperienceOptions = [
+  { id: "0–1 years", title: "0–1 years" },
+  { id: "1+ years", title: "1+ years" },
+  { id: "2+ years", title: "2+ years" },
+  { id: "3+ years", title: "3+ years" },
+  { id: "5+ years", title: "5+ years" },
+  { id: "7+ years", title: "7+ years" },
+];
+
+export const appraisalStatusOptions = [
+  { id: "Draft", title: "Draft" },
+  { id: "Submitted", title: "Submitted" },
+  { id: "Under Review", title: "Under Review" },
+  { id: "Finalized", title: "Finalized" },
+];
+
+export const appraisalCycleOptions = [
+  { id: "Q1", title: "Q1 (Jan–Mar)" },
+  { id: "Q2", title: "Q2 (Apr–Jun)" },
+  { id: "Q3", title: "Q3 (Jul–Sep)" },
+  { id: "Q4", title: "Q4 (Oct–Dec)" },
+  { id: "Annual", title: "Annual" },
+  { id: "H1", title: "H1 (Jan–Jun)" },
+  { id: "H2", title: "H2 (Jul–Dec)" },
+];
+
+export const kpiCategoryOptions = [
+  { id: "Productivity", title: "Productivity" },
+  { id: "Quality", title: "Quality" },
+  { id: "Collaboration", title: "Collaboration" },
+  { id: "Initiative", title: "Initiative" },
+  { id: "Attendance", title: "Attendance" },
+  { id: "Innovation", title: "Innovation" },
+  { id: "Leadership", title: "Leadership" },
+  { id: "Customer Focus", title: "Customer Focus" },
+];
+
+export const exitTypeOptions = [
+  { id: "Resignation", title: "Resignation" },
+  { id: "Retirement", title: "Retirement" },
+  { id: "Termination", title: "Termination" },
+  { id: "Absconding", title: "Absconding" },
+  { id: "Contract End", title: "Contract End" },
+];
+
+export const exitStatusOptions = [
+  { id: "Notice Period", title: "Notice Period" },
+  { id: "Clearance", title: "Clearance" },
+  { id: "Settlement", title: "Settlement" },
+  { id: "Completed", title: "Completed" },
+  { id: "Cancelled", title: "Cancelled" },
+];
+
+export const exitStatusFilterOptions = [
+  { id: "", title: "All Status" },
+  ...exitStatusOptions,
+];
+
+// Exit lifecycle enum + badge (Offboarding pages).
+export const EXIT_STATUS = {
+  NOTICE_PERIOD: "Notice Period",
+  CLEARANCE: "Clearance",
+  SETTLEMENT: "Settlement",
+  COMPLETED: "Completed",
+  CANCELLED: "Cancelled",
+};
+
+export const EXIT_STATUS_BADGE = {
+  "Notice Period": "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+  Clearance: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  Settlement: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
+  Completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  Cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+};
+
+export const CLEARANCE_SECTIONS = ["assets", "finance", "it", "manager"];
+
+export const CLEARANCE_LABELS = {
+  assets: "Assets",
+  finance: "Finance",
+  it: "IT",
+  manager: "Manager",
+};
+
+export const exitInterviewReasonOptions = [
+  { id: "Better Opportunity", title: "Better Opportunity" },
+  { id: "Compensation", title: "Compensation" },
+  { id: "Career Growth", title: "Career Growth" },
+  { id: "Work-Life Balance", title: "Work-Life Balance" },
+  { id: "Management / Culture", title: "Management / Culture" },
+  { id: "Relocation", title: "Relocation" },
+  { id: "Retirement", title: "Retirement" },
+  { id: "Contract End", title: "Contract End" },
+  { id: "Other", title: "Other" },
+];
+
+export const wouldRehireOptions = [
+  { id: "Yes", title: "Yes" },
+  { id: "No", title: "No" },
+  { id: "Maybe", title: "Maybe" },
+];
+
+export const onboardingTaskCategoryOptions = [
+  { id: "documentation", title: "Documentation" },
+  { id: "it_access", title: "IT & Access" },
+  { id: "workplace", title: "Workplace Setup" },
+  { id: "payroll", title: "Payroll & Compliance" },
+  { id: "orientation", title: "Orientation" },
+];
+
+export const ONBOARDING_STATUS = {
+  IN_PROGRESS: "In Progress",
+  COMPLETED: "Completed",
+};
+
+export const payrollRunStatusOptions = [
+  { id: "Draft", title: "Draft" },
+  { id: "Pending Approval", title: "Pending Approval" },
+  { id: "Approved", title: "Approved" },
+  { id: "Processing", title: "Processing" },
+  { id: "Paid", title: "Paid" },
+  { id: "Cancelled", title: "Cancelled" },
+];
+
+// Payroll run / special-payment lifecycle enums + badges.
+export const RUN_STATUS = {
+  DRAFT: "Draft",
+  PENDING_APPROVAL: "Pending Approval",
+  APPROVED: "Approved",
+  PROCESSING: "Processing",
+  PAID: "Paid",
+  CANCELLED: "Cancelled",
+};
+
+export const RUN_STATUS_BADGE = {
+  Draft: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-300",
+  "Pending Approval": "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+  Approved: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  Processing: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
+  Paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  Cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+};
+
+export const SP_STATUS = {
+  DRAFT: "Draft",
+  PENDING_APPROVAL: "Pending Approval",
+  APPROVED: "Approved",
+  PAID: "Paid",
+  CANCELLED: "Cancelled",
+};
+
+export const SP_STATUS_BADGE = {
+  Draft: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-300",
+  "Pending Approval": "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+  Approved: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  Paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  Cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+};
+
+export const payrollRunStatusFilterOptions = [
+  { id: "all", title: "All Status" },
+  ...payrollRunStatusOptions,
+];
+
+export const specialPaymentStatusOptions = [
+  { id: "Draft", title: "Draft" },
+  { id: "Pending Approval", title: "Pending Approval" },
+  { id: "Approved", title: "Approved" },
+  { id: "Paid", title: "Paid" },
+  { id: "Cancelled", title: "Cancelled" },
+];
+
+export const specialPaymentStatusFilterOptions = [
+  { id: "all", title: "payroll:all" },
+  ...specialPaymentStatusOptions,
+];
+
+export const specialPaymentTargetOptions = [
+  { id: "all", title: "payroll:sp_target_all" },
+  { id: "department", title: "payroll:sp_target_department" },
+  { id: "individual", title: "payroll:sp_target_individual" },
+  { id: "custom", title: "payroll:sp_target_custom" },
+];
+
+export const specialPaymentModeOptions = [
+  { id: "fixed", title: "Fixed" },
+  { id: "pct_basic", title: "% of Basic" },
+  { id: "pct_gross", title: "% of Gross" },
+];
+
+export const pfWithdrawalTypeOptions = [
+  { id: "Partial", title: "Partial" },
+  { id: "Full", title: "Full (Settlement)" },
+];
+
+export const pfStatusFilterOptions = [
+  { id: "all", title: "pf:all" },
+  { id: "Active", title: "pf:active" },
+  { id: "Inactive", title: "pf:inactive" },
+];
+
+export const announcementCategoryOptions = [
+  { id: "General", title: "General" },
+  { id: "Policy", title: "Policy" },
+  { id: "Event", title: "Event" },
+  { id: "Urgent", title: "Urgent" },
+];
+
+export const announcementCategoryFilterOptions = [
+  { id: "", title: "hrhub:all_categories" },
+  ...announcementCategoryOptions,
+];
+
+export const ANN_CATEGORY_BADGE = {
+  General: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-300",
+  Policy: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  Event: "bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-300",
+  Urgent: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
+};
+
+export const holidayTypeOptions = [
+  { id: "Public", title: "Public" },
+  { id: "Company", title: "Company" },
+  { id: "Optional", title: "Optional" },
+];
+
+export const holidayTypeFilterOptions = [
+  { id: "", title: "hrhub:all_types" },
+  ...holidayTypeOptions,
+];
+
+export const HOLIDAY_TYPE_BADGE = {
+  Public: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  Company: "bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300",
+  Optional: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+};
+
+export const requestDocumentTypeOptions = [
+  { id: "Salary Certificate", title: "Salary Certificate" },
+  { id: "Experience Letter", title: "Experience Letter" },
+  { id: "NOC", title: "NOC" },
+  { id: "Employment Verification", title: "Employment Verification" },
+  { id: "Bank Account Letter", title: "Bank Account Letter" },
+];
+
+export const probationOutcomeOptions = [
+  { id: "Confirm", title: "Confirm" },
+  { id: "Extend", title: "Extend" },
+  { id: "Terminate", title: "Terminate" },
+];
+
+export const promotionChangeTypeOptions = [
+  { id: "Promotion", title: "Promotion" },
+  { id: "Increment", title: "Increment" },
+  { id: "Transfer", title: "Transfer" },
+];
+
+export const shortLeaveTypeOptions = [
+  { id: "Early Out", title: "Early Out" },
+  { id: "Late Arrival", title: "Late Arrival" },
+  { id: "Gate Pass", title: "Gate Pass" },
+];
+
+export const requestShiftTypeOptions = [
+  { id: "Day", title: "Day" },
+  { id: "Night", title: "Night" },
+  { id: "Morning", title: "Morning" },
+  { id: "Evening", title: "Evening" },
+  { id: "Rotational", title: "Rotational" },
+];
+
+export const requestAssetTypeOptions = [
+  { id: "Laptop", title: "Laptop" },
+  { id: "Desktop", title: "Desktop" },
+  { id: "Monitor", title: "Monitor" },
+  { id: "Phone", title: "Phone" },
+  { id: "SIM Card", title: "SIM Card" },
+  { id: "Access Card", title: "Access Card" },
+  { id: "Furniture", title: "Furniture" },
+  { id: "Other", title: "Other" },
+];
+
+export const profileFieldOptions = [
+  { id: "Phone Number", title: "Phone Number" },
+  { id: "Address", title: "Address" },
+  { id: "Bank Account", title: "Bank Account" },
+  { id: "Emergency Contact", title: "Emergency Contact" },
+  { id: "Marital Status", title: "Marital Status" },
+  { id: "Email", title: "Email" },
+];
+
+export const grievanceCategoryOptions = [
+  { id: "Workplace", title: "Workplace" },
+  { id: "Harassment", title: "Harassment" },
+  { id: "Payroll", title: "Payroll" },
+  { id: "Management", title: "Management" },
+  { id: "Facilities", title: "Facilities" },
+  { id: "Other", title: "Other" },
+];
+
+export const disciplinaryTypeOptions = [
+  { id: "Verbal Warning", title: "Verbal Warning" },
+  { id: "Written Warning", title: "Written Warning" },
+  { id: "Final Warning", title: "Final Warning" },
+  { id: "Suspension", title: "Suspension" },
+];
+
+export const helpdeskCategoryOptions = [
+  { id: "IT Support", title: "IT Support" },
+  { id: "Facilities", title: "Facilities" },
+  { id: "Payroll", title: "Payroll" },
+  { id: "Access / Security", title: "Access / Security" },
+  { id: "Other", title: "Other" },
+];
+
+export const helpdeskPriorityOptions = [
+  { id: "Low", title: "Low" },
+  { id: "Medium", title: "Medium" },
+  { id: "High", title: "High" },
+  { id: "Urgent", title: "Urgent" },
+];
+
+
+export const coaAccountTypeOptions = [
+  { id: "Asset", title: "finance:type_asset" },
+  { id: "Liability", title: "finance:type_liability" },
+  { id: "Equity", title: "finance:type_equity" },
+  { id: "Revenue", title: "finance:type_revenue" },
+  { id: "Expense", title: "finance:type_expense" },
+];
+
+export const coaAccountTypeFilterOptions = [
+  { id: "All", title: "All" },
+  ...coaAccountTypeOptions.map((o) => ({ id: o.id, title: o.id })),
+];
+
+export const coaAccountTypeBadge = {
+  Asset: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
+  Liability: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
+  Equity: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
+  Revenue: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  Expense: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300",
+};
+
+export const coaAccountSubTypeOptions = [
+  { id: "current_asset", title: "Current Asset", forTypes: ["Asset"] },
+  { id: "fixed_asset", title: "Fixed Asset", forTypes: ["Asset"] },
+  { id: "vat_receivable", title: "VAT Receivable", forTypes: ["Asset"] },
+  { id: "current_liability", title: "Current Liability", forTypes: ["Liability"] },
+  { id: "long_term_liability", title: "Long-Term Liability", forTypes: ["Liability"] },
+  { id: "vat_payable", title: "VAT Payable", forTypes: ["Liability"] },
+  { id: "retained_earnings", title: "Retained Earnings", forTypes: ["Equity"] },
+  { id: "other_equity", title: "Other Equity", forTypes: ["Equity"] },
+  { id: "operating_revenue", title: "Operating Revenue", forTypes: ["Revenue"] },
+  { id: "other_revenue", title: "Other Revenue", forTypes: ["Revenue"] },
+  { id: "cogs", title: "Cost of Goods Sold", forTypes: ["Expense"] },
+  { id: "operating_expense", title: "Operating Expense", forTypes: ["Expense"] },
+  { id: "tax_expense", title: "Tax Expense", forTypes: ["Expense"] },
+];
+
+export const coaAccountStatusOptions = [
+  { id: "Active", title: "product:status_active" },
+  { id: "Inactive", title: "product:status_inactive" },
+];
+
+export const bankAccountTypeOptions = [
+  { id: "Bank", title: "Bank" },
+  { id: "Cash", title: "Cash" },
+];
+
+export const bankTxTypeOptions = [
+  { id: "deposit", title: "finance:tx_deposit" },
+  { id: "withdrawal", title: "finance:tx_withdrawal" },
+  { id: "bank_charge", title: "finance:tx_bank_charge" },
+];
+
+export const financePaymentDirectionOptions = [
+  { id: "receipt", title: "finance:receipt" },
+  { id: "disbursement", title: "finance:disbursement" },
+];
+
+export const financeJournalStatusBadge = {
+  Posted: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  Draft: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-300",
+};
+
+export const financeReconciliationStatusBadge = {
+  Reconciled: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
+  Open: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
+};
+
+export const monthShortLabels = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+export const agingBucketLabels = ["0–30 days", "31–60 days", "61–90 days", "90+ days"];
+
+export const expiryBucketOrder = [
+  "expired",
+  "within_1_month",
+  "within_6_months",
+  "within_1_year",
+];
+
+export const agingReportTypeOptions = [
+  { id: "AR", title: "AR" },
+  { id: "AP", title: "AP" },
+];
+
+export const userRoleStatusOptions = [
+  { id: "active", title: "active", pill: "bg-emerald-100 text-emerald-700" },
+  { id: "inactive", title: "inactive", pill: "bg-red-100 text-red-600" },
+];
+
+export const settingsTaxTypeOptions = [
+  { id: "VAT", title: "VAT" },
+  { id: "Withholding", title: "Withholding Tax" },
+  { id: "Customs", title: "Customs / Import Duty" },
+  { id: "Exempt", title: "Exempt" },
+];
+
+export const settingsCurrencyOptions = [
+  { id: "SAR", title: "SAR — Saudi Riyal" },
+  { id: "USD", title: "USD — US Dollar" },
+  { id: "EUR", title: "EUR — Euro" },
+  { id: "AED", title: "AED — UAE Dirham" },
+  { id: "GBP", title: "GBP — British Pound" },
+  { id: "EGP", title: "EGP — Egyptian Pound" },
+  { id: "KWD", title: "KWD — Kuwaiti Dinar" },
+];
+
+export const settingsDateFormatOptions = [
+  { id: "DD/MM/YYYY", title: "DD/MM/YYYY" },
+  { id: "MM/DD/YYYY", title: "MM/DD/YYYY" },
+  { id: "YYYY-MM-DD", title: "YYYY-MM-DD" },
+];
+
+export const settingsTimezoneOptions = [
+  { id: "Asia/Riyadh", title: "Asia/Riyadh (UTC+3)" },
+  { id: "Asia/Dubai", title: "Asia/Dubai (UTC+4)" },
+  { id: "Asia/Amman", title: "Asia/Amman (UTC+2)" },
+  { id: "Europe/London", title: "Europe/London (UTC+0)" },
+  { id: "UTC", title: "UTC" },
+];
+
+export const settingsLanguageOptions = [
+  { id: "en", title: "English" },
+  { id: "ar", title: "Arabic" },
+];
+
+export const settingsTimeFormatOptions = [
+  { id: "12h", title: "12-hour" },
+  { id: "24h", title: "24-hour" },
+];
+
+export const businessCategoryOptions = [
+  { id: "Retail", title: "Retail" },
+  { id: "F&B", title: "Food & Beverage" },
+  { id: "E-Commerce", title: "E-Commerce" },
+  { id: "Healthcare", title: "Healthcare" },
+  { id: "Travel", title: "Travel" },
+  { id: "Education", title: "Education" },
+  { id: "Real Estate", title: "Real Estate" },
+  { id: "Technology", title: "Technology" },
+  { id: "Other", title: "Other" },
+];
+
+export const merchantStatusFilterOptions = [
+  { id: "all", title: "merchant:all_statuses" },
+  { id: "active", title: "Active" },
+  { id: "inactive", title: "Inactive" },
+];
+
+export const adminRoleOptions = [
+  { id: "Admin", title: "Admin" },
+  { id: "Super Admin", title: "Super Admin" },
+];

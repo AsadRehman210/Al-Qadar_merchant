@@ -8,6 +8,7 @@ import moment from "moment";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import Datepicker from "components/Datepicker";
 import SelectDropdown from "components/SelectDropdown";
 import Calender from "images/icons/calender.png";
@@ -21,20 +22,16 @@ import {
   clearCurrentDepartment,
 } from "store/slices/departmentSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
+import { departmentStatusOptions } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
-
-const STATUS_OPTIONS = [
-  { title: "department:status_active", id: "Active" },
-  { title: "department:status_inactive", id: "Inactive" },
-];
 
 const AddDepartment = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { id } = useParams();
-  const [selStatus, setSelStatus] = useState(STATUS_OPTIONS[0]);
+  const [selStatus, setSelStatus] = useState(departmentStatusOptions[0]);
   const [selEstablishedDate, setSelEstablishedDate] = useState("");
   const [selHod, setSelHod] = useState(null);
 
@@ -90,7 +87,7 @@ const AddDepartment = () => {
         status: existing.status || "Active",
       });
       setSelEstablishedDate(establishedFmt);
-      const st = STATUS_OPTIONS.find((o) => o.id === existing.status);
+      const st = departmentStatusOptions.find((o) => o.id === existing.status);
       if (st) setSelStatus(st);
       setSelHod(
         existing.hodEmployeeId ? { id: existing.hodEmployeeId, title: existing.hodName || "" } : null,
@@ -172,27 +169,24 @@ const AddDepartment = () => {
               register={register}
               errors={errors}
               required
-              pattern={/[a-zA-Z\s.'-]/}
+              pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
               maxLength={150}
             />
-            <div>
-              <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                {t("department:hod_name")}
-              </label>
-              <SelectDropdown
-                data={hodOptions}
-                selected={selHod}
-                setSelected={setSelHod}
-                placeholder={t("department:select_hod")}
-                emptyMessage={t("department:no_active_employees")}
-              />
-            </div>
+            <SelectDropdown
+              label={t("department:hod_name")}
+              data={hodOptions}
+              selected={selHod}
+              setSelected={setSelHod}
+              placeholder={t("department:select_hod")}
+              emptyMessage={t("department:no_active_employees")}
+            />
             <FormInput
               label={t("department:location")}
               name="location"
               register={register}
               errors={errors}
+              pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
               maxLength={100}
             />
@@ -212,7 +206,7 @@ const AddDepartment = () => {
             />
             <SelectDropdown
               label="department:status"
-              data={STATUS_OPTIONS}
+              data={departmentStatusOptions}
               selected={selStatus}
               setSelected={setSelStatus}
               name="status"
@@ -222,21 +216,15 @@ const AddDepartment = () => {
               valueKey="id"
               required
             />
-            <div className="lg:col-span-3">
-              <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                {t("department:description")}
-              </label>
-              <textarea
-                rows={4}
-                {...register("description", {
-                  maxLength: { value: 500, message: "Maximum length is 500 characters" },
-                })}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-              />
-              {errors.description?.message && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.description.message}</p>
-              )}
-            </div>
+            <FormTextarea
+              wrapperClass="lg:col-span-3"
+              label={t("department:description")}
+              name="description"
+              register={register}
+              errors={errors}
+              rows={4}
+              maxLength={{ value: 500, message: "Maximum length is 500 characters" }}
+            />
           </div>
 
           <div className="flex flex-wrap gap-3 justify-end mt-7 pt-6 border-t border-slate-200 dark:border-white/20">

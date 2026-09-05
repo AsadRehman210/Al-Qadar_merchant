@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
@@ -8,13 +8,12 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import RichTextEditor from "components/RichTextEditor";
-import { JOB_STATUS_OPTS } from "../recruitmentFakeData";
+import { jobStatusOptions } from "global/constant";
+import { jobExperienceOptions } from "global/constant";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { fetchDesignationsDropdown, showDesignationDropdownOptions } from "store/slices/designationSlice";
 import { fetchJobById, showCurrentJob, clearCurrentJob, createJob, updateJob } from "store/slices/recruitmentSlice";
 import { showUserData } from "store/slices/uniqueSlice";
-
-const experienceOpts = ["0–1 years", "1+ years", "2+ years", "3+ years", "5+ years", "7+ years"].map((e) => ({ id: e, title: e }));
 
 const AddJob = () => {
   const navigate = useNavigate();
@@ -39,12 +38,12 @@ const AddJob = () => {
 
   const [selDept, setSelDept] = useState(null);
   const [selDesignation, setSelDesignation] = useState(null);
-  const [selStatus, setSelStatus] = useState(JOB_STATUS_OPTS[0]);
-  const [selExp, setSelExp] = useState(experienceOpts[2]);
+  const [selStatus, setSelStatus] = useState(jobStatusOptions[0]);
+  const [selExp, setSelExp] = useState(jobExperienceOptions[2]);
 
   // Designations belong to a single department, so the Job Title picker only
   // ever needs the backend's designations for whichever department is
-  // selected — fetched fresh from the API on every department change,
+  // selected � fetched fresh from the API on every department change,
   // never filtered out of a bulk client-side list.
   useEffect(() => {
     if (selDept?.id) dispatch(fetchDesignationsDropdown({ departmentId: selDept.id }));
@@ -75,20 +74,45 @@ const AddJob = () => {
           ? { id: existing.designationId, title: existing.designationTitle || existing.title }
           : null,
       );
-      setSelStatus(JOB_STATUS_OPTS.find((s) => s.id === existing.status) || JOB_STATUS_OPTS[0]);
-      setSelExp(experienceOpts.find((e) => e.id === existing.experience) || experienceOpts[2]);
+      setSelStatus(jobStatusOptions.find((s) => s.id === existing.status) || jobStatusOptions[0]);
+      setSelExp(jobExperienceOptions.find((e) => e.id === existing.experience) || jobExperienceOptions[2]);
     }
   }, [existing, isEdit, departmentOpts, reset]);
 
   // Changing the department invalidates whichever designation was picked
-  // under the previous one — but skip this on the initial edit-mode load,
+  // under the previous one � but skip this on the initial edit-mode load,
   // since that effect above sets both together.
   const handleDeptChange = (v) => {
     setSelDept(v);
     setSelDesignation(null);
   };
 
+  const stripRichText = (html) =>
+    (html || "").replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").trim();
+
   const onSubmit = async (data) => {
+    if (Number(data.salaryMax) < Number(data.salaryMin)) {
+      toast.error("Salary max must be greater than or equal to salary min.");
+      return;
+    }
+    const descriptionText = stripRichText(data.description);
+    const requirementsText = stripRichText(data.requirements);
+    if (!descriptionText) {
+      toast.error("Job description is required.");
+      return;
+    }
+    if (descriptionText.length > 5000) {
+      toast.error("Job description must be at most 5000 characters.");
+      return;
+    }
+    if (!requirementsText) {
+      toast.error("Requirements are required.");
+      return;
+    }
+    if (requirementsText.length > 5000) {
+      toast.error("Requirements must be at most 5000 characters.");
+      return;
+    }
     const payload = {
       ...data,
       openings: Number(data.openings) || 1,
@@ -128,67 +152,75 @@ const AddJob = () => {
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white dark:bg-white/10 rounded-3xl border border-slate-200 dark:border-white/20 p-8 border-l-4 !border-l-[var(--color-teal-500)] space-y-6">
         <h3 className={sH}>Job Information</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div>
-            <label className={labelCls}>Department *</label>
-            <SelectDropdown
-              data={departmentOpts}
-              selected={selDept}
-              setSelected={handleDeptChange}
-              placeholder="Select Department"
-              name="departmentId"
-              valueKey="id"
-              register={register}
-              setValue={setValue}
-              trigger={trigger}
-              errors={errors}
-              required
-              classes="!h-[46px] !rounded-md"
-            />
-          </div>
-          <div>
-            <label className={labelCls}>Job Title *</label>
-            <SelectDropdown
-              data={designationOpts}
-              selected={selDesignation}
-              setSelected={setSelDesignation}
-              placeholder={selDept ? "Select Job Title" : "Select Department first"}
-              emptyMessage={selDept ? undefined : "Select a department first"}
-              name="designationId"
-              valueKey="id"
-              register={register}
-              setValue={setValue}
-              trigger={trigger}
-              errors={errors}
-              required
-              classes="!h-[46px] !rounded-md"
-            />
-          </div>
-          <FormInput label="Number of Openings" name="openings" register={register} errors={errors} type="number" min={1} max={100} placeholder="1" />
-          <div>
-            <label className={labelCls}>Required Experience</label>
-            <SelectDropdown data={experienceOpts} selected={selExp} setSelected={(v) => setSelExp(v || experienceOpts[2])} hideClear classes="!h-[46px] !rounded-md" />
-          </div>
+          <SelectDropdown
+            label="Department"
+            data={departmentOpts}
+            selected={selDept}
+            setSelected={handleDeptChange}
+            placeholder="Select Department"
+            name="departmentId"
+            valueKey="id"
+            register={register}
+            setValue={setValue}
+            trigger={trigger}
+            errors={errors}
+            required
+            classes="!h-[46px] !rounded-md"
+          />
+          <SelectDropdown
+            label="Job Title"
+            data={designationOpts}
+            selected={selDesignation}
+            setSelected={setSelDesignation}
+            placeholder={selDept ? "Select Job Title" : "Select Department first"}
+            emptyMessage={selDept ? undefined : "Select a department first"}
+            name="designationId"
+            valueKey="id"
+            register={register}
+            setValue={setValue}
+            trigger={trigger}
+            errors={errors}
+            required
+            classes="!h-[46px] !rounded-md"
+          />
+          <FormInput label="Number of Openings" name="openings" register={register} errors={errors} type="number" required min={1} max={100} placeholder="1" />
+          <SelectDropdown
+            label="Required Experience"
+            data={jobExperienceOptions}
+            selected={selExp}
+            setSelected={(v) => setSelExp(v || jobExperienceOptions[2])}
+            hideClear
+            classes="!h-[46px] !rounded-md"
+          />
           <FormInput label="Salary Min" name="salaryMin" register={register} errors={errors} type="number" min={0} decimal decimalPlaces={3} maxLength={10} placeholder="5000" />
           <FormInput label="Salary Max" name="salaryMax" register={register} errors={errors} type="number" min={0} decimal decimalPlaces={3} maxLength={10} placeholder="10000" />
-          <div>
-            <label className={labelCls}>Currency</label>
-            <SelectDropdown
-              data={[{ id: tenantCurrency, title: tenantCurrency }]}
-              selected={{ id: tenantCurrency, title: tenantCurrency }}
-              setSelected={() => {}}
-              hideClear
-              disabled
-              classes="!h-[46px] !rounded-md"
-            />
-          </div>
-          <div>
-            <label className={labelCls}>Application Deadline</label>
-            <input type="date" {...register("deadline")} className="w-full h-[46px] px-3 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-900 dark:text-white" />
-          </div>
-          <div>
-            <label className={labelCls}>Status</label>
-            <SelectDropdown data={JOB_STATUS_OPTS} selected={selStatus} setSelected={(v) => setSelStatus(v || JOB_STATUS_OPTS[0])} hideClear classes="!h-[46px] !rounded-md" />
-          </div>
+          <SelectDropdown
+            label="Currency"
+            data={[{ id: tenantCurrency, title: tenantCurrency }]}
+            selected={{ id: tenantCurrency, title: tenantCurrency }}
+            setSelected={() => {}}
+            hideClear
+            disabled
+            classes="!h-[46px] !rounded-md"
+          />
+          <FormInput
+            label="Application Deadline"
+            name="deadline"
+            type="date"
+            register={register}
+            errors={errors}
+            required
+            min={new Date().toISOString().split("T")[0]}
+            inputClass="!h-[46px] !rounded-xl"
+          />
+          <SelectDropdown
+            label="Status"
+            data={jobStatusOptions}
+            selected={selStatus}
+            setSelected={(v) => setSelStatus(v || jobStatusOptions[0])}
+            hideClear
+            classes="!h-[46px] !rounded-md"
+          />
           <div className="md:col-span-2 lg:col-span-3">
             <label className={labelCls}>Job Description</label>
             <Controller

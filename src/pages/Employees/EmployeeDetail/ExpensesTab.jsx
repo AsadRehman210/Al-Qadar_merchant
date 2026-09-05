@@ -8,7 +8,8 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import ReactPaginate from "react-paginate";
 import SelectDropdown from "components/SelectDropdown";
 import { rows } from "global/constant";
-import { EXPENSE_STATUS } from "../../Expenses/expenseFakeData";
+import { formatAmount } from "global/helper";
+import { EXPENSE_STATUS } from "global/constant";
 import { fetchExpensesByEmployee, showEmployeeExpenses } from "store/slices/expenseSlice";
 
 const ExpensesTab = ({ data }) => {
@@ -30,7 +31,6 @@ const ExpensesTab = ({ data }) => {
 
   const handlePageClick = (event) => setPage(event.selected + 1);
 
-  const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
   // Dates come back from the API as full ISO timestamps — show just the date.
   const fmtDate = (d) => (d ? dayjs(d).format("DD MMM YYYY") : "-");
 

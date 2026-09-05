@@ -7,7 +7,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
@@ -22,7 +22,6 @@ import FinancePage from "../FinancePage";
 
 const { view_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const RecoverableTax = () => {
   const { t } = useTranslation();
@@ -49,7 +48,7 @@ const RecoverableTax = () => {
           <div className="mb-6 max-w-xs">
             <div className="p-4 rounded-2xl border border-teal-200 bg-teal-50 dark:bg-teal-500/10 dark:border-teal-500/20">
               <p className="text-xs text-slate-500">{t("finance:total_recoverable_tax")}</p>
-              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{fmt(totalAmount)}</p>
+              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalAmount)}</p>
             </div>
           </div>
 
@@ -65,11 +64,12 @@ const RecoverableTax = () => {
                   <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("purchase:supplier")}</th>
                   <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("purchase:date")}</th>
                   <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap">{t("purchase:subtotal")}</th>
+                  <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:returned_tax")}</th>
                   <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">{t("purchase:tax_amount")}</th>
                 </tr>
               </thead>
               <tbody>
-                <TableState loading={loading} data={rows} colSpan={5}>
+                <TableState loading={loading} data={rows} colSpan={6}>
                   {rows.map((row) => (
                     <tr key={row.id} className="transition-colors border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10 last:[&_td]:border-b-0">
                       <td className="px-4 py-4 align-middle pl-6 font-mono text-xs">
@@ -77,8 +77,9 @@ const RecoverableTax = () => {
                       </td>
                       <td className="px-4 py-4 align-middle">{row.supplierName}</td>
                       <td className="px-4 py-4 align-middle">{row.date ? String(row.date).slice(0, 10) : "—"}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{fmt(row.subtotal)} {row.currency}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold pr-6">{fmt(row.taxAmount)} {row.currency}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{formatAmount(row.subtotal)} {row.currency}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums text-amber-700 dark:text-amber-300">{row.returnedTaxAmount ? `${formatAmount(row.returnedTaxAmount)} ${row.currency}` : "—"}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold pr-6">{formatAmount(row.taxAmount)} {row.currency}</td>
                     </tr>
                   ))}
                 </TableState>

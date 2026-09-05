@@ -8,13 +8,12 @@ import {
   FiClock,
   FiCheckCircle,
 } from "react-icons/fi";
+import { defaultWeeklySchedule } from "global/helper";
 import {
-  EMPLOYEE_STATUS_BADGE,
-  EMPLOYEE_STATUS_OPTIONS,
-  DEFAULT_WEEKLY_SCHEDULE,
-} from "../employeesFakeData";
-
-import { weekdayLabelKeys as DAY_LABEL_KEY } from "global/constant";
+  weekdayLabelKeys as DAY_LABEL_KEY,
+  employeeStatusOptions,
+  employeeStatusBadge,
+} from "global/constant";
 
 const OfficialDetailsTab = ({ data }) => {
   const { t } = useTranslation();
@@ -29,10 +28,10 @@ const OfficialDetailsTab = ({ data }) => {
   ];
 
   const statusLabel =
-    EMPLOYEE_STATUS_OPTIONS.find((s) => s.id === data?.status)?.title ||
+    employeeStatusOptions.find((s) => s.id === data?.status)?.title ||
     data?.status;
   const statusBadgeClass =
-    EMPLOYEE_STATUS_BADGE[data?.status] ||
+    employeeStatusBadge[data?.status] ||
     "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70";
 
   const LIFECYCLE_DATE_FIELD = {
@@ -51,7 +50,7 @@ const OfficialDetailsTab = ({ data }) => {
 
   const weeklySchedule = data?.weekly_schedule?.length
     ? data.weekly_schedule
-    : DEFAULT_WEEKLY_SCHEDULE;
+    : defaultWeeklySchedule;
 
   // weeklyScheduleHistory is append-only: [...older entries, currentEntry].
   // The entry right before the last one is the most recent PAST schedule —

@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { APPLIED_VIA } from "global/approvalEngine";
@@ -22,7 +23,8 @@ import { applyRequest, triggerRefresh } from "store/slices/requestSlice";
 
 const { add_employee } = rafeeqi_role_ids;
 
-const toOpts = (arr) => arr.map((x) => ({ id: x, title: x }));
+const toOpts = (arr) =>
+  arr.map((x) => (x && typeof x === "object" ? x : { id: x, title: x }));
 const NUMBER_FIELDS = ["hours", "noticePeriodDays", "advanceAmount", "quantity", "cost"];
 
 // Extra per-field validation props for the config-driven fields below.
@@ -99,6 +101,15 @@ const ApplyRequest = ({ hrMode = false }) => {
       else details[f] = data[f];
     });
 
+    if (details.travelFrom && details.travelTo && details.travelTo < details.travelFrom) {
+      toast.error(t("requests:from_before_to", "From date must be before or equal to to date"));
+      return;
+    }
+    if (details.fromTime && details.toTime && details.toTime < details.fromTime) {
+      toast.error(t("requests:from_before_to", "From time must be before or equal to to time"));
+      return;
+    }
+
     setSubmitting(true);
     try {
       await dispatch(applyRequest({
@@ -125,20 +136,19 @@ const ApplyRequest = ({ hrMode = false }) => {
 
     if (f === "reason") {
       return (
-        <div key={f} className="lg:col-span-3">
-          <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-            {label} <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            rows={4}
-            {...register("reason", { required: true, minLength: { value: 5, message: "Minimum length is 5 characters" }, maxLength: { value: 500, message: "Maximum length is 500 characters" } })}
-            placeholder={t("requests:reason_placeholder")}
-            className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-          />
-          {errors.reason && errors.reason.type !== "required" && (
-            <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.reason.message}</p>
-          )}
-        </div>
+        <FormTextarea
+          key={f}
+          label={label}
+          name="reason"
+          register={register}
+          errors={errors}
+          required
+          rows={4}
+          minLength={{ value: 5, message: "Minimum length is 5 characters" }}
+          maxLength={{ value: 500, message: "Maximum length is 500 characters" }}
+          placeholder={t("requests:reason_placeholder")}
+          wrapperClass="lg:col-span-3"
+        />
       );
     }
 

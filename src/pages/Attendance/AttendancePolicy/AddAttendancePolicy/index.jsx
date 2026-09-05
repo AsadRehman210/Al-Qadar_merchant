@@ -6,6 +6,8 @@ import { toast } from "react-toastify";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiSave } from "react-icons/fi";
 import Button from "components/Button";
 import Checkboxes from "components/Checkboxes";
+import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import {
   fetchAttendancePolicyById,
   fetchCurrentAttendancePolicy,
@@ -14,22 +16,6 @@ import {
   showCurrentAttendancePolicy,
   clearCurrentAttendancePolicy,
 } from "store/slices/attendancePolicySlice";
-
-const inputCls =
-  "w-full h-11 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500/80";
-const labelCls = "text-xs font-medium text-slate-600 dark:text-white/60 mb-1 block";
-
-const Field = ({ label, children, hint, error, className = "" }) => (
-  <div className={className}>
-    {label ? <label className={labelCls}>{label}</label> : null}
-    {children}
-    {error ? (
-      <p className="text-xs text-red-600 dark:text-red-400 mt-1">{error}</p>
-    ) : hint ? (
-      <p className="text-xs text-slate-500 dark:text-white/45 mt-1">{hint}</p>
-    ) : null}
-  </div>
-);
 
 const SectionTitle = ({ title, hint }) => (
   <div className="pb-4 mb-5 border-b border-slate-100 dark:border-white/10">
@@ -139,8 +125,16 @@ const AddAttendancePolicy = () => {
 
   const handleSave = async () => {
     const nextErrors = {};
-    if (!policy.name?.trim()) nextErrors.name = t("attendance:policy_name_required");
+    if (!policy.name?.trim() || policy.name.trim().length < 2) nextErrors.name = t("attendance:policy_name_required");
     if (!policy.implementedDate) nextErrors.implementedDate = t("attendance:implemented_date_required");
+    const today = new Date().toISOString().split("T")[0];
+    if (policy.implementedDate && policy.implementedDate > today) {
+      nextErrors.implementedDate = t("attendance:implemented_not_future", "Implemented date cannot be in the future");
+    }
+    if (policy.salaryCalculationDays === "" || policy.salaryCalculationDays == null
+      || Number(policy.salaryCalculationDays) < 1 || Number(policy.salaryCalculationDays) > 31) {
+      nextErrors.salaryCalculationDays = t("attendance:salary_days_range", "Salary calculation days must be between 1 and 31");
+    }
     setFormErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
@@ -212,22 +206,30 @@ const AddAttendancePolicy = () => {
           }}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label={t("attendance:policy_name_required")} error={formErrors.name}>
-              <input
-                className={inputCls}
-                value={policy.name}
-                onChange={(e) => setValue("name", e.target.value)}
-                placeholder={t("attendance:policy_profile_optional_name")}
-              />
-            </Field>
-            <Field label={t("attendance:implemented_date")} error={formErrors.implementedDate}>
-              <input
-                type="date"
-                className={inputCls}
-                value={policy.implementedDate}
-                onChange={(e) => setValue("implementedDate", e.target.value)}
-              />
-            </Field>
+            <FormInput
+              label={t("attendance:policy_name_required")}
+              name="name"
+              value={policy.name}
+              onValueChange={(v) => setValue("name", v)}
+              placeholder={t("attendance:policy_profile_optional_name")}
+              pattern={/[a-zA-Z0-9\s.'-]/}
+              minLength={2}
+              maxLength={150}
+              inputClass="!h-11"
+              labelClass="!text-xs"
+              errors={formErrors.name ? { name: { message: formErrors.name } } : undefined}
+            />
+            <FormInput
+              label={t("attendance:implemented_date")}
+              name="implementedDate"
+              type="date"
+              value={policy.implementedDate}
+              onValueChange={(v) => setValue("implementedDate", v)}
+              max={new Date().toISOString().split("T")[0]}
+              inputClass="!h-11"
+              labelClass="!text-xs"
+              errors={formErrors.implementedDate ? { implementedDate: { message: formErrors.implementedDate } } : undefined}
+            />
           </div>
 
           <div className="rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 p-4">
@@ -249,38 +251,40 @@ const AddAttendancePolicy = () => {
                 hint={t("attendance:policy_grace_section_hint")}
               />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label={t("attendance:policy_grace_late")}>
-                  <input
+                <FormInput
+                  label={t("attendance:policy_grace_late")}
+                  type="number"
+                  min={0}
+                  max={180}
+                  value={rules.lateGraceMinutes}
+                  onValueChange={(v) => setRule("lateGraceMinutes", Number(v))}
+                  inputClass="!h-11"
+                  labelClass="!text-xs"
+                />
+                <FormInput
+                  label={t("attendance:policy_grace_early")}
+                  type="number"
+                  min={0}
+                  max={180}
+                  value={rules.earlyGraceMinutes}
+                  onValueChange={(v) => setRule("earlyGraceMinutes", Number(v))}
+                  inputClass="!h-11"
+                  labelClass="!text-xs"
+                />
+                <div className="sm:col-span-2">
+                  <FormInput
+                    label={t("attendance:policy_deduction_per_minute")}
                     type="number"
-                    min="0"
-                    className={inputCls}
-                    value={rules.lateGraceMinutes}
-                    onChange={(e) => setRule("lateGraceMinutes", Number(e.target.value))}
-                  />
-                </Field>
-                <Field label={t("attendance:policy_grace_early")}>
-                  <input
-                    type="number"
-                    min="0"
-                    className={inputCls}
-                    value={rules.earlyGraceMinutes}
-                    onChange={(e) => setRule("earlyGraceMinutes", Number(e.target.value))}
-                  />
-                </Field>
-                <Field
-                  label={t("attendance:policy_deduction_per_minute")}
-                  className="sm:col-span-2"
-                  hint={t("attendance:policy_deduction_hint")}
-                >
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    className={inputCls}
+                    min={0}
+                    decimal
+                    decimalPlaces={2}
                     value={rules.deductionPerMinute}
-                    onChange={(e) => setRule("deductionPerMinute", Number(e.target.value))}
+                    onValueChange={(v) => setRule("deductionPerMinute", Number(v))}
+                    inputClass="!h-11"
+                    labelClass="!text-xs"
                   />
-                </Field>
+                  <p className="text-xs text-slate-500 dark:text-white/45 mt-1">{t("attendance:policy_deduction_hint")}</p>
+                </div>
               </div>
 
               <div className="mt-6 pt-6 border-t border-slate-100 dark:border-white/10">
@@ -321,25 +325,28 @@ const AddAttendancePolicy = () => {
               title={t("attendance:policy_salary_days_label")}
               hint={t("attendance:policy_salary_days_hint")}
             />
-            <Field className="max-w-xs">
-              <input
-                type="number"
-                min="1"
-                className={inputCls}
-                value={policy.salaryCalculationDays}
-                onChange={(e) => setValue("salaryCalculationDays", Number(e.target.value))}
-              />
-            </Field>
+            <FormInput
+              type="number"
+              required
+              min={1}
+              max={31}
+              name="salaryCalculationDays"
+              value={policy.salaryCalculationDays}
+              onValueChange={(v) => setValue("salaryCalculationDays", Number(v))}
+              inputClass="!h-11"
+              wrapperClass="max-w-xs"
+              errors={formErrors.salaryCalculationDays ? { salaryCalculationDays: { message: formErrors.salaryCalculationDays } } : undefined}
+            />
           </section>
 
-          <Field label={t("attendance:policy_notes")}>
-            <textarea
-              rows={3}
-              className={inputCls.replace("h-11", "min-h-[80px] py-2")}
-              value={policy.notes}
-              onChange={(e) => setValue("notes", e.target.value)}
-            />
-          </Field>
+          <FormTextarea
+            label={t("attendance:policy_notes")}
+            rows={3}
+            value={policy.notes}
+            onValueChange={(v) => setValue("notes", v)}
+            maxLength={500}
+            labelClass="!text-xs"
+          />
 
           <PolicyPreviewCard policy={policy} t={t} />
 

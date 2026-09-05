@@ -9,8 +9,8 @@ import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import Button from "components/Button";
 import TableState from "components/TableState";
-import { tableRows } from "global/constant";
-import { checkRoleAuth } from "global/helper";
+import { tableRows, pfStatusFilterOptions } from "global/constant";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { useListFilters } from "hooks/useListFilters";
 import {
@@ -28,7 +28,6 @@ import {
 } from "store/slices/providentFundSlice";
 
 const { view_employee, add_employee } = rafeeqi_role_ids;
-const fmt = (n) => (n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const ProvidentFund = () => {
   const { t } = useTranslation();
@@ -61,17 +60,13 @@ const ProvidentFund = () => {
 
   const totalPages = useMemo(() => Math.ceil((totalRecords || 0) / selRows.id) || 1, [totalRecords, selRows]);
 
-  const statusOpts = [
-    { id: "all", title: t("pf:all") },
-    { id: "Active", title: t("pf:active") },
-    { id: "Inactive", title: t("pf:inactive") },
-  ];
+  const statusOpts = pfStatusFilterOptions;
 
   const STAT_CARDS = [
-    { label: t("pf:total_fund"), value: `SAR ${fmt(summary.totalFund)}`, sub: t("pf:current_balance"), color: "from-teal-500 to-teal-600" },
-    { label: t("pf:employee_contributions"), value: `SAR ${fmt(summary.totalEmployeeContrib)}`, sub: policy ? `${policy.employeeRate}% of basic` : "", color: "from-blue-500 to-blue-600" },
-    { label: t("pf:employer_contributions"), value: `SAR ${fmt(summary.totalEmployerContrib)}`, sub: policy ? `${policy.employerRate}% of basic` : "", color: "from-purple-500 to-purple-600" },
-    { label: t("pf:total_withdrawn"), value: `SAR ${fmt(summary.totalWithdrawn)}`, sub: t("pf:all_time_withdrawals"), color: "from-rose-500 to-rose-600" },
+    { label: t("pf:total_fund"), value: `SAR ${formatAmount(summary.totalFund)}`, sub: t("pf:current_balance"), color: "from-teal-500 to-teal-600" },
+    { label: t("pf:employee_contributions"), value: `SAR ${formatAmount(summary.totalEmployeeContrib)}`, sub: policy ? `${policy.employeeRate}% of basic` : "", color: "from-blue-500 to-blue-600" },
+    { label: t("pf:employer_contributions"), value: `SAR ${formatAmount(summary.totalEmployerContrib)}`, sub: policy ? `${policy.employerRate}% of basic` : "", color: "from-purple-500 to-purple-600" },
+    { label: t("pf:total_withdrawn"), value: `SAR ${formatAmount(summary.totalWithdrawn)}`, sub: t("pf:all_time_withdrawals"), color: "from-rose-500 to-rose-600" },
   ];
 
   const handlePageChange = (newPage) => dispatch(setCurrentPage(newPage));
@@ -159,9 +154,9 @@ const ProvidentFund = () => {
                     <td className="px-3 py-4 text-xs font-mono text-slate-600 dark:text-white/70">
                       {r.pfAccountNo || "-"}
                     </td>
-                    <td className="px-3 py-4 text-sm">SAR {fmt((r.totalEmployeeContrib || 0) + (r.totalEmployerContrib || 0))}</td>
-                    <td className="px-3 py-4 text-sm text-rose-600">SAR {fmt(r.totalWithdrawn)}</td>
-                    <td className="px-3 py-4 text-sm font-bold text-emerald-600">SAR {fmt(r.currentBalance)}</td>
+                    <td className="px-3 py-4 text-sm">SAR {formatAmount((r.totalEmployeeContrib || 0) + (r.totalEmployerContrib || 0))}</td>
+                    <td className="px-3 py-4 text-sm text-rose-600">SAR {formatAmount(r.totalWithdrawn)}</td>
+                    <td className="px-3 py-4 text-sm font-bold text-emerald-600">SAR {formatAmount(r.currentBalance)}</td>
                     <td className="px-3 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${r.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
                         {r.status}

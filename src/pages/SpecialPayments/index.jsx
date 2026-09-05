@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,10 +10,10 @@ import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import Button from "components/Button";
 import TableState from "components/TableState";
-import { tableRows } from "global/constant";
-import { checkRoleAuth } from "global/helper";
+import { tableRows, specialPaymentStatusFilterOptions } from "global/constant";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { SP_STATUS_BADGE, SP_STATUS } from "pages/PayrollBatch/payrollBatchFakeData";
+import { SP_STATUS_BADGE } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
   fetchSpecialPayments,
@@ -28,7 +28,6 @@ import {
 } from "store/slices/payrollBatchSlice";
 
 const { view_employee, add_employee } = rafeeqi_role_ids;
-const fmt = (n) => (n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const SpecialPayments = () => {
   const { t } = useTranslation();
@@ -73,24 +72,21 @@ const SpecialPayments = () => {
     ...p,
     employeeCount: p.employees?.length || 0,
     amountPerEmployee: p.employees?.length ? Math.round((p.totalAmount || 0) / p.employees.length) : 0,
-    createdAtLabel: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—",
+    createdAtLabel: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "�",
   })), [payments]);
 
   const typeOpts = [
     { id: "all", title: t("payroll:all") },
     ...types.map((x) => ({ id: x.id, title: x.name })),
   ];
-  const statusOpts = [
-    { id: "all", title: t("payroll:all") },
-    ...Object.values(SP_STATUS).map((s) => ({ id: s, title: s })),
-  ];
+  const statusOpts = specialPaymentStatusFilterOptions;
 
   const totalPages = Math.ceil((totalRecords || 0) / selRows.id) || 1;
   const handleRowsChange = (v) => setFilters({ limitId: v.id, page: 1 });
 
   const STAT_CARDS = [
-    { label: t("payroll:sp_total_paid"), value: `SAR ${fmt(summary.totalPaid)}`, sub: `${summary.paidCount} payments`, color: "from-emerald-500 to-emerald-600" },
-    { label: t("payroll:sp_pending_payment"), value: `SAR ${fmt(summary.totalPending)}`, sub: `${summary.pendingCount} approved`, color: "from-blue-500 to-blue-600" },
+    { label: t("payroll:sp_total_paid"), value: `SAR ${formatAmount(summary.totalPaid)}`, sub: `${summary.paidCount} payments`, color: "from-emerald-500 to-emerald-600" },
+    { label: t("payroll:sp_pending_payment"), value: `SAR ${formatAmount(summary.totalPending)}`, sub: `${summary.pendingCount} approved`, color: "from-blue-500 to-blue-600" },
     { label: t("payroll:sp_draft"), value: summary.draftCount, sub: t("payroll:sp_awaiting_submission"), color: "from-slate-500 to-slate-600" },
     { label: t("payroll:sp_total_count"), value: summary.totalCount, sub: t("payroll:sp_all_time"), color: "from-purple-500 to-purple-600" },
   ];
@@ -136,7 +132,7 @@ const SpecialPayments = () => {
             <button key={type.id} type="button"
               onClick={() => setFilters({ filterType: type.id, page: 1 })}
               className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 text-center transition-all cursor-pointer ${filterType === type.id ? "border-teal-400 bg-teal-50 dark:bg-teal-500/10" : "border-slate-200 dark:border-white/10 hover:border-teal-300 bg-white dark:bg-white/5"}`}>
-              <span className="text-2xl">{type.icon || "💰"}</span>
+              <span className="text-2xl">{type.icon || "??"}</span>
               <p className="text-xs font-semibold text-slate-700 dark:text-white leading-tight">{type.name}</p>
             </button>
           ))}
@@ -144,7 +140,7 @@ const SpecialPayments = () => {
           {checkRoleAuth(add_employee) && (
             <button type="button" onClick={() => navigate("/special-payments/types")}
               className="flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 border-dashed border-teal-300 dark:border-teal-500/40 text-center transition-all cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-500/10">
-              <span className="text-2xl">⚙️</span>
+              <span className="text-2xl">??</span>
               <p className="text-xs font-semibold text-teal-600 dark:text-teal-400 leading-tight">{t("payroll:sp_manage_types")}</p>
             </button>
           )}
@@ -201,8 +197,8 @@ const SpecialPayments = () => {
                       {p.target === "department" ? `Dept: ${p.departmentName}` : p.target === "individual" ? "Individual" : p.target === "custom" ? "Custom" : "All Employees"}
                     </td>
                     <td className="px-4 py-4 text-sm font-semibold">{p.employeeCount}</td>
-                    <td className="px-4 py-4 font-bold text-slate-900 dark:text-white">SAR {fmt(p.totalAmount)}</td>
-                    <td className="px-4 py-4 text-sm text-slate-600 dark:text-white/70">SAR {fmt(p.amountPerEmployee)}</td>
+                    <td className="px-4 py-4 font-bold text-slate-900 dark:text-white">SAR {formatAmount(p.totalAmount)}</td>
+                    <td className="px-4 py-4 text-sm text-slate-600 dark:text-white/70">SAR {formatAmount(p.amountPerEmployee)}</td>
                     <td className="px-4 py-4 text-xs text-slate-500 dark:text-white/50">{p.createdAtLabel}</td>
                     <td className="px-4 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${SP_STATUS_BADGE[p.status] || ""}`}>{p.status}</span>

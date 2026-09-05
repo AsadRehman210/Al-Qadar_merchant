@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
-import { EXPENSE_TYPE_IDS } from "./expenseFakeData";
+import { EXPENSE_TYPE_IDS } from "global/constant";
 
 const ExpensesFilter = ({ filters, setFilters }) => {
   const { t } = useTranslation();

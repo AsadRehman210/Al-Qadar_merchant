@@ -5,7 +5,7 @@
 export const defaultRawLine = () => ({
   variantId: "",
   quantity: "",
-  actualQuantity: "",
+  costPrice: "",
 });
 
 /** A free-form cost that isn't raw material — labor, electricity, packaging,
@@ -18,17 +18,25 @@ export const defaultOtherCostLine = () => ({
 export const DEFAULT_PRODUCTION_ORDER = {
   scheduledDate: "",
   outputVariantId: "",
+  outputVariantName: "",
   outputQuantity: "",
+  actualOutputQuantity: "",
   warehouseId: "",
+  warehouseName: "",
+  outputWarehouseId: "",
+  outputWarehouseName: "",
+  outputExpiryDate: "",
   notes: "",
   rawLines: [defaultRawLine()],
   otherCostLines: [defaultOtherCostLine()],
+  quarantineLotId: "",
+  quarantineLotNumber: "",
+  quarantineQty: "",
 };
 
 /** Live cost preview while an order is still being drafted — the same
  *  qty×cost + overhead formula the backend's /complete endpoint uses, but
- *  pure (no side effects) and based on planned `quantity`/`outputQuantity`
- *  rather than actuals, so it can be recomputed on every keystroke.
+ *  pure (no side effects) so it can be recomputed on every keystroke.
  *  `variantCostById` is a Map<variantId, costPrice> built from the loaded
  *  variant list. */
 export const computeProductionCost = (rawLines, otherCostLines, outputQuantity, variantCostById = new Map()) => {
@@ -37,7 +45,8 @@ export const computeProductionCost = (rawLines, otherCostLines, outputQuantity, 
     if (!line.variantId) return;
     const qty = Number(line.quantity) || 0;
     if (qty <= 0) return;
-    totalRawCost += qty * (Number(variantCostById.get(line.variantId)) || 0);
+    const unit = Number(line.costPrice ?? variantCostById.get(line.variantId)) || 0;
+    totalRawCost += qty * unit;
   });
   const totalOtherCost = (otherCostLines || []).reduce(
     (sum, line) => sum + (Number(line.amount) || 0),
@@ -46,9 +55,9 @@ export const computeProductionCost = (rawLines, otherCostLines, outputQuantity, 
   const totalCost = totalRawCost + totalOtherCost;
   const outputQty = Number(outputQuantity) || 0;
   return {
-    totalRawCost: Math.round(totalRawCost * 100) / 100,
-    totalOtherCost: Math.round(totalOtherCost * 100) / 100,
-    totalCost: Math.round(totalCost * 100) / 100,
-    unitCost: outputQty > 0 ? Math.round((totalCost / outputQty) * 100) / 100 : 0,
+    totalRawCost,
+    totalOtherCost,
+    totalCost,
+    unitCost: outputQty > 0 ? totalCost / outputQty : 0,
   };
 };

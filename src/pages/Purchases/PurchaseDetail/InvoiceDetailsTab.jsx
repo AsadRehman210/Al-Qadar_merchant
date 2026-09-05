@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { lineTotal } from "../purchaseInvoiceHelpers";
-import { paymentStatusBadge } from "global/constant";
+import { lineTotal } from "global/helper";
+import { paymentStatusBadge, purchaseStatusBadge } from "global/constant";
 import DetailField from "./DetailField";
 
 const InvoiceDetailsTab = ({
@@ -108,7 +108,16 @@ const InvoiceDetailsTab = ({
             </p>
           </div>
         )}
-        <DetailField label={t("purchase:status")} value={invoice.status} />
+        <div>
+          <p className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-1">
+            {t("purchase:status")}
+          </p>
+          <span
+            className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${purchaseStatusBadge[invoice.status] || purchaseStatusBadge.Draft}`}
+          >
+            {invoice.status || "—"}
+          </span>
+        </div>
         <div>
           <p className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-1">
             {t("purchase:payment_status")}

@@ -7,20 +7,16 @@ import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { applyLeave } from "store/slices/leaveSlice";
 import { fetchLeaveTypes, showLeaveTypes } from "store/slices/leaveTypeSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
+import { leaveHalfDayOptions } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
-
-const HALF_DAY_OPTS = [
-  { id: "full", title: "Full Day" },
-  { id: "first_half", title: "First Half" },
-  { id: "second_half", title: "Second Half" },
-];
 
 // Create-only — the backend has no PUT/update endpoint for a leave request
 // (only apply/approve/reject/cancel), so the earlier edit-mode path was
@@ -40,7 +36,7 @@ const AddLeave = () => {
   }, [dispatch]);
 
   const [selEmployee, setSelEmployee] = useState(null);
-  const [selHalfDay, setSelHalfDay] = useState(HALF_DAY_OPTS[0]);
+  const [selHalfDay, setSelHalfDay] = useState(leaveHalfDayOptions[0]);
 
   const empOpts = useMemo(
     () => employees.filter((e) => e.status === "active").map((e) => ({
@@ -190,12 +186,13 @@ const AddLeave = () => {
               register={register}
               errors={errors}
               required
+              min={fromDate}
             />
             <SelectDropdown
               label="leave:day_type"
-              data={HALF_DAY_OPTS}
+              data={leaveHalfDayOptions}
               selected={selHalfDay}
-              setSelected={(v) => setSelHalfDay(v || HALF_DAY_OPTS[0])}
+              setSelected={(v) => setSelHalfDay(v || leaveHalfDayOptions[0])}
               name="halfDay"
               register={register}
             />
@@ -207,7 +204,8 @@ const AddLeave = () => {
                 {totalDays} {t("leave:days")}
               </div>
             </div>
-            <FormInput label={t("leave:handover_to")} name="handoverTo" register={register} errors={errors} />
+            <FormInput label={t("leave:handover_to")} name="handoverTo" register={register} errors={errors}
+              pattern={/[a-zA-Z\s.'-]/} minLength={2} maxLength={150} />
             <FormInput
               label={t("leave:emergency_contact")}
               name="emergencyContact"
@@ -217,26 +215,18 @@ const AddLeave = () => {
               minLength={7}
               maxLength={20}
             />
-            <div className="lg:col-span-3">
-              <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                {t("leave:reason")} <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                rows={4}
-                {...register("reason", {
-                  required: true,
-                  minLength: { value: 5, message: "Minimum length is 5 characters" },
-                  maxLength: { value: 500, message: "Maximum length is 500 characters" },
-                })}
-                placeholder={t("leave:reason_placeholder")}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-              />
-              {errors.reason && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  {errors.reason.message || t("leave:reason_required")}
-                </p>
-              )}
-            </div>
+            <FormTextarea
+              label={t("leave:reason")}
+              name="reason"
+              register={register}
+              errors={errors}
+              required={t("leave:reason_required")}
+              rows={4}
+              minLength={{ value: 5, message: "Minimum length is 5 characters" }}
+              maxLength={{ value: 500, message: "Maximum length is 500 characters" }}
+              placeholder={t("leave:reason_placeholder")}
+              wrapperClass="lg:col-span-3"
+            />
           </div>
 
           <div className="flex flex-wrap gap-3 justify-end mt-7 pt-6 border-t border-slate-200 dark:border-white/20">

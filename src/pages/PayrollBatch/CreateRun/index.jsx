@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight, FiCheck } from "react-icons/fi";
 import Button from "components/Button";
+import FormInput from "components/FormInput";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { createPayrollRun } from "store/slices/payrollBatchSlice";
@@ -127,29 +128,23 @@ const CreateRun = () => {
           <div className={panelCls}>
             <h3 className="font-semibold text-lg text-slate-800 dark:text-white mb-5">{t("payroll:run_config")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                  {t("payroll:payroll_month")} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="month"
-                  value={month}
-                  onChange={(e) => setMonth(e.target.value)}
-                  max={new Date().toISOString().slice(0, 7)}
-                  className="w-full h-[46px] rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm text-slate-900 dark:text-white focus:border-teal-500 focus:outline-0"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                  {t("payroll:notes")}
-                </label>
-                <input
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder={t("payroll:notes_placeholder")}
-                  className="w-full h-[46px] rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm text-slate-900 dark:text-white focus:border-teal-500 focus:outline-0"
-                />
-              </div>
+              <FormInput
+                label={t("payroll:payroll_month")}
+                type="month"
+                required
+                value={month}
+                onValueChange={setMonth}
+                max={new Date().toISOString().slice(0, 7)}
+                inputClass="!h-[46px] !rounded-lg"
+              />
+              <FormInput
+                label={t("payroll:notes")}
+                value={notes}
+                onValueChange={setNotes}
+                maxLength={500}
+                placeholder={t("payroll:notes_placeholder")}
+                inputClass="!h-[46px] !rounded-lg"
+              />
             </div>
 
             {/* auto-deductions note */}
@@ -196,11 +191,12 @@ const CreateRun = () => {
               </div>
             </div>
 
-            <input
+            <FormInput
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onValueChange={setSearch}
               placeholder={t("payroll:search_emp")}
-              className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm mb-4 focus:border-teal-500 focus:outline-0"
+              inputClass="!h-10 !rounded-lg"
+              wrapperClass="w-full mb-4"
             />
 
             <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">

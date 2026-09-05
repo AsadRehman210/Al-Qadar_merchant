@@ -5,8 +5,10 @@ import { useNavigate } from "react-router";
 import { FiArrowLeft, FiArrowRight, FiClipboard, FiCheckCircle, FiAlertTriangle, FiXCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
+import FormInput from "components/FormInput";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { assetAuditResultList } from "global/constant";
 import {
   fetchAssetAudits,
   fetchActiveAssetAudit,
@@ -20,8 +22,6 @@ import {
 import { SkeletonTable } from "components/Skeleton";
 
 const { add_customer } = rafeeqi_role_ids;
-
-const AUDIT_RESULT_OPTIONS = ["Pending", "Verified", "Missing", "Damaged"];
 
 const RESULT_STYLES = {
   Pending: "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/50",
@@ -133,14 +133,16 @@ const AssetAudits = () => {
                     <p className="font-medium text-slate-800 dark:text-white/90 truncate">{r.assetName || "—"}</p>
                     <p className="text-xs text-slate-400 font-mono">{r.assetTag}</p>
                   </div>
-                  <input
+                  <FormInput
                     value={notesDraft[r.assetId] ?? r.notes ?? ""}
-                    onChange={(e) => setNotesDraft((p) => ({ ...p, [r.assetId]: e.target.value }))}
+                    onValueChange={(v) => setNotesDraft((p) => ({ ...p, [r.assetId]: v }))}
                     placeholder={t("asset:notes")}
-                    className="h-8 w-40 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-2 text-xs focus:outline-0 focus:border-teal-500"
+                    wrapperClass="w-40"
+                    inputClass="!h-8 !rounded-lg !text-xs !px-2"
+                    maxLength={500}
                   />
                   <div className="flex gap-1.5 shrink-0">
-                    {AUDIT_RESULT_OPTIONS.filter((s) => s !== "Pending").map((s) => (
+                    {assetAuditResultList.filter((s) => s !== "Pending").map((s) => (
                       <button
                         key={s}
                         type="button"

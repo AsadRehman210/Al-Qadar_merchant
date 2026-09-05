@@ -7,10 +7,8 @@ import { LuCalendarCheck, LuHandCoins, LuReceipt, LuClipboardList, LuBanknote, L
 import { APPROVAL_STATUS_BADGE } from "global/approvalEngine";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { LOAN_STATUS } from "pages/Loans/loanFakeData";
-import { EXPENSE_STATUS } from "pages/Expenses/expenseFakeData";
+import { LOAN_STATUS, EXPENSE_STATUS, RUN_STATUS, SP_STATUS } from "global/constant";
 import { APPROVAL_STATUS, requestTypeById } from "pages/Requests/requestsFakeData";
-import { RUN_STATUS, SP_STATUS } from "pages/PayrollBatch/payrollBatchFakeData";
 import {
   showLastUpdated as requestUpdated,
   fetchRequests,

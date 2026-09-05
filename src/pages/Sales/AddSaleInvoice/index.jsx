@@ -25,11 +25,10 @@ import SaleInvoiceForm from "./SaleInvoiceForm";
 
 const { add_customer, edit_customer } = rafeeqi_role_ids;
 
-const defaultLine = () => ({ variantId: "", productName: "", qty: 1, price: 0, costPrice: 0, unit: "pcs" });
+const defaultLine = () => ({ variantId: "", productName: "", qty: 1, price: 0, costPrice: 0, unit: "" });
 
 const DEFAULT_SALE_FORM = {
   customerId: "",
-  date: new Date().toISOString().slice(0, 10),
   warehouseId: "",
   receiverName: "",
   products: [defaultLine()],
@@ -59,6 +58,7 @@ const AddSaleInvoice = () => {
   const {
     handleSubmit,
     reset,
+    trigger,
     formState: { isSubmitting },
   } = methods;
 
@@ -74,7 +74,6 @@ const AddSaleInvoice = () => {
         reset({
           ...DEFAULT_SALE_FORM,
           ...inv,
-          date: inv.date ? new Date(inv.date).toISOString().slice(0, 10) : DEFAULT_SALE_FORM.date,
           deliveryDate: inv.deliveryDate ? new Date(inv.deliveryDate).toISOString().slice(0, 10) : "",
           products: inv.products?.length > 0 ? inv.products.map((l) => ({ ...defaultLine(), ...l })) : [defaultLine()],
         });
@@ -111,7 +110,7 @@ const AddSaleInvoice = () => {
             productName: l.productName,
             qty: l.qty,
             price: l.price,
-            unit: l.unit || "pcs",
+            unit: l.unit || "",
             batchId: l.batchId || "",
             taxPercent: l.taxPercent ?? null,
           }))
@@ -134,21 +133,28 @@ const AddSaleInvoice = () => {
       toast.error(t("sales:customer_required"));
       return;
     }
+    if (!data.deliveryDate) {
+      toast.error(t("sales:delivery_date_required"));
+      return;
+    }
+    const linesOk = await trigger("products");
+    if (!linesOk) {
+      toast.error(t("sales:fix_line_qty"));
+      return;
+    }
+    const { invoiceNumber, date, ...rest } = data;
     try {
       if (id) {
-        // Product edits move real stock (see sale-invoice-service.update) so
-        // the backend only accepts them while still Pending — once
-        // InTransit/Delivered/Cancelled, drop products/taxPercent from the
-        // payload so the rest of the edit (customer, notes, dates, ...)
-        // still saves instead of the whole PUT getting rejected.
-        const payload = current?.deliveryStatus && current.deliveryStatus !== "Pending"
-          ? (({ products, taxPercent, ...rest }) => rest)(data)
-          : data;
+        // Product edits are frozen once Delivered or Cancelled. Pending and
+        // In Transit still send products — stock hasn't left yet.
+        const productsFrozen =
+          current?.deliveryStatus === "Delivered" || current?.deliveryStatus === "Cancelled";
+        const payload = productsFrozen
+          ? (({ products, taxPercent, ...fields }) => fields)(rest)
+          : rest;
         await dispatch(updateSaleInvoice({ id, data: payload })).unwrap();
-        // deliveryStatus carries a stock-decrement side effect the generic
-        // PUT deliberately never applies (backend silently ignores it there)
-        // — only the dedicated PATCH endpoint triggers it, same gap as
-        // Purchase Invoice's `status` field.
+        // deliveryStatus (especially Delivered) posts stock/COGS via the
+        // dedicated PATCH — the generic PUT never applies it.
         if (data.deliveryStatus && data.deliveryStatus !== current?.deliveryStatus) {
           await dispatch(updateSaleDeliveryStatus({ id, status: data.deliveryStatus })).unwrap();
         }
@@ -156,8 +162,8 @@ const AddSaleInvoice = () => {
         navigate(`/sales/detail/${id}`);
       } else {
         const payload = fromQuotationId
-          ? { ...data, convertedFromQuotationId: fromQuotationId, convertedFromQuoteNumber: fromQuotation?.quoteNumber }
-          : data;
+          ? { ...rest, convertedFromQuotationId: fromQuotationId, convertedFromQuoteNumber: fromQuotation?.quoteNumber }
+          : rest;
         const created = await dispatch(createSaleInvoice(payload)).unwrap();
         toast.success(t("sales:save_success"));
         if (fromQuotationId) {
@@ -219,7 +225,7 @@ const AddSaleInvoice = () => {
             onSubmit={handleSubmit(onSubmit)}
             className="bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-8 border-l-4 !border-l-[var(--color-teal-500)] dark:border-l-teal-500/60"
           >
-            <SaleInvoiceForm isEdit={Boolean(id)} currentDeliveryStatus={current?.deliveryStatus} lockProductFields={Boolean(fromQuotationId)} />
+            <SaleInvoiceForm isEdit={Boolean(id)} currentDeliveryStatus={current?.deliveryStatus} stockApplied={Boolean(current?.stockApplied)} lockProductFields={Boolean(fromQuotationId)} />
 
             <div className="flex flex-wrap gap-3 justify-end mt-7 pt-6 border-t border-slate-200 dark:border-white/20">
               <Button

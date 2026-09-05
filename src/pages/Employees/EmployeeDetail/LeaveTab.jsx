@@ -10,7 +10,7 @@ import {
   showLeaveBalance,
 } from "store/slices/leaveSlice";
 import { fetchLeaveTypes, showLeaveTypes } from "store/slices/leaveTypeSlice";
-import { LEAVE_STATUS_BADGE } from "../../LeaveManagement/leaveHelpers";
+import { leaveStatusBadge } from "global/constant";
 
 const LeaveTab = ({ data }) => {
   const { t } = useTranslation();
@@ -133,7 +133,7 @@ const LeaveTab = ({ data }) => {
                     <td className="py-2.5 px-4">
                       <span
                         className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
-                          LEAVE_STATUS_BADGE[l.status] || "bg-slate-100 text-slate-700"
+                          leaveStatusBadge[l.status] || "bg-slate-100 text-slate-700"
                         }`}
                       >
                         {l.status}

@@ -13,16 +13,18 @@ import {
   showCurrentQuotation,
   showCurrentQuotationLoading,
 } from "store/slices/quotationSlice";
-import { lineTotal, lineProfit, computeInvoiceProfit } from "../../saleInvoiceHelpers";
 import QuotationPreviewModal from "../QuotationPreviewModal";
 import dayjs from "dayjs";
 import { SkeletonDetail } from "components/Skeleton";
+import { checkRoleAuth, lineTotal, lineProfit, computeInvoiceProfit, formatAmount } from "global/helper";
+import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { quotationStatusBadge as STATUS_BADGE, quotationStatusList } from "global/constant";
 
-const QUOTE_STATUS = ["Draft", "Sent", "Accepted", "Rejected", "Expired", "Converted"];
+const { status_sales_quotation } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const QUOTE_STATUS = quotationStatusList;
 
-import { quotationStatusBadge as STATUS_BADGE } from "global/constant";
+const fmt = formatAmount;
 
 const QuotationDetail = () => {
   const { t, i18n } = useTranslation();
@@ -126,10 +128,12 @@ const QuotationDetail = () => {
                 <FiRefreshCw className="h-4 w-4" /> {t("sales:convert_to_invoice")}
               </button>
             )}
-            <button type="button" onClick={() => { setNewStatus(quote.status); setShowStatusEdit(!showStatusEdit); }}
-              className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-50">
-              {t("sales:update_status")}
-            </button>
+            {checkRoleAuth(status_sales_quotation) && (
+              <button type="button" onClick={() => { setNewStatus(quote.status); setShowStatusEdit(!showStatusEdit); }}
+                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-50">
+                {t("sales:update_status")}
+              </button>
+            )}
             <Button title={t("edit")} icon={FaRegEdit} type="button"
               onClick={() => navigate(`/quotation/edit/${quote.id}`)}
               className="!w-auto !rounded-md !h-10 !px-4 !border border-slate-200 dark:!border-white/25 !text-white dark:!text-white dark:!bg-white/10 hover:!bg-teal-600 dark:hover:!bg-white/20"
@@ -163,7 +167,7 @@ const QuotationDetail = () => {
         )}
 
         {/* Status edit */}
-        {showStatusEdit && (
+        {checkRoleAuth(status_sales_quotation) && showStatusEdit && (
           <div className="mb-5 p-4 rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-500/10 flex items-end gap-3">
             <div>
               <label className="text-xs font-medium text-linkText block mb-1">{t("sales:status")}</label>

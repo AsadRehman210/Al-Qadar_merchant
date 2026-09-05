@@ -11,7 +11,7 @@ import SelectDropdown from "components/SelectDropdown";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { PRODUCT_TYPE_OPTIONS } from "../../inventoryOptions";
+import { productTypeOptions } from "global/constant";
 import {
   createProduct,
   updateProduct,
@@ -53,7 +53,7 @@ const AddProduct = () => {
   );
 
   const [selCategory, setSelCategory] = useState({});
-  const [selProductType, setSelProductType] = useState(PRODUCT_TYPE_OPTIONS[0]);
+  const [selProductType, setSelProductType] = useState(productTypeOptions[0]);
 
   const {
     register,
@@ -85,8 +85,8 @@ const AddProduct = () => {
         categoryId: existing.categoryId || "",
         productType: existing.productType || "Finished Product",
       });
-      const pt = PRODUCT_TYPE_OPTIONS.find((x) => x.id === existing.productType);
-      setSelProductType(pt || PRODUCT_TYPE_OPTIONS[0]);
+      const pt = productTypeOptions.find((x) => x.id === existing.productType);
+      setSelProductType(pt || productTypeOptions[0]);
 
       if (existing.categoryId) {
         const inFirstPage = categoryOpts.find((c) => c.id === existing.categoryId);
@@ -206,7 +206,7 @@ const AddProduct = () => {
             />
             <SelectDropdown
               label="product:product_type"
-              data={PRODUCT_TYPE_OPTIONS}
+              data={productTypeOptions}
               selected={selProductType}
               setSelected={(v) => {
                 setSelProductType(v);
@@ -217,7 +217,9 @@ const AddProduct = () => {
               register={register}
               setValue={setValue}
               trigger={trigger}
+              errors={errors}
               valueKey="id"
+              required
               placeholder="product:select_product_type"
             />
           </div>

@@ -22,6 +22,7 @@ const statusLabel = (status, t) => {
     InProgress: "production:st_in_progress",
     Completed: "production:st_completed",
     Cancelled: "production:st_cancelled",
+    Reversed: "production:st_reversed",
   };
   const key = map[status];
   return key ? t(key) : status;
@@ -33,6 +34,7 @@ const getStatusClass = (status) => {
     InProgress: "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300",
     Completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
     Cancelled: "bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-300",
+    Reversed: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
   };
   return map[status] || "bg-slate-100 text-slate-700 dark:bg-slate-500/20";
 };

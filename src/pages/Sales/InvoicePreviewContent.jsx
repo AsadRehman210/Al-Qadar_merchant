@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { useTranslation } from "react-i18next";
-import { lineTotal } from "./saleInvoiceHelpers";
+import { lineTotal } from "global/helper";
 
 const InvoicePreviewContent = forwardRef(function InvoicePreviewContent(
   { invoice },

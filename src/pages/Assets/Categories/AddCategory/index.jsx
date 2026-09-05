@@ -10,6 +10,7 @@ import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { assetActiveInactiveOptions } from "global/constant";
 import {
   fetchAssetCategories,
   createAssetCategory,
@@ -18,11 +19,6 @@ import {
 } from "store/slices/assetSlice";
 
 const { add_customer, edit_customer } = rafeeqi_role_ids;
-
-const STATUS_OPTS = [
-  { id: "Active", title: "asset:active" },
-  { id: "Inactive", title: "asset:inactive" },
-];
 
 const AddAssetCategory = () => {
   const { t, i18n } = useTranslation();
@@ -42,7 +38,7 @@ const AddAssetCategory = () => {
     [categories, id],
   );
 
-  const [selStatus, setSelStatus] = useState(STATUS_OPTS[0]);
+  const [selStatus, setSelStatus] = useState(assetActiveInactiveOptions[0]);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     mode: "onChange",
@@ -60,8 +56,8 @@ const AddAssetCategory = () => {
         name: existing.name || "",
         description: existing.description || "",
       });
-      const st = STATUS_OPTS.find((x) => x.id === existing.status);
-      setSelStatus(st || STATUS_OPTS[0]);
+      const st = assetActiveInactiveOptions.find((x) => x.id === existing.status);
+      setSelStatus(st || assetActiveInactiveOptions[0]);
     }
   }, [existing, reset]);
 
@@ -162,18 +158,14 @@ const AddAssetCategory = () => {
                 maxLength={500}
               />
             </div>
-            <div>
-              <label className="text-sm font-medium text-linkText mb-1 block">
-                {t("asset:status")}
-              </label>
-              <SelectDropdown
-                data={STATUS_OPTS}
-                selected={selStatus}
-                setSelected={setSelStatus}
-                hideClear
-                classes="!h-[46px] !rounded-lg"
-              />
-            </div>
+            <SelectDropdown
+              label={t("asset:status")}
+              data={assetActiveInactiveOptions}
+              selected={selStatus}
+              setSelected={setSelStatus}
+              hideClear
+              classes="!h-[46px] !rounded-lg"
+            />
           </div>
 
           <div className="flex flex-wrap gap-3 justify-end mt-7 pt-6 border-t border-slate-200 dark:border-white/20">

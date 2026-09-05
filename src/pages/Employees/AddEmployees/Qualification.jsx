@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useFormContext, useFieldArray, Controller } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-toastify";
+import moment from "moment";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import Datepicker from "components/Datepicker";
@@ -8,6 +10,7 @@ import Button from "components/Button";
 import Checkboxes from "components/Checkboxes";
 import Calender from "images/icons/calender.png";
 import { IoAdd, IoTrashOutline, IoPencilOutline, IoCloseOutline } from "react-icons/io5";
+import { skillProficiencyOptions, skillTypeOptions } from "global/constant";
 
 const DEFAULT_EDUCATION = {
   degree_name: "",
@@ -34,19 +37,6 @@ const DEFAULT_SKILL = {
   years_experience: "",
   skill_type: "",
 };
-
-const PROFICIENCY_OPTIONS = [
-  { title: "Beginner", id: "beginner" },
-  { title: "Intermediate", id: "intermediate" },
-  { title: "Advanced", id: "advanced" },
-  { title: "Expert", id: "expert" },
-];
-
-const SKILL_TYPE_OPTIONS = [
-  { title: "Technical", id: "technical" },
-  { title: "Soft Skill", id: "soft_skill" },
-  { title: "Language", id: "language" },
-];
 
 // Read-only rows table shown below each section's draft form — matches the
 // table look used across the app (EmployeeDetail's Qualification/Salary
@@ -134,7 +124,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
   const [eduEndDate, setEduEndDate] = useState("");
   const [certIssueDate, setCertIssueDate] = useState("");
   const [certExpiryDate, setCertExpiryDate] = useState("");
-  const [selProficiency, setSelProficiency] = useState(PROFICIENCY_OPTIONS[0]);
+  const [selProficiency, setSelProficiency] = useState(skillProficiencyOptions[0]);
   const [selSkillType, setSelSkillType] = useState(null);
 
   // Draft fields live at a fixed (non-array) path so they can reuse the same
@@ -153,7 +143,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
   };
   const resetSkillDraft = () => {
     setValue("_draftSkill", { ...DEFAULT_SKILL });
-    setSelProficiency(PROFICIENCY_OPTIONS[0]);
+    setSelProficiency(skillProficiencyOptions[0]);
     setSelSkillType(null);
     setSkillEditIndex(null);
   };
@@ -181,9 +171,21 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
   };
 
   const handleAddCertificate = async () => {
-    const valid = await trigger("_draftCertificate.certificate_name");
+    const fields = ["_draftCertificate.certificate_name"];
+    const noExpiry = getValues("_draftCertificate.no_expiry");
+    if (!noExpiry) fields.push("_draftCertificate.expiry_date");
+    const valid = await trigger(fields);
     if (!valid) return;
     const draft = getValues("_draftCertificate");
+    if (!draft.no_expiry && !draft.expiry_date) {
+      toast.error(t("employees:expiry_required", "Expiry date is required when no-expiry is off"));
+      return;
+    }
+    if (!draft.no_expiry && draft.issue_date && draft.expiry_date
+      && moment(draft.expiry_date, "DD-MM-YYYY").isBefore(moment(draft.issue_date, "DD-MM-YYYY"))) {
+      toast.error(t("employees:expiry_after_issue", "Expiry date must be on or after issue date"));
+      return;
+    }
     if (certEditIndex != null) certificateFields.update(certEditIndex, draft);
     else certificateFields.append(draft);
     resetCertDraft();
@@ -208,9 +210,9 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
     const item = skillFields.fields[index];
     setValue("_draftSkill", { ...DEFAULT_SKILL, ...item });
     setSelProficiency(
-      PROFICIENCY_OPTIONS.find((o) => o.id === item.proficiency_level) || PROFICIENCY_OPTIONS[0],
+      skillProficiencyOptions.find((o) => o.id === item.proficiency_level) || skillProficiencyOptions[0],
     );
-    setSelSkillType(SKILL_TYPE_OPTIONS.find((o) => o.id === item.skill_type) || null);
+    setSelSkillType(skillTypeOptions.find((o) => o.id === item.skill_type) || null);
     setSkillEditIndex(index);
   };
 
@@ -266,6 +268,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                 errors={errors}
                 required
                 placeholder="e.g. BSc, MBA"
+                pattern={/[a-zA-Z0-9\s.'-]/}
                 minLength={2}
                 maxLength={100}
               />
@@ -275,6 +278,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                 register={register}
                 errors={errors}
                 placeholder="e.g. Computer Science"
+                pattern={/[a-zA-Z0-9\s.'-]/}
                 minLength={2}
                 maxLength={100}
               />
@@ -284,6 +288,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                 register={register}
                 errors={errors}
                 placeholder="e.g. HEC, CBSE"
+                pattern={/[a-zA-Z0-9\s.'-]/}
                 minLength={2}
                 maxLength={100}
               />
@@ -293,7 +298,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                 register={register}
                 errors={errors}
                 placeholder="e.g. Riyadh, Saudi Arabia"
-                pattern={/[a-zA-Z\s.,'-]/}
+                pattern={/[a-zA-Z0-9\s.'-]/}
                 minLength={2}
                 maxLength={100}
               />
@@ -310,6 +315,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                   selected={eduEndDate}
                   setSelected={setEduEndDate}
                   isDefaultSelection={false}
+                  max={moment().format("DD-MM-YYYY")}
                 />
               </div>
               <FormInput
@@ -317,8 +323,12 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                 name="_draftEducation.percentage_cgpa"
                 register={register}
                 errors={errors}
-                placeholder="e.g. 3.5 CGPA or 85%"
-                maxLength={20}
+                type="number"
+                placeholder="e.g. 3.5 or 85"
+                min={0}
+                max={100}
+                decimal
+                decimalPlaces={2}
               />
             </div>
             <div className="flex items-center gap-3 justify-end pt-1">
@@ -385,6 +395,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                 errors={errors}
                 required
                 placeholder="e.g. AWS Certified Developer"
+                pattern={/[a-zA-Z0-9\s.'-]/}
                 minLength={2}
                 maxLength={100}
               />
@@ -394,6 +405,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                 register={register}
                 errors={errors}
                 placeholder="e.g. Microsoft, Google"
+                pattern={/[a-zA-Z0-9\s.'-]/}
                 minLength={2}
                 maxLength={100}
               />
@@ -410,6 +422,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                   selected={certIssueDate}
                   setSelected={setCertIssueDate}
                   isDefaultSelection={false}
+                  max={moment().format("DD-MM-YYYY")}
                 />
               </div>
               <FormInput
@@ -449,6 +462,9 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                     selected={certExpiryDate}
                     setSelected={setCertExpiryDate}
                     isDefaultSelection={false}
+                    required
+                    min={certIssueDate || undefined}
+                    minErrorMessage={t("employees:expiry_after_issue", "Expiry date must be on or after issue date")}
                   />
                 </div>
               )}
@@ -515,12 +531,13 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
                 errors={errors}
                 required
                 placeholder="e.g. React.js, Communication, Excel"
+                pattern={/[a-zA-Z0-9\s.'-]/}
                 minLength={2}
                 maxLength={100}
               />
               <SelectDropdown
                 label={t("employees:proficiency_level")}
-                data={PROFICIENCY_OPTIONS}
+                data={skillProficiencyOptions}
                 selected={selProficiency}
                 setSelected={setSelProficiency}
                 name="_draftSkill.proficiency_level"
@@ -542,7 +559,7 @@ const Qualification = ({ setSelectedIndex, setValidValues }) => {
               />
               <SelectDropdown
                 label={`${t("employees:skill_type")} (${t("employees:optional")})`}
-                data={SKILL_TYPE_OPTIONS}
+                data={skillTypeOptions}
                 selected={selSkillType || {}}
                 setSelected={(v) => {
                   // Clearing sets `{}` — the component's own setValue effect

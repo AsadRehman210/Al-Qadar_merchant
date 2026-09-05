@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from "react";
+import { formatAmount } from "global/helper";
 import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,7 +15,6 @@ import { fetchDepartments, showDepartments } from "store/slices/departmentSlice"
 import { fetchDesignations, showDesignations } from "store/slices/designationSlice";
 import { SkeletonDetail } from "components/Skeleton";
 
-const fmt = (n) => (n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const Row = ({ label, value, bold, positive, negative, separator }) => (
   <>
@@ -22,7 +22,7 @@ const Row = ({ label, value, bold, positive, negative, separator }) => (
     <tr className={bold ? "font-bold" : ""}>
       <td className={`py-1 pr-4 text-sm ${bold ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-white/70"}`}>{label}</td>
       <td className={`py-1 text-right text-sm ${positive ? "text-emerald-600" : negative ? "text-rose-600" : "text-slate-800 dark:text-white"}`}>
-        SAR {fmt(value)}
+        SAR {formatAmount(value)}
       </td>
     </tr>
   </>
@@ -175,12 +175,12 @@ const Payslip = () => {
           <div className="bg-gradient-to-r from-teal-500 to-teal-600 text-white rounded-2xl p-5 flex items-center justify-between">
             <div>
               <p className="text-sm opacity-80">{t("payroll:net_pay")}</p>
-              <p className="text-3xl font-extrabold">SAR {fmt(emp.netPay)}</p>
+              <p className="text-3xl font-extrabold">SAR {formatAmount(emp.netPay)}</p>
             </div>
             <div className="text-right text-sm opacity-80">
               <p>{t("payroll:employer_contribution")}</p>
-              <p className="font-semibold">PF: SAR {fmt(emp.pfEmployer)}</p>
-              <p className="font-semibold">{t("payroll:total_cost")}: SAR {fmt(emp.employerCost)}</p>
+              <p className="font-semibold">PF: SAR {formatAmount(emp.pfEmployer)}</p>
+              <p className="font-semibold">{t("payroll:total_cost")}: SAR {formatAmount(emp.employerCost)}</p>
             </div>
           </div>
 

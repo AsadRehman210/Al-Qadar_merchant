@@ -9,8 +9,9 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
+import FormInput from "components/FormInput";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
-import { tableRows } from "global/constant";
+import { tableRows, stockIssueTypeOptions, stockIssueTypeFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import Block from "components/Skeleton";
 import {
@@ -34,15 +35,6 @@ import {
   showStockIssuesTotal,
   showStockIssuesLoading,
 } from "store/slices/stockIssueSlice";
-
-const ISSUE_TYPE_OPTS = [
-  { id: "Internal Use", title: "Internal Use" },
-  { id: "Sample", title: "Sample" },
-  { id: "Damage", title: "Damage" },
-  { id: "Other", title: "Other" },
-];
-
-const ISSUE_TYPE_FILTER_OPTS = [{ id: "", title: "All Types" }, ...ISSUE_TYPE_OPTS];
 
 const typeBadge = (t) => {
   if (t === "Damage") return "bg-red-100 text-red-700";
@@ -95,7 +87,7 @@ const AddIssueForm = ({ onSaved, onCancel }) => {
 
   const defaultWhId = searchParams.get("wh") || "";
   const [selWh,   setSelWh]   = useState(null);
-  const [selType, setSelType] = useState(ISSUE_TYPE_OPTS[0]);
+  const [selType, setSelType] = useState(stockIssueTypeOptions[0]);
   const [date,    setDate]    = useState(new Date().toISOString().split("T")[0]);
   const [issuedTo, setIssuedTo] = useState("");
   const [reference, setReference] = useState("");
@@ -118,16 +110,28 @@ const AddIssueForm = ({ onSaved, onCancel }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selWh) { toast.error(t("select_warehouses_required", { defaultValue: "Select a warehouse" })); return; }
-    if (!issuedTo.trim()) { toast.error(t("issued_to_required")); return; }
+    const to = String(issuedTo || "").trim();
+    if (to.length < 2) { toast.error(t("issued_to_required")); return; }
+    const ref = String(reference || "").trim();
+    if (ref && ref.length < 2) { toast.error(t("reference_min", { defaultValue: "Reference must be at least 2 characters" })); return; }
+    const by = String(issuedBy || "").trim();
+    if (by && by.length < 2) { toast.error(t("issued_by_min", { defaultValue: "Issued by must be at least 2 characters" })); return; }
+    if (!date) { toast.error(t("date_required", { defaultValue: "Date is required" })); return; }
+    const today = new Date().toISOString().split("T")[0];
+    if (date > today) { toast.error(t("date_not_future", { defaultValue: "Date cannot be in the future" })); return; }
     const resolvedItems = items.filter((it) => it.variant?.id).map((it) => ({ variantId: it.variant.id, qty: Number(it.qty) }));
     if (!resolvedItems.length) { toast.error(t("select_item_required")); return; }
+    if (resolvedItems.some((it) => !(it.qty > 0))) {
+      toast.error(t("qty_required", { defaultValue: "Each item quantity must be greater than 0" }));
+      return;
+    }
     try {
       await dispatch(
         createStockIssue({
           warehouseId: selWh?.id,
           date,
           issueType: selType?.id,
-          issuedTo,
+          issuedTo: to,
           reference,
           notes,
           items: resolvedItems,
@@ -140,45 +144,92 @@ const AddIssueForm = ({ onSaved, onCancel }) => {
     }
   };
 
-  const inputCls = "w-full h-[40px] px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-900 dark:text-white";
-  const labelCls = "text-xs font-medium text-slate-600 dark:text-white/60 mb-1 block";
-
   return (
     <form onSubmit={handleSubmit} className="bg-white dark:bg-white/10 rounded-3xl border border-slate-200 dark:border-white/20 p-8 border-l-4 !border-l-rose-400">
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-6 pb-2 border-b border-slate-200 dark:border-white/10">{t("issue_details")}</h3>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <SearchablePaginatedDropdown
+          label={`${t("warehouse")} *`}
+          labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+          data={warehouseSource.data} selected={selWh} setSelected={setSelWh}
+          enableApiSearch onApiSearch={warehouseSource.onApiSearch} hasMore={warehouseSource.hasMore}
+          onLoadMore={warehouseSource.onLoadMore} paginationLoading={warehouseSource.paginationLoading}
+          loading={warehouseSource.loading} hideClear classes="!h-[46px] !rounded-lg"
+        />
         <div>
-          <label className={labelCls}>{t("warehouse")} *</label>
-          <SearchablePaginatedDropdown
-            data={warehouseSource.data} selected={selWh} setSelected={setSelWh}
-            enableApiSearch onApiSearch={warehouseSource.onApiSearch} hasMore={warehouseSource.hasMore}
-            onLoadMore={warehouseSource.onLoadMore} paginationLoading={warehouseSource.paginationLoading}
-            loading={warehouseSource.loading} hideClear classes="!h-[46px] !rounded-lg"
+          <FormInput
+            label={`${t("date")} *`}
+            labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+            name="issueDate"
+            type="date"
+            value={date}
+            onValueChange={setDate}
+            inputClass="!h-[46px] !rounded-lg"
+            max={new Date().toISOString().split("T")[0]}
+          />
+        </div>
+        <SelectDropdown
+          label={t("issue_type")}
+          labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+          data={stockIssueTypeOptions}
+          selected={selType}
+          setSelected={setSelType}
+          hideClear
+          classes="!h-[46px] !rounded-lg"
+        />
+        <div>
+          <FormInput
+            label={`${t("issued_to")} *`}
+            labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+            name="issuedTo"
+            value={issuedTo}
+            onValueChange={setIssuedTo}
+            placeholder={t("issued_to_placeholder")}
+            inputClass="!h-[46px] !rounded-lg"
+            pattern={/[a-zA-Z0-9\s.'-]/}
+            minLength={2}
+            maxLength={150}
           />
         </div>
         <div>
-          <label className={labelCls}>{t("date")} *</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`${inputCls} h-[46px]`} required />
+          <FormInput
+            label={t("reference")}
+            labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+            name="reference"
+            value={reference}
+            onValueChange={setReference}
+            placeholder={t("reference_placeholder")}
+            inputClass="!h-[46px] !rounded-lg"
+            pattern={/[A-Za-z0-9\-_/]/}
+            minLength={2}
+            maxLength={100}
+          />
         </div>
         <div>
-          <label className={labelCls}>{t("issue_type")}</label>
-          <SelectDropdown data={ISSUE_TYPE_OPTS} selected={selType} setSelected={setSelType} hideClear classes="!h-[46px] !rounded-lg" />
-        </div>
-        <div>
-          <label className={labelCls}>{t("issued_to")} *</label>
-          <input type="text" value={issuedTo} onChange={(e) => setIssuedTo(e.target.value)} className={`${inputCls} h-[46px]`} placeholder={t("issued_to_placeholder")} required />
-        </div>
-        <div>
-          <label className={labelCls}>{t("reference")}</label>
-          <input type="text" value={reference} onChange={(e) => setReference(e.target.value)} className={`${inputCls} h-[46px]`} placeholder={t("reference_placeholder")} />
-        </div>
-        <div>
-          <label className={labelCls}>{t("issued_by")}</label>
-          <input type="text" value={issuedBy} onChange={(e) => setIssuedBy(e.target.value)} className={`${inputCls} h-[46px]`} placeholder={t("issued_by_placeholder")} />
+          <FormInput
+            label={t("issued_by")}
+            labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+            name="issuedBy"
+            value={issuedBy}
+            onValueChange={setIssuedBy}
+            placeholder={t("issued_by_placeholder")}
+            inputClass="!h-[46px] !rounded-lg"
+            pattern={/[a-zA-Z0-9\s.'-]/}
+            minLength={2}
+            maxLength={150}
+          />
         </div>
         <div className="md:col-span-2 lg:col-span-3">
-          <label className={labelCls}>{t("notes")}</label>
-          <input type="text" value={notes} onChange={(e) => setNotes(e.target.value)} className={`${inputCls} h-[46px]`} placeholder={t("notes_placeholder")} />
+          <FormInput
+            label={t("notes")}
+            labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+            name="notes"
+            value={notes}
+            onValueChange={setNotes}
+            placeholder={t("notes_placeholder")}
+            inputClass="!h-[46px] !rounded-lg"
+            maxLength={500}
+          />
         </div>
       </div>
 
@@ -187,8 +238,9 @@ const AddIssueForm = ({ onSaved, onCancel }) => {
         {items.map((item, i) => (
           <div key={i} className="grid grid-cols-1 md:grid-cols-5 gap-3 p-3 bg-slate-50 dark:bg-white/5 rounded-xl border border-slate-100 dark:border-white/10">
             <div className="md:col-span-3">
-              <label className={labelCls}>{t("product")}</label>
               <SearchablePaginatedDropdown
+                label={t("product")}
+                labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
                 data={variantSource.data} selected={item.variant} setSelected={(v) => updateItem(i, "variant", v)}
                 enableApiSearch onApiSearch={variantSource.onApiSearch} hasMore={variantSource.hasMore}
                 onLoadMore={variantSource.onLoadMore} paginationLoading={variantSource.paginationLoading}
@@ -196,8 +248,19 @@ const AddIssueForm = ({ onSaved, onCancel }) => {
               />
             </div>
             <div>
-              <label className={labelCls}>{t("qty")}</label>
-              <input type="number" min={1} value={item.qty} onChange={(e) => updateItem(i, "qty", e.target.value)} className={inputCls} />
+              <FormInput
+                label={t("qty")}
+                labelClass="text-xs font-medium text-slate-600 dark:text-white/60"
+                name={`itemQty-${i}`}
+                type="number"
+                min={0.01}
+                decimal
+                decimalPlaces={2}
+                maxLength={10}
+                value={item.qty}
+                onValueChange={(v) => updateItem(i, "qty", v)}
+                inputClass="!h-10 !rounded-lg"
+              />
             </div>
             <div className="flex items-end">
               <button type="button" onClick={() => removeItem(i)} disabled={items.length === 1} className="h-10 w-10 rounded-lg bg-red-50 dark:bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-100 disabled:opacity-30">
@@ -228,11 +291,11 @@ const StockIssue = () => {
     page: 1,
     limitId: tableRows[0].id,
     search: "",
-    typeId: ISSUE_TYPE_FILTER_OPTS[0].id,
+    typeId: stockIssueTypeFilterOptions[0].id,
   });
   const { page, search } = filters;
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
-  const selType = ISSUE_TYPE_FILTER_OPTS.find((o) => o.id === filters.typeId) || ISSUE_TYPE_FILTER_OPTS[0];
+  const selType = stockIssueTypeFilterOptions.find((o) => o.id === filters.typeId) || stockIssueTypeFilterOptions[0];
   const setPage = (v) => setFilters({ page: v });
 
   const issues = useSelector(showStockIssues);
@@ -277,7 +340,7 @@ const StockIssue = () => {
           <SearchInput placeholder={`${t("search", { ns: "translation" })}...`} onSearch={(v) => setFilters({ search: v, page: 1 })} initialValue={search} />
         </div>
         <div className="w-full sm:w-48">
-          <SelectDropdown data={ISSUE_TYPE_FILTER_OPTS} selected={selType} setSelected={(v) => setFilters({ typeId: (v || ISSUE_TYPE_FILTER_OPTS[0]).id, page: 1 })} hideClear classes="!h-10 !rounded-lg" />
+          <SelectDropdown data={stockIssueTypeFilterOptions} selected={selType} setSelected={(v) => setFilters({ typeId: (v || stockIssueTypeFilterOptions[0]).id, page: 1 })} hideClear classes="!h-10 !rounded-lg" />
         </div>
       </div>
 

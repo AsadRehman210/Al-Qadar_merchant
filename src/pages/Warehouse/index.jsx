@@ -21,8 +21,6 @@ import {
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonCards } from "components/Skeleton";
 
-const STATUS_OPTS = statusFilterOptions;
-
 const statusBadge = (s) =>
   s === "Active"
     ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
@@ -48,11 +46,11 @@ const Warehouse = () => {
     page: 1,
     limitId: tableRows[0].id,
     search: "",
-    statusId: STATUS_OPTS[0].id,
+    statusId: statusFilterOptions[0].id,
   });
   const { page, search } = filters;
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
-  const selStatus = STATUS_OPTS.find((o) => o.id === filters.statusId) || STATUS_OPTS[0];
+  const selStatus = statusFilterOptions.find((o) => o.id === filters.statusId) || statusFilterOptions[0];
   const setPage = (v) => setFilters({ page: v });
   const popupRef = useRef();
   const pendingDelete = useRef(null);
@@ -135,9 +133,9 @@ const Warehouse = () => {
         </div>
         <div className="w-full sm:w-48">
           <SelectDropdown
-            data={STATUS_OPTS}
+            data={statusFilterOptions}
             selected={selStatus}
-            setSelected={(v) => setFilters({ statusId: (v || STATUS_OPTS[0]).id, page: 1 })}
+            setSelected={(v) => setFilters({ statusId: (v || statusFilterOptions[0]).id, page: 1 })}
             hideClear
             classes="!h-10 !rounded-lg"
           />

@@ -24,6 +24,10 @@ const GeneralInfoTab = ({ customer }) => {
     { label: t("customers:country"), value: customer.country },
     { label: t("customers:tax_number"), value: customer.taxNumber },
     { label: t("customers:registration_number"), value: customer.registrationNumber },
+    {
+      label: t("customers:opening_balance"),
+      value: `${(parseFloat(customer.openingBalance) || 0).toLocaleString()} SAR`,
+    },
   ];
 
   return (

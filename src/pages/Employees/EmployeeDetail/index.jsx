@@ -29,7 +29,8 @@ import { fetchDesignations, showDesignations } from "store/slices/designationSli
 import { fetchCurrentSalary, showCurrentSalary, clearCurrentSalary } from "store/slices/salarySlice";
 import { fetchPayrollHistoryByEmployee, showEmployeePayrollHistory, clearEmployeeHistory } from "store/slices/payrollBatchSlice";
 import { SkeletonDetail } from "components/Skeleton";
-import { progressOf, ONBOARDING_STATUS } from "../../Onboarding/onboardingFakeData";
+import { onboardingProgressOf } from "global/helper";
+import { ONBOARDING_STATUS } from "global/constant";
 import { fetchOnboardingByEmployee, showOnboardingByEmployee } from "store/slices/onboardingSlice";
 
 const TAB_CLASS =
@@ -112,7 +113,7 @@ export default function EmployeeDetail() {
     onboarding.status === ONBOARDING_STATUS.IN_PROGRESS;
   const onboardingDone = onboarding && onboarding.status === ONBOARDING_STATUS.COMPLETED;
   const showOnboardingCallout = onboardingInProgress || onboardingDone;
-  const onboardingProgress = showOnboardingCallout ? progressOf(onboarding) : null;
+  const onboardingProgress = showOnboardingCallout ? onboardingProgressOf(onboarding) : null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

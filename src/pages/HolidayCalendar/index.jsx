@@ -1,4 +1,4 @@
-ï»¿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
@@ -11,9 +11,10 @@ import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import DataState from "components/DataState";
-import { cardRows } from "global/constant";
+import { cardRows, holidayTypeOptions, holidayTypeFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { useForm } from "react-hook-form";
+import { toast } from "react-toastify";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
@@ -27,7 +28,7 @@ import {
   updateHoliday,
   deleteHoliday,
 } from "store/slices/holidaySlice";
-import { HOLIDAY_TYPES, HOLIDAY_TYPE_BADGE } from "./holidayFakeData";
+import { HOLIDAY_TYPE_BADGE } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
 
@@ -37,7 +38,7 @@ const HolidayCalendar = () => {
   const isHR = checkRoleAuth(add_employee);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [selType, setSelType] = useState({ id: HOLIDAY_TYPES[0], title: HOLIDAY_TYPES[0] });
+  const [selType, setSelType] = useState(holidayTypeOptions[0]);
   const [recurring, setRecurring] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [filters, setFilters] = useListFilters("hr-holiday-calendar", {
@@ -82,20 +83,17 @@ const HolidayCalendar = () => {
   const totalPages = Math.ceil((totalRecords || 0) / selRows.id) || 1;
   const handleRowsChange = (v) => setFilters({ limitId: v.id, page: 1 });
 
-  const typeOpts = [
-    { id: "", title: t("hrhub:all_types", "All Types") },
-    ...HOLIDAY_TYPES.map((x) => ({ id: x, title: x })),
-  ];
+  const typeOpts = holidayTypeFilterOptions;
 
   const typeLabel = (type) =>
-    type === "Public" ? t("hrhub:type_public") : type === "Company" ? t("hrhub:type_company") : t("hrhub:type_optional");
+    holidayTypeOptions.find((o) => o.id === type)?.title || type;
 
   const closeForm = () => {
     setShowForm(false);
     setEditingId(null);
     reset({ name: "", date: "" });
     setRecurring(false);
-    setSelType({ id: HOLIDAY_TYPES[0], title: HOLIDAY_TYPES[0] });
+    setSelType(holidayTypeOptions[0]);
   };
 
   const openAddForm = () => {
@@ -106,7 +104,7 @@ const HolidayCalendar = () => {
     setEditingId(null);
     reset({ name: "", date: "" });
     setRecurring(false);
-    setSelType({ id: HOLIDAY_TYPES[0], title: HOLIDAY_TYPES[0] });
+    setSelType(holidayTypeOptions[0]);
     setShowForm(true);
   };
 
@@ -114,11 +112,15 @@ const HolidayCalendar = () => {
     setEditingId(holiday.id);
     reset({ name: holiday.name, date: holiday.date });
     setRecurring(holiday.recurring);
-    setSelType({ id: holiday.type, title: typeLabel(holiday.type) });
+    setSelType(holidayTypeOptions.find((x) => x.id === holiday.type) || holidayTypeOptions[0]);
     setShowForm(true);
   };
 
   const onSubmit = async (data) => {
+    if (!selType?.id) {
+      toast.error(t("hrhub:holiday_type_required", "Holiday type is required"));
+      return;
+    }
     setSubmitting(true);
     try {
       const payload = { name: data.name, date: data.date, type: selType.id, recurring };
@@ -175,7 +177,7 @@ const HolidayCalendar = () => {
           </div>
           <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white col-span-2 lg:col-span-1">
             <p className="text-sm font-medium opacity-80">{t("hrhub:next_holiday")}</p>
-            <p className="text-lg font-bold mt-1 truncate">{summary.next ? summary.next.name : "â€”"}</p>
+            <p className="text-lg font-bold mt-1 truncate">{summary.next ? summary.next.name : "—"}</p>
             {summary.next && <p className="text-xs opacity-80">{dayjs(summary.next.date).format("ddd, DD MMM YYYY")}</p>}
           </div>
         </div>
@@ -191,13 +193,14 @@ const HolidayCalendar = () => {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-end">
               <FormInput label={t("hrhub:holiday_name")} name="name" register={register} errors={errors} required
-                pattern={/[a-zA-Z\s.'-]/} minLength={2} maxLength={100} />
+                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={100} />
               <FormInput label={t("hrhub:holiday_date")} name="date" type="date" register={register} errors={errors} required />
               <SelectDropdown
                 label={t("hrhub:holiday_type")}
-                data={HOLIDAY_TYPES.map((x) => ({ id: x, title: typeLabel(x) }))}
-                selected={{ id: selType.id, title: typeLabel(selType.id) }}
+                data={holidayTypeOptions}
+                selected={selType}
                 setSelected={(v) => setSelType(v || selType)}
+                required
                 hideClear
               />
               <label className="flex items-center gap-2 h-11 text-sm text-slate-700 dark:text-white/80 cursor-pointer">
@@ -251,7 +254,7 @@ const HolidayCalendar = () => {
                       <p className="text-xs text-slate-500 dark:text-white/50 flex items-center gap-1.5">
                         <LuCalendarDays className="h-3.5 w-3.5" />
                         {dayjs(h.date).format("dddd, DD MMM YYYY")}
-                        {h.recurring && <span className="ml-1">Â· {t("hrhub:recurring")}</span>}
+                        {h.recurring && <span className="ml-1">· {t("hrhub:recurring")}</span>}
                       </p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${HOLIDAY_TYPE_BADGE[h.type]}`}>{typeLabel(h.type)}</span>

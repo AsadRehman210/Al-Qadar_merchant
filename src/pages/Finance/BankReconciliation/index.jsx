@@ -2,14 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import SelectDropdown from "components/SelectDropdown";
+import FormInput from "components/FormInput";
 import Button from "components/Button";
 import FinancePage from "../FinancePage";
 import ReactPaginate from "react-paginate";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import { tableRows } from "global/constant";
+import { financeReconciliationStatusBadge, tableRows } from "global/constant";
 import {
   fetchBankAccounts,
   fetchStatementLines,
@@ -33,7 +34,6 @@ import EmptyState from "components/EmptyState";
 import { useListFilters } from "hooks/useListFilters";
 
 const { view_customer, add_customer } = rafeeqi_role_ids;
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
 const EMPTY_LINE = { date: new Date().toISOString().slice(0, 10), description: "", amount: "", reference: "" };
 const EMPTY_SESSION = { periodStart: "", periodEnd: "", statementEndingBalance: "" };
@@ -88,8 +88,19 @@ const BankReconciliation = () => {
   );
 
   const handleAddLine = async () => {
-    if (!selAccount?.id || !newLine.date || !newLine.amount) {
+    const today = new Date().toISOString().slice(0, 10);
+    const desc = String(newLine.description || "").trim();
+    const amt = parseFloat(newLine.amount);
+    if (!selAccount?.id || !newLine.date || !desc || desc.length < 2) {
       toast.error(t("finance:invalid_data"));
+      return;
+    }
+    if (newLine.date > today) {
+      toast.error(t("finance:date_not_future", { defaultValue: "Date cannot be in the future" }));
+      return;
+    }
+    if (!Number.isFinite(amt) || amt === 0) {
+      toast.error(t("finance:amount_required", { defaultValue: "Amount must not be zero" }));
       return;
     }
     const result = await dispatch(
@@ -165,19 +176,26 @@ const BankReconciliation = () => {
         <>
           <div className="mb-6 flex flex-wrap gap-4 items-end">
             <div className="min-w-[260px]">
-              <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:bank_account")}</label>
-              <SelectDropdown data={accountOpts} selected={selAccount} setSelected={(opt) => setFilters({ accountId: opt?.id || null, page: 1 })} hideClear classes="!h-[46px] !rounded-lg" />
+              <SelectDropdown
+                label={t("finance:bank_account")}
+                labelClass="!text-xs font-medium text-slate-500"
+                data={accountOpts}
+                selected={selAccount}
+                setSelected={(opt) => setFilters({ accountId: opt?.id || null, page: 1 })}
+                hideClear
+                classes="!h-[46px] !rounded-lg"
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mb-6">
             <div className="rounded-2xl border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-500/10 p-4">
               <p className="text-xs text-slate-500 dark:text-white/60 mb-1">{t("finance:recon_cleared")}</p>
-              <p className="text-xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300">{fmt(totalMatched)}</p>
+              <p className="text-xl font-bold tabular-nums text-emerald-700 dark:text-emerald-300">{formatAmount(totalMatched)}</p>
             </div>
             <div className="rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-amber-50/50 dark:bg-amber-500/10 p-4">
               <p className="text-xs text-slate-500 dark:text-white/60 mb-1">{t("finance:recon_uncleared")}</p>
-              <p className="text-xl font-bold tabular-nums text-amber-700 dark:text-amber-300">{fmt(totalUnmatched)}</p>
+              <p className="text-xl font-bold tabular-nums text-amber-700 dark:text-amber-300">{formatAmount(totalUnmatched)}</p>
             </div>
           </div>
 
@@ -185,21 +203,45 @@ const BankReconciliation = () => {
             <div className="mb-6 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
               <p className="text-sm font-semibold mb-3">{t("finance:recon_add_line")}</p>
               <div className="grid md:grid-cols-5 gap-3 items-end">
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:recon_date")}</label>
-                  <input type="date" value={newLine.date} onChange={(e) => setNewLine({ ...newLine, date: e.target.value })}
-                    className="h-10 w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:recon_description")}</label>
-                  <input type="text" value={newLine.description} onChange={(e) => setNewLine({ ...newLine, description: e.target.value })}
-                    className="h-10 w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:amount")}</label>
-                  <input type="number" step="0.01" value={newLine.amount} onChange={(e) => setNewLine({ ...newLine, amount: e.target.value })}
-                    className="h-10 w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm" />
-                </div>
+                <FormInput
+                  label={t("finance:recon_date")}
+                  labelClass="!text-xs font-medium text-slate-500"
+                  name="reconDate"
+                  type="date"
+                  required
+                  max={new Date().toISOString().slice(0, 10)}
+                  value={newLine.date}
+                  onValueChange={(v) => setNewLine({ ...newLine, date: v })}
+                  wrapperClass="w-full"
+                  inputClass="!h-10 !rounded-lg"
+                />
+                <FormInput
+                  label={t("finance:recon_description")}
+                  labelClass="!text-xs font-medium text-slate-500"
+                  name="reconDescription"
+                  required
+                  minLength={2}
+                  maxLength={500}
+                  value={newLine.description}
+                  onValueChange={(v) => setNewLine({ ...newLine, description: v })}
+                  wrapperClass="md:col-span-2 w-full"
+                  inputClass="!h-10 !rounded-lg"
+                />
+                <FormInput
+                  label={t("finance:amount")}
+                  labelClass="!text-xs font-medium text-slate-500"
+                  name="reconAmount"
+                  type="number"
+                  decimal
+                  decimalPlaces={3}
+                  maxLength={10}
+                  allowNegative
+                  required
+                  value={newLine.amount}
+                  onValueChange={(v) => setNewLine({ ...newLine, amount: v })}
+                  wrapperClass="w-full"
+                  inputClass="!h-10 !rounded-lg"
+                />
                 <Button type="button" title={t("save")} btn="primary" onClick={handleAddLine} />
               </div>
               <p className="text-[11px] text-slate-400 mt-2">{t("finance:recon_amount_hint")}</p>
@@ -228,7 +270,7 @@ const BankReconciliation = () => {
                     <tr key={row.id} className={`transition-colors border-b border-slate-100 dark:border-white/5 last:[&_td]:border-b-0 ${row.matched ? "bg-emerald-50/40 dark:bg-emerald-500/5" : ""}`}>
                       <td className="px-4 py-4 align-middle pl-6 text-slate-500">{new Date(row.date).toLocaleDateString()}</td>
                       <td className="px-4 py-4 align-middle">{row.description}</td>
-                      <td className={`px-4 py-4 align-middle text-end tabular-nums ${row.amount >= 0 ? "text-emerald-600" : "text-red-500"}`}>{fmt(row.amount)}</td>
+                      <td className={`px-4 py-4 align-middle text-end tabular-nums ${row.amount >= 0 ? "text-emerald-600" : "text-red-500"}`}>{formatAmount(row.amount)}</td>
                       <td className="px-4 py-4 align-middle font-mono text-xs">{row.reference || "—"}</td>
                       <td className="px-4 py-4 align-middle pr-6">
                         {row.matched ? (
@@ -293,21 +335,39 @@ const BankReconciliation = () => {
           {checkRoleAuth(add_customer) && (
             <div className="mb-4 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
               <div className="grid md:grid-cols-4 gap-3 items-end">
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:date_from")}</label>
-                  <input type="date" value={newSession.periodStart} onChange={(e) => setNewSession({ ...newSession, periodStart: e.target.value })}
-                    className="h-10 w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:date_to")}</label>
-                  <input type="date" value={newSession.periodEnd} onChange={(e) => setNewSession({ ...newSession, periodEnd: e.target.value })}
-                    className="h-10 w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:recon_statement_balance")}</label>
-                  <input type="number" step="0.01" value={newSession.statementEndingBalance} onChange={(e) => setNewSession({ ...newSession, statementEndingBalance: e.target.value })}
-                    className="h-10 w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm" />
-                </div>
+                <FormInput
+                  label={t("finance:date_from")}
+                  labelClass="!text-xs font-medium text-slate-500"
+                  name="sessionFrom"
+                  type="date"
+                  value={newSession.periodStart}
+                  onValueChange={(v) => setNewSession({ ...newSession, periodStart: v })}
+                  wrapperClass="w-full"
+                  inputClass="!h-10 !rounded-lg"
+                />
+                <FormInput
+                  label={t("finance:date_to")}
+                  labelClass="!text-xs font-medium text-slate-500"
+                  name="sessionTo"
+                  type="date"
+                  value={newSession.periodEnd}
+                  onValueChange={(v) => setNewSession({ ...newSession, periodEnd: v })}
+                  wrapperClass="w-full"
+                  inputClass="!h-10 !rounded-lg"
+                />
+                <FormInput
+                  label={t("finance:recon_statement_balance")}
+                  labelClass="!text-xs font-medium text-slate-500"
+                  name="sessionBalance"
+                  type="number"
+                  decimal
+                  decimalPlaces={2}
+                  allowNegative
+                  value={newSession.statementEndingBalance}
+                  onValueChange={(v) => setNewSession({ ...newSession, statementEndingBalance: v })}
+                  wrapperClass="w-full"
+                  inputClass="!h-10 !rounded-lg"
+                />
                 <Button type="button" title={t("finance:recon_start_session")} btn="primary" onClick={handleCreateSession} />
               </div>
             </div>
@@ -333,13 +393,13 @@ const BankReconciliation = () => {
                     <tr key={s.id} className="transition-colors border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10 last:[&_td]:border-b-0">
                       <td className="px-4 py-4 align-middle pl-6 text-slate-500">{new Date(s.periodStart).toLocaleDateString()}</td>
                       <td className="px-4 py-4 align-middle text-slate-500">{new Date(s.periodEnd).toLocaleDateString()}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{fmt(s.statementEndingBalance)}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{fmt(s.bookBalance)}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{formatAmount(s.statementEndingBalance)}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{formatAmount(s.bookBalance)}</td>
                       <td className={`px-4 py-4 align-middle text-end tabular-nums font-medium ${s.difference !== 0 ? "text-red-500" : "text-emerald-600"}`}>
-                        {s.difference !== 0 ? fmt(s.difference) : "✓ 0.00"}
+                        {s.difference !== 0 ? formatAmount(s.difference) : "✓ 0.00"}
                       </td>
                       <td className="px-4 py-4 align-middle">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${s.status === "Reconciled" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{s.status}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${financeReconciliationStatusBadge[s.status] || ""}`}>{s.status}</span>
                       </td>
                       <td className="px-4 py-4 align-middle pr-6">
                         {s.status === "Open" && checkRoleAuth(add_customer) && (

@@ -6,7 +6,7 @@ import ReactPaginate from "react-paginate";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
@@ -23,7 +23,6 @@ import FinancePage from "../FinancePage";
 
 const { view_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
 
 // The real Accounts Receivable view — every Sale Invoice this tenant is
 // actually still owed on (or owes a refund back for), sourced live from the
@@ -55,11 +54,11 @@ const Receivable = () => {
           <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-2xl">
             <div className="p-4 rounded-2xl border border-rose-200 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/20">
               <p className="text-xs text-slate-500">{t("finance:total_receivable", { defaultValue: "Total receivable" })}</p>
-              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{fmt(totalBalanceDue)}</p>
+              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalBalanceDue)}</p>
             </div>
             <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/20">
               <p className="text-xs text-slate-500">{t("finance:total_refund_due", { defaultValue: "Refund due to customers" })}</p>
-              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{fmt(totalRefundDue)}</p>
+              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalRefundDue)}</p>
             </div>
           </div>
 
@@ -95,10 +94,10 @@ const Receivable = () => {
                         </td>
                         <td className="px-4 py-4 align-middle">{row.date ? String(row.date).slice(0, 10) : "—"}</td>
                         <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold">
-                          {(Number(row.balanceDue) || 0) > 0 ? `${fmt(row.balanceDue)} ${row.currency}` : "—"}
+                          {(Number(row.balanceDue) || 0) > 0 ? `${formatAmount(row.balanceDue)} ${row.currency}` : "—"}
                         </td>
                         <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold text-amber-600 dark:text-amber-400 pr-6">
-                          {(Number(row.refundDue) || 0) > 0 ? `${fmt(row.refundDue)} ${row.currency}` : "—"}
+                          {(Number(row.refundDue) || 0) > 0 ? `${formatAmount(row.refundDue)} ${row.currency}` : "—"}
                         </td>
                       </tr>
                   ))}

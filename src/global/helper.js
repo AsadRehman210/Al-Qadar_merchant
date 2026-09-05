@@ -1,5 +1,6 @@
 import { store } from "store";
 import { clearLoginData } from "store/slices/uniqueSlice";
+import { LEGACY_WILDCARD_PERMISSIONS } from "global/rafeeqiRoles";
 import { gender } from "global/constant";
 import i18n from "i18next";
 import { BASE_URL, GOOGLE_API_KEY } from "global/config";
@@ -57,34 +58,103 @@ export const formatNameDropdownData = (field, data) => {
   });
 };
 
+// Maps a sidebar item href to the "<module>.view" permission that should gate
+// it, so a sub-user only sees modules their Role grants — even for the many
+// menu items still carrying the legacy `${view_customer}` placeholder. Mirrors
+// the backend's MODULE_PERMISSION_MAP (source/utility/helper/constants/permissions.ts).
+const HREF_VIEW_PERMISSION = {
+  "/dashboard": "dashboard.view",
+  "/merchant-management": "merchant-management.view",
+  "/reports": "reports.view",
+  "/settings": "settings.view",
+  "/users": "user.view",
+  "/roles": "role.view",
+  "/employees": "employee.view",
+  "/org-chart": "employee.view",
+  "/compliance": "employee.view",
+  "/departments": "department.view",
+  "/designations": "designation.view",
+  "/attendance": "attendance.view",
+  "/attendance-policy": "attendance-policy.view",
+  "/salary": "salary.view",
+  "/payroll-batch": "payroll-run.view",
+  "/special-payments": "special-payment.view",
+  "/provident-fund": "provident-fund.view",
+  "/loans": "loan.view",
+  "/expenses": "expense.view",
+  "/leave-management": "leave.view",
+  "/requests": "employee-request.view",
+  "/my-approvals": "employee-request.view",
+  "/holiday-calendar": "holiday.view",
+  "/announcements": "announcement.view",
+  "/recruitment": "recruitment.view",
+  "/onboarding": "onboarding.view",
+  "/offboarding": "offboarding.view",
+  "/performance": "performance.view",
+  "/customers": "sales-customer.view",
+  "/suppliers": "purchase-supplier.view",
+  "/sales": "sales-invoice.view",
+  "/quotation": "sales-quotation.view",
+  "/credit-notes": "sales-credit-note.view",
+  "/purchases": "purchase-invoice.view",
+  "/debit-notes": "purchase-debit-note.view",
+  "/inventory/products": "inventory-product.view",
+  "/inventory/categories": "inventory-category.view",
+  "/inventory/variants": "inventory-variant.view",
+  "/inventory/production": "inventory-production.view",
+  "/inventory/quarantine": "inventory-quarantine.view",
+  "/inventory/stock": "warehouse-stock.view",
+  "/warehouse": "warehouse.view",
+  "/warehouse_transfers": "warehouse-transfer.view",
+  "/warehouse_issues": "warehouse-issue.view",
+  "/assets": "asset.view",
+  "/assets-categories": "asset-category.view",
+  "/assets/requests": "asset-request.view",
+  "/assets/audits": "asset-audit.view",
+  "/assets/reports": "asset.view",
+  "/finance/coa": "finance-coa.view",
+  "/finance/journal": "finance-journal.view",
+  "/finance/ledger": "finance-ledger.view",
+  "/finance/reports": "finance-reports.view",
+  "/finance/bank-cash": "finance-bank.view",
+  "/finance/bank-reconciliation": "finance-reconciliation.view",
+  "/finance/payable": "finance-payable.view",
+  "/finance/receivable": "finance-receivable.view",
+  "/finance/payments": "finance-payment.view",
+  "/finance/income": "finance-income.view",
+  "/finance/expenses": "finance-expense.view",
+  "/finance/recoverable-tax": "finance-vat.view",
+  "/finance/collected-tax": "finance-vat.view",
+  "/finance/tax-payment": "finance-vat.view",
+};
+
+export const hrefViewPermission = (href) => HREF_VIEW_PERMISSION[href] || null;
+
 // Function to check for user roles
 export const checkRoleAuth = (role) => {
   const state = store.getState();
   const userRoles = state.unique.userRoles;
   const userData = state.unique.userData;
 
-  // If userRoles is empty, allow access
+  // The Account owner (the "default user") always has full access. A sub-user
+  // is gated by the permission keys their assigned Role grants — sent on the
+  // login response as `account.permissions` and mirrored into
+  // `state.unique.userRoles` (see authSlice loginErp).
   if (userData?.is_default_user) return true;
 
-  // ERP accounts (super_admin/admin/merchant) have no granular per-action
-  // permission system — a tenant's Admin/Merchant always has full CRUD over
-  // their own modules, so any authenticated ERP session passes every check
-  // instead of silently failing against the legacy roles array it never populates.
-  if (userData?.role) return true;
-
-  // If role is provided, check if it matches any userRoles
   if (role) {
-    // Split the role string by commas, if any, to get an array of roles
     const roles = role?.includes(",") ? role?.split(",") : [role];
 
-    // Check if any of the roles exist in userRoles
-    const hasRole = roles?.some((r) => userRoles?.includes(r));
+    // Legacy universal placeholders (sales-customer.*) are sprinkled across
+    // many unrelated pages as a generic "can write / can read" check — for a
+    // sub-user, defer those to the sidebar + backend (both enforce per module)
+    // rather than hiding a Warehouse button because they lack Customer rights.
+    if (roles.every((r) => LEGACY_WILDCARD_PERMISSIONS.has(r))) return true;
 
-    // Return true if the user has the role
+    const hasRole = roles?.some((r) => userRoles?.includes(r));
     if (hasRole) return true;
   }
 
-  // If none of the roles match, return false (not authorized)
   return false;
 };
 
@@ -962,3 +1032,155 @@ export const detectContentType = (type) => {
     return "document";
   return "other";
 };
+
+// ─── Operations — shared pure helpers (cross-module) ───
+
+/** Pre-tax line subtotal: qty × price. */
+export const lineTotal = (line) =>
+  (Number(line?.qty) || 0) * (Number(line?.price) || 0);
+
+/** Line profit using costPrice when present. */
+export const lineProfit = (line) =>
+  lineTotal(line) - (Number(line?.qty) || 0) * (Number(line?.costPrice) || 0);
+
+export const computeInvoiceProfit = (lines) =>
+  (lines || []).reduce((sum, line) => sum + lineProfit(line), 0);
+
+/** Line tax % override, else invoice-level rate — mirrors backend effectiveLineTaxPercent. */
+export const effectiveLineTaxPercent = (line, invoiceTaxPercent) =>
+  line?.taxPercent !== undefined && line?.taxPercent !== null && line?.taxPercent !== ""
+    ? Number(line.taxPercent) || 0
+    : Number(invoiceTaxPercent) || 0;
+
+export const deliveryFrozen = (status) =>
+  status === "Delivered" || status === "Cancelled";
+
+export const canCancelDelivery = (status) =>
+  status === "Pending" || status === "InTransit";
+
+/** YYYY-MM-DD for date inputs from ISO/date strings. */
+export const toDateInput = (value) => (value ? String(value).slice(0, 10) : "");
+
+/** Alias used across sales/customers/suppliers tables. */
+export const toIsoDate = (value) => toDateInput(value);
+
+/** Locale amount formatting for invoice/tables (2 decimals). */
+export const formatAmount = (value, fractionDigits = 2) =>
+  (parseFloat(value) || 0).toLocaleString("en-US", {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  });
+
+export const defaultSaleLine = () => ({
+  variantId: "",
+  productName: "",
+  qty: 1,
+  price: 0,
+  costPrice: 0,
+  unit: "",
+});
+
+export const defaultPurchaseLine = () => ({
+  variantId: "",
+  productName: "",
+  qty: 1,
+  price: 0,
+  unit: "pcs",
+  expiryDate: "",
+  taxPercent: null,
+});
+
+export const isRawMaterialProduct = (product) =>
+  product?.productType === "Raw Material";
+
+// ─── HR / Employee Management — shared pure helpers (cross-module) ───
+
+/** Sun→Sat keys for per-employee weekly schedule editors. */
+export const weekDayKeys = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+/** Default schedule: Sun–Thu working 09:00–18:00, Fri–Sat off. */
+export const defaultWeeklySchedule = weekDayKeys.map((day) => ({
+  day,
+  isWorking: day !== "fri" && day !== "sat",
+  start: "09:00",
+  end: "18:00",
+}));
+
+/** At least one working day; every working day has start < end. */
+export const isWeeklyScheduleValid = (schedule) =>
+  Array.isArray(schedule) &&
+  schedule.some((d) => d.isWorking) &&
+  schedule.every((d) => !d.isWorking || (d.start && d.end && d.start < d.end));
+
+/** Onboarding checklist progress — used by Onboarding list + Employee detail. */
+export const onboardingProgressOf = (o) => {
+  const tasks = o?.tasks || [];
+  const required = tasks.filter((t) => t.required);
+  const optional = tasks.filter((t) => !t.required);
+  const done = tasks.filter((t) => t.done).length;
+  return {
+    done,
+    total: tasks.length,
+    pct: tasks.length ? Math.round((done / tasks.length) * 100) : 0,
+    requiredDone: required.filter((t) => t.done).length,
+    requiredTotal: required.length,
+    optionalDone: optional.filter((t) => t.done).length,
+    optionalTotal: optional.length,
+  };
+};
+
+/** Resolve onboarding task-category id → display title. */
+export const onboardingCategoryLabel = (id, categoryOptions = []) =>
+  categoryOptions.find((c) => c.id === id)?.title || id;
+
+/** Leave approval-step chip flags (Pending / Approved / Rejected). */
+export const leaveApprovalStepStatus = (s) => ({
+  done: s === "Approved",
+  rejected: s === "Rejected",
+  active: s === "Pending",
+});
+
+// ─── Finance / Reports — shared pure helpers (cross-module) ───
+
+/** Signed amount string (leading "-" for negatives). */
+export const formatSignedAmount = (value, fractionDigits = 2) => {
+  const v = parseFloat(value) || 0;
+  return `${v >= 0 ? "" : "-"}${Math.abs(v).toLocaleString(undefined, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  })}`;
+};
+
+/** Amount with currency suffix, e.g. "1,234.00 SAR". */
+export const formatMoneyWithCurrency = (value, currency = "SAR", fractionDigits = 2) =>
+  `${formatAmount(value, fractionDigits)} ${currency}`;
+
+/** Chart-of-accounts dropdown title: "CODE — Name". */
+export const coaAccountTitle = (account) =>
+  account ? `${account.code || ""} — ${account.name || ""}`.replace(/^\s*—\s*|\s*—\s*$/g, "").trim() || account.name || "" : "";
+
+/** Map CoA rows to SelectDropdown options. */
+export const mapCoaToOptions = (accounts) =>
+  (accounts || []).map((a) => ({ id: a.id, title: `${a.code} — ${a.name}` }));
+
+/** Flatten CoA into parent-first order with `depth` for indentation. */
+export const buildCoaTree = (accounts = []) => {
+  const childrenOf = (parentId) => accounts.filter((a) => a.parentId === parentId);
+  const flatten = (nodes, depth = 0) => {
+    const result = [];
+    for (const node of nodes) {
+      result.push({ ...node, depth });
+      result.push(...flatten(childrenOf(node.id), depth + 1));
+    }
+    return result;
+  };
+  return flatten(accounts.filter((a) => !a.parentId));
+};
+
+/** AR/AP aging bucket label from overdue days. */
+export const agingBucketOf = (days) =>
+  days <= 30 ? "0–30 days" : days <= 60 ? "31–60 days" : days <= 90 ? "61–90 days" : "90+ days";
+
+/** Report table date cell: YYYY-MM-DD or em dash. */
+export const formatReportDate = (value) => (value ? String(value).slice(0, 10) : "—");
+

@@ -40,6 +40,7 @@ const AddCustomer = () => {
           if (!cust) return;
           setExisting(cust);
           Object.keys(cust).forEach((key) => {
+            if (["id", "currentBalance", "openingBalanceLocked", "createdAt", "updatedAt"].includes(key)) return;
             if (cust[key] != null && cust[key] !== "") {
               setValue(key, cust[key]);
             }
@@ -60,12 +61,19 @@ const AddCustomer = () => {
   }, [id, navigate, t]);
 
   const onSubmit = async (data) => {
+    const payload = { ...data };
+    if (existing?.openingBalanceLocked) {
+      delete payload.openingBalance;
+    } else {
+      payload.openingBalance =
+        data.openingBalance === "" || data.openingBalance == null ? 0 : Number(data.openingBalance);
+    }
     try {
       if (id) {
-        const updated = await dispatch(updateSalesCustomer({ id, data })).unwrap();
+        const updated = await dispatch(updateSalesCustomer({ id, data: payload })).unwrap();
         toast.success(updated.message);
       } else {
-        const created = await dispatch(createSalesCustomer(data)).unwrap();
+        const created = await dispatch(createSalesCustomer(payload)).unwrap();
         toast.success(created.message);
       }
       navigate("/customers");

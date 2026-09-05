@@ -1,4 +1,4 @@
-ï»¿import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FiPlus, FiEye, FiEdit2, FiBriefcase, FiUsers, FiCheckCircle } from "react-icons/fi";
@@ -9,7 +9,7 @@ import SearchInput from "components/SearchInput";
 import DataState from "components/DataState";
 import { cardRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
-import { JOB_STATUS_OPTS } from "./recruitmentFakeData";
+import { jobStatusOptions } from "global/constant";
 import {
   fetchJobs,
   fetchJobsSummary,
@@ -71,7 +71,7 @@ const Recruitment = () => {
   }, [dispatch]);
 
   const departmentOpts = useMemo(() => departments.map((d) => ({ id: d.id, title: d.name })), [departments]);
-  const selStatus = JOB_STATUS_OPTS.find((o) => o.id === filters.statusId) || null;
+  const selStatus = jobStatusOptions.find((o) => o.id === filters.statusId) || null;
   const selDept = departmentOpts.find((o) => o.id === filters.deptId) || null;
 
   const totalPages = Math.ceil((totalRecords || 0) / selRows.id) || 1;
@@ -105,7 +105,7 @@ const Recruitment = () => {
           />
         </div>
         <div className="w-full sm:w-44">
-          <SelectDropdown data={JOB_STATUS_OPTS} selected={selStatus} setSelected={(v) => setFilters({ statusId: v?.id || null, page: 1 })} placeholder="All Statuses" classes="!h-10 !rounded-md" />
+          <SelectDropdown data={jobStatusOptions} selected={selStatus} setSelected={(v) => setFilters({ statusId: v?.id || null, page: 1 })} placeholder="All Statuses" classes="!h-10 !rounded-md" />
         </div>
         <div className="w-full sm:w-52">
           <SelectDropdown data={departmentOpts} selected={selDept} setSelected={(v) => setFilters({ deptId: v?.id || null, page: 1 })} placeholder="All Departments" classes="!h-10 !rounded-md" />
@@ -121,14 +121,14 @@ const Recruitment = () => {
                 <span className="text-xs text-slate-400 font-mono">{job.jobCode}</span>
               </div>
               <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{job.title}</h3>
-              <p className="text-sm text-slate-500 mb-1">{job.departmentName} Â· {job.experience}</p>
-              <p className="text-xs text-slate-400 mb-3">Deadline: {job.deadline ? job.deadline.slice(0, 10) : "â€”"}</p>
+              <p className="text-sm text-slate-500 mb-1">{job.departmentName} · {job.experience}</p>
+              <p className="text-xs text-slate-400 mb-3">Deadline: {job.deadline ? job.deadline.slice(0, 10) : "—"}</p>
 
               <div className="flex items-center justify-between py-2 border-t border-slate-100 dark:border-white/10 mb-3">
                 <div className="text-center"><p className="text-xs text-slate-400">Openings</p><p className="font-bold text-slate-900 dark:text-white">{job.openings}</p></div>
                 <div className="text-center"><p className="text-xs text-slate-400">Applied</p><p className="font-bold text-slate-900 dark:text-white">{job.candidateCount}</p></div>
                 <div className="text-center"><p className="text-xs text-slate-400">Hired</p><p className="font-bold text-emerald-600">{job.hiredCount}</p></div>
-                <div className="text-center"><p className="text-xs text-slate-400">Salary</p><p className="text-xs font-medium text-teal-600">{job.salaryMin?.toLocaleString()}â€“{job.salaryMax?.toLocaleString()} {job.currency}</p></div>
+                <div className="text-center"><p className="text-xs text-slate-400">Salary</p><p className="text-xs font-medium text-teal-600">{job.salaryMin?.toLocaleString()}–{job.salaryMax?.toLocaleString()} {job.currency}</p></div>
               </div>
 
               <div className="flex gap-2">

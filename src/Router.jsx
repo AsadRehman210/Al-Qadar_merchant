@@ -117,7 +117,10 @@ const VariantDetail = lazy(
   () => import("pages/Inventory/Variants/VariantDetail"),
 );
 const InventoryStock = lazy(() => import("pages/Inventory/Stock"));
+const OpeningStockImport = lazy(() => import("pages/Inventory/Stock/OpeningImport"));
 const StockDetail = lazy(() => import("pages/Inventory/Stock/StockDetail"));
+const QuarantineLots = lazy(() => import("pages/Inventory/Quarantine"));
+const QuarantineDetail = lazy(() => import("pages/Inventory/Quarantine/QuarantineDetail"));
 const Production = lazy(() => import("pages/Inventory/Production"));
 const AddProductionOrder = lazy(
   () => import("pages/Inventory/Production/AddProductionOrder"),
@@ -181,6 +184,11 @@ const WarehouseDetail = lazy(() => import("pages/Warehouse/WarehouseDetail"));
 const StockTransfer = lazy(() => import("pages/Warehouse/StockTransfer"));
 const StockIssue = lazy(() => import("pages/Warehouse/StockIssue"));
 const Settings = lazy(() => import("pages/Settings"));
+const Roles = lazy(() => import("pages/Roles"));
+const AddRole = lazy(() => import("pages/Roles/AddRole"));
+const AccessUsers = lazy(() => import("pages/Users"));
+const AddAccessUser = lazy(() => import("pages/Users/AddUser"));
+const AccessUserDetail = lazy(() => import("pages/Users/UserDetail"));
 const Performance = lazy(() => import("pages/Performance"));
 const AddAppraisal = lazy(() => import("pages/Performance/AddAppraisal"));
 const AppraisalDetail = lazy(() => import("pages/Performance/AppraisalDetail"));
@@ -203,8 +211,6 @@ const CreditNoteDetail = lazy(() => import("pages/Sales/CreditNotes/CreditNoteDe
 const DebitNotes = lazy(() => import("pages/Purchases/DebitNotes"));
 const AddDebitNote = lazy(() => import("pages/Purchases/DebitNotes/AddDebitNote"));
 const DebitNoteDetail = lazy(() => import("pages/Purchases/DebitNotes/DebitNoteDetail"));
-const StockAdjust = lazy(() => import("pages/Inventory/Stock/StockAdjust"));
-
 // Dashboard routes require a live ERP session — previously there was no
 // guard at all, so any dashboard URL was reachable without logging in (the
 // pages would just fail their API calls silently).
@@ -342,8 +348,10 @@ function Router() {
                 element={<VariantDetail />}
               />
               <Route path="inventory/stock" element={<InventoryStock />} />
+              <Route path="inventory/stock/opening-import" element={<OpeningStockImport />} />
               <Route path="inventory/stock/detail/:id" element={<StockDetail />} />
-              <Route path="inventory/stock/adjust" element={<StockAdjust />} />
+              <Route path="inventory/quarantine" element={<QuarantineLots />} />
+              <Route path="inventory/quarantine/detail/:id" element={<QuarantineDetail />} />
               <Route path="inventory/production" element={<Production />} />
               <Route
                 path="inventory/production/add"
@@ -452,6 +460,13 @@ function Router() {
               <Route path="warehouse_issues" element={<StockIssue />} />
               <Route path="warehouse_issues/add" element={<StockIssue />} />
               <Route path="settings" element={<Settings />} />
+              <Route path="roles" element={<Roles />} />
+              <Route path="roles/add" element={<AddRole />} />
+              <Route path="roles/edit/:id" element={<AddRole />} />
+              <Route path="users" element={<AccessUsers />} />
+              <Route path="users/add" element={<AddAccessUser />} />
+              <Route path="users/edit/:id" element={<AddAccessUser />} />
+              <Route path="users/detail/:id" element={<AccessUserDetail />} />
               <Route path="performance" element={<Performance />} />
               <Route path="performance/add" element={<AddAppraisal />} />
               <Route path="performance/edit/:id" element={<AddAppraisal />} />

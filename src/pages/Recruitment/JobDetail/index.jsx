@@ -1,12 +1,14 @@
-ï»¿import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/react";
 import { FiArrowLeft, FiEdit2, FiBriefcase, FiUsers, FiList, FiPlus, FiAlertCircle, FiArrowRight } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
+import FormInput from "components/FormInput";
 import RichTextContent from "components/RichTextContent";
-import { STAGE_PIPELINE } from "../recruitmentFakeData";
+import { recruitmentStageOptions } from "global/constant";
+const STAGE_PIPELINE = recruitmentStageOptions.map((s) => s.id);
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import {
   fetchJobById,
@@ -40,7 +42,7 @@ const nextStage = (current) => {
 const InfoRow = ({ label, value }) => (
   <div className="flex flex-col sm:flex-row sm:items-center gap-1 py-3 border-b border-slate-100 dark:border-white/10 last:border-0">
     <span className="text-sm text-slate-500 dark:text-white/50 sm:w-40 shrink-0">{label}</span>
-    <span className="text-sm font-medium text-slate-900 dark:text-white">{value || "â€”"}</span>
+    <span className="text-sm font-medium text-slate-900 dark:text-white">{value || "—"}</span>
   </div>
 );
 
@@ -49,12 +51,11 @@ const AddCandidateForm = ({ jobId, onSaved, onCancel }) => {
   const dispatch = useDispatch();
   const [form, setForm] = useState({ name: "", email: "", phone: "", experience: "", currentCompany: "", notes: "" });
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
-  const inputCls = "w-full h-[40px] px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-900 dark:text-white";
-  const labelCls = "text-xs font-medium text-slate-600 dark:text-white/60 mb-1 block";
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.email) { toast.error("Name and email required"); return; }
+    if (!form.name?.trim() || form.name.trim().length < 2) { toast.error("Name is required (min 2 characters)."); return; }
+    if (!form.email) { toast.error("Email is required."); return; }
+    if (form.phone && form.phone.replace(/\D/g, "").length < 7) { toast.error("Phone must be 7–20 characters."); return; }
     try {
       await dispatch(applyCandidate({ ...form, jobId })).unwrap();
       await dispatch(fetchCandidatesByJob(jobId));
@@ -69,21 +70,31 @@ const AddCandidateForm = ({ jobId, onSaved, onCancel }) => {
     <div className="bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 rounded-2xl p-6 mb-5">
       <div className="flex items-center justify-between mb-4">
         <h4 className="font-semibold text-slate-900 dark:text-white">Add Candidate</h4>
-        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-600 text-xl">Ã—</button>
+        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-600 text-xl">×</button>
       </div>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
-          { k: "name", label: "Full Name *", ph: "Candidate Name" },
-          { k: "email", label: "Email *", ph: "email@example.com" },
-          { k: "phone", label: "Phone", ph: "+966 5X XXX XXXX" },
-          { k: "experience", label: "Experience", ph: "3 years" },
-          { k: "currentCompany", label: "Current Company", ph: "Company name" },
-          { k: "notes", label: "Notes", ph: "Optional notes" },
-        ].map(({ k, label, ph }) => (
-          <div key={k}>
-            <label className={labelCls}>{label}</label>
-            <input value={form[k]} onChange={(e) => set(k, e.target.value)} placeholder={ph} className={inputCls} />
-          </div>
+          { k: "name", label: "Full Name", ph: "Candidate Name", required: true, pattern: /[a-zA-Z\s.'-]/, minLength: 2, maxLength: 150 },
+          { k: "email", label: "Email", ph: "email@example.com", required: true, type: "email" },
+          { k: "phone", label: "Phone", ph: "+966 5X XXX XXXX", pattern: /[0-9+\-() ]/, minLength: 7, maxLength: 20 },
+          { k: "experience", label: "Experience", ph: "3 years", maxLength: 50 },
+          { k: "currentCompany", label: "Current Company", ph: "Company name", pattern: /[a-zA-Z0-9\s.'-]/, maxLength: 150 },
+          { k: "notes", label: "Notes", ph: "Optional notes", maxLength: 500 },
+        ].map(({ k, label, ph, required, type, pattern, minLength, maxLength }) => (
+          <FormInput
+            key={k}
+            label={label}
+            labelClass="!text-xs font-medium text-slate-600 dark:text-white/60"
+            required={required}
+            type={type}
+            pattern={pattern}
+            minLength={minLength}
+            maxLength={maxLength}
+            value={form[k]}
+            onValueChange={(v) => set(k, v)}
+            placeholder={ph}
+            inputClass="!h-10 !rounded-lg"
+          />
         ))}
         <div className="flex items-end gap-2 sm:col-span-2 lg:col-span-3">
           <button type="submit" className="h-10 px-5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-sm font-medium">Add Candidate</button>
@@ -94,7 +105,7 @@ const AddCandidateForm = ({ jobId, onSaved, onCancel }) => {
   );
 };
 
-// Hire confirmation inline form â€” the designation (and department) come from
+// Hire confirmation inline form — the designation (and department) come from
 // the job posting itself now, so only the joining date needs to be captured
 // here to create the real Employee record.
 const HireForm = ({ candidate, onDone, onCancel }) => {
@@ -103,6 +114,7 @@ const HireForm = ({ candidate, onDone, onCancel }) => {
   const [submitting, setSubmitting] = useState(false);
 
   const handleConfirm = async () => {
+    if (!joiningDate) { toast.error("Joining date is required."); return; }
     setSubmitting(true);
     try {
       await dispatch(hireCandidate({
@@ -110,7 +122,7 @@ const HireForm = ({ candidate, onDone, onCancel }) => {
         data: { joiningDate },
       })).unwrap();
       await dispatch(fetchCandidatesByJob(candidate.jobId));
-      toast.success(`${candidate.name} hired â€” employee record created, onboarding checklist started.`);
+      toast.success(`${candidate.name} hired — employee record created, onboarding checklist started.`);
       onDone?.();
     } catch (err) {
       toast.error(err || "Failed to hire candidate.");
@@ -123,10 +135,15 @@ const HireForm = ({ candidate, onDone, onCancel }) => {
     <div className="bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-2xl p-5 mt-2">
       <p className="text-sm font-semibold text-slate-800 dark:text-white mb-3">Hire {candidate.name}</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-xs font-medium text-slate-600 dark:text-white/60 mb-1 block">Joining Date *</label>
-          <input type="date" value={joiningDate} onChange={(e) => setJoiningDate(e.target.value)} className="w-full h-10 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm text-slate-900 dark:text-white" />
-        </div>
+        <FormInput
+          label="Joining Date"
+          labelClass="!text-xs font-medium text-slate-600 dark:text-white/60"
+          type="date"
+          required
+          value={joiningDate}
+          onValueChange={setJoiningDate}
+          inputClass="!h-10 !rounded-lg"
+        />
       </div>
       <div className="flex gap-2 mt-4">
         <button type="button" disabled={submitting} onClick={handleConfirm} className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium disabled:opacity-50">Confirm Hire</button>
@@ -200,7 +217,7 @@ const JobDetail = () => {
     );
   }
 
-  const departmentName = departmentsById[job.departmentId]?.name || "â€”";
+  const departmentName = departmentsById[job.departmentId]?.name || "—";
   const tabCls = ({ selected }) =>
     `flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all outline-none ${selected ? "bg-[var(--color-teal-500)] text-white shadow-sm" : "text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/10"}`;
 
@@ -213,7 +230,7 @@ const JobDetail = () => {
             <h1 className="text-3xl font-bold tracking-tight">{job.title}</h1>
             <JobStatusMenu jobId={job.id} status={job.status} size="md" onChanged={() => dispatch(fetchJobById(id))} />
           </div>
-          <p className="text-slate-500 dark:text-white/50 text-sm">{job.jobCode} Â· {departmentName} Â· {job.openings} opening(s) Â· Deadline: {job.deadline ? job.deadline.slice(0, 10) : "â€”"}</p>
+          <p className="text-slate-500 dark:text-white/50 text-sm">{job.jobCode} · {departmentName} · {job.openings} opening(s) · Deadline: {job.deadline ? job.deadline.slice(0, 10) : "—"}</p>
         </div>
         <Button type="button" title="Edit Job" icon={FiEdit2} onClick={() => navigate(`/recruitment/edit/${id}`)} btn="primary" className="!rounded-md !bg-[var(--color-teal-500)] hover:!bg-[var(--color-teal-600)] !border-0" />
       </div>
@@ -236,7 +253,7 @@ const JobDetail = () => {
                 <InfoRow label="Department" value={departmentName} />
                 <InfoRow label="Openings" value={job.openings} />
                 <InfoRow label="Experience" value={job.experience} />
-                <InfoRow label="Salary" value={`${job.salaryMin?.toLocaleString()} â€” ${job.salaryMax?.toLocaleString()} ${job.currency}`} />
+                <InfoRow label="Salary" value={`${job.salaryMin?.toLocaleString()} — ${job.salaryMax?.toLocaleString()} ${job.currency}`} />
                 <InfoRow label="Deadline" value={job.deadline ? job.deadline.slice(0, 10) : null} />
                 <InfoRow label="Posted" value={job.createdAt ? job.createdAt.slice(0, 10) : null} />
               </div>
@@ -286,8 +303,8 @@ const JobDetail = () => {
                             <td className="px-6 py-3 font-medium text-slate-900 dark:text-white">{c.name}</td>
                             <td className="px-4 py-3 text-slate-500">{c.email}</td>
                             <td className="px-4 py-3 text-slate-500">{c.experience}</td>
-                            <td className="px-4 py-3 text-slate-500">{c.currentCompany || "â€”"}</td>
-                            <td className="px-4 py-3 text-slate-400">{c.createdAt ? c.createdAt.slice(0, 10) : "â€”"}</td>
+                            <td className="px-4 py-3 text-slate-500">{c.currentCompany || "—"}</td>
+                            <td className="px-4 py-3 text-slate-400">{c.createdAt ? c.createdAt.slice(0, 10) : "—"}</td>
                             <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${stageColor(c.stage)}`}>{c.stage}</span></td>
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
@@ -337,7 +354,7 @@ const JobDetail = () => {
                           <p className="text-xs text-slate-400 truncate">{c.currentCompany || c.email}</p>
                           {stage !== "Hired" && stage !== "Rejected" && (
                             <div className="flex gap-1 mt-1.5">
-                              {nextStage(stage) && <button onClick={() => handleAdvance(c.id, nextStage(stage))} className="flex-1 text-[10px] bg-teal-100 text-teal-700 rounded py-0.5">â†’ {nextStage(stage)}</button>}
+                              {nextStage(stage) && <button onClick={() => handleAdvance(c.id, nextStage(stage))} className="flex-1 text-[10px] bg-teal-100 text-teal-700 rounded py-0.5">? {nextStage(stage)}</button>}
                             </div>
                           )}
                         </div>

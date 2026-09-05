@@ -6,7 +6,8 @@ import { toast } from "react-toastify";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiX, FiFileText, FiAlertTriangle } from "react-icons/fi";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import Button from "components/Button";
-import { checkRoleAuth } from "global/helper";
+import FormInput from "components/FormInput";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
   fetchLoanById,
@@ -29,7 +30,6 @@ const { add_employee } = rafeeqi_role_ids;
 const TAB_CLASS =
   "min-w-[140px] whitespace-nowrap cursor-pointer py-3 px-5 rounded-lg h-11 flex justify-center items-center font-medium text-sm text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:text-white data-[selected]:font-semibold hover:text-teal-700 hover:bg-teal-500/10 dark:hover:text-white dark:hover:bg-teal-500/20";
 
-const fmt = (val) => (parseFloat(val) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 import { loanStatusBadge as STATUS_BADGE } from "global/constant";
 
@@ -214,9 +214,13 @@ const LoanDetail = () => {
               <div className="mt-4 p-4 bg-white dark:bg-white/10 rounded-xl border border-rose-300">
                 <p className="text-sm font-semibold text-slate-800 dark:text-white mb-2">{t("loans:reject_reason")}</p>
                 <div className="flex gap-2">
-                  <input value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
+                  <FormInput
+                    value={rejectReason}
+                    onValueChange={setRejectReason}
                     placeholder={t("loans:reject_reason_placeholder")}
-                    className="flex-1 h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-rose-400" />
+                    inputClass="!h-9"
+                    wrapperClass="flex-1"
+                  />
                   <button type="button" disabled={busy} onClick={handleReject} className="h-9 px-3 rounded-lg bg-rose-500 text-white text-sm font-semibold"><FiCheck /></button>
                   <button type="button" onClick={() => setShowRejectModal(false)} className="h-9 px-3 rounded-lg bg-slate-200 dark:bg-white/20 text-slate-600 dark:text-white text-sm"><FiX /></button>
                 </div>
@@ -246,15 +250,15 @@ const LoanDetail = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <div className="p-5 rounded-2xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10">
             <p className="text-xs text-slate-500 dark:text-white/60">{t("loans:loan_amount")}</p>
-            <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">SAR {fmt(loan.loanAmount)}</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">SAR {formatAmount(loan.loanAmount)}</p>
           </div>
           <div className="p-5 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10">
             <p className="text-xs text-emerald-600">{t("loans:paid_amount")}</p>
-            <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">SAR {fmt(paidAmount)}</p>
+            <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300 mt-1">SAR {formatAmount(paidAmount)}</p>
           </div>
           <div className="p-5 rounded-2xl border border-rose-200 dark:border-rose-500/30 bg-rose-50/50 dark:bg-rose-500/10">
             <p className="text-xs text-rose-600">{t("loans:remaining_amount")}</p>
-            <p className="text-xl font-bold text-rose-700 dark:text-rose-300 mt-1">SAR {fmt(remainingAmount)}</p>
+            <p className="text-xl font-bold text-rose-700 dark:text-rose-300 mt-1">SAR {formatAmount(remainingAmount)}</p>
           </div>
           <div className="p-5 rounded-2xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10">
             <p className="text-xs text-slate-500 dark:text-white/60">{t("loans:progress")}</p>
@@ -276,10 +280,18 @@ const LoanDetail = () => {
               <div className="mt-3 p-5 rounded-2xl bg-white dark:bg-white/10 border-2 border-purple-200 dark:border-purple-500/30 space-y-3">
                 <h4 className="font-bold text-slate-800 dark:text-white">{t("loans:pre_closure_form")}</h4>
                 <div>
-                  <label className="text-xs font-medium text-linkText block mb-1">{t("loans:pre_closure_amount")}</label>
-                  <input type="number" value={pcAmount} onChange={(e) => setPcAmount(e.target.value)}
-                    placeholder={`Max: SAR ${fmt(remainingAmount)}`}
-                    className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-purple-400" />
+                  <FormInput
+                    label={t("loans:pre_closure_amount")}
+                    type="number"
+                    decimal
+                    decimalPlaces={2}
+                    min={0}
+                    value={pcAmount}
+                    onValueChange={setPcAmount}
+                    placeholder={`Max: SAR ${formatAmount(remainingAmount)}`}
+                    inputClass="!h-10"
+                    labelClass="!text-xs"
+                  />
                   <p className="text-xs text-slate-400 mt-1">{t("loans:pre_closure_amount_hint")}</p>
                 </div>
                 <div className="flex gap-2 pt-1">
@@ -316,7 +328,7 @@ const LoanDetail = () => {
                     { label: t("loans:loan_type"), value: loan.loanType },
                     { label: t("loans:loan_purpose"), value: loan.loanPurpose },
                     { label: t("loans:interest_percent"), value: loan.interestPercent ? `${loan.interestPercent}%` : "-" },
-                    { label: t("loans:per_month_installment"), value: `SAR ${fmt(loan.monthlyDeduction)}` },
+                    { label: t("loans:per_month_installment"), value: `SAR ${formatAmount(loan.monthlyDeduction)}` },
                     { label: t("loans:applied_via"), value: loan.appliedVia === "employee" ? t("loans:self_service") : t("loans:hr_direct") },
                   ].map((f) => (
                     <div key={f.label}>
@@ -343,7 +355,7 @@ const LoanDetail = () => {
                   <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/20">
                     <h4 className="font-semibold text-slate-900 dark:text-white mb-3 text-purple-600">{t("loans:pre_closure")}</h4>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                      <p><span className="text-slate-500 dark:text-white/60">{t("loans:pre_closure_amount")}:</span><br /><strong>SAR {fmt(loan.preClosureAmount)}</strong></p>
+                      <p><span className="text-slate-500 dark:text-white/60">{t("loans:pre_closure_amount")}:</span><br /><strong>SAR {formatAmount(loan.preClosureAmount)}</strong></p>
                       <p><span className="text-slate-500 dark:text-white/60">{t("loans:pre_closure_date")}:</span><br />{loan.preClosureDate ? new Date(loan.preClosureDate).toLocaleDateString() : "-"}</p>
                     </div>
                   </div>
@@ -383,7 +395,7 @@ const LoanDetail = () => {
               <div className={panelClass}>
                 <h4 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{t("loans:emi_schedule")}</h4>
                 <p className="text-sm text-slate-500 dark:text-white/70 mb-4">
-                  {t("loans:paid_amount")}: SAR {fmt(paidAmount)} · {t("loans:remaining_amount")}: SAR {fmt(remainingAmount)}
+                  {t("loans:paid_amount")}: SAR {formatAmount(paidAmount)} · {t("loans:remaining_amount")}: SAR {formatAmount(remainingAmount)}
                 </p>
                 {schedule.length === 0 ? (
                   <p className="text-slate-500 dark:text-white/60 py-8 text-center">{t("loans:not_disbursed_yet")}</p>
@@ -402,10 +414,10 @@ const LoanDetail = () => {
                           <tr key={row.installmentNo} className={`border-t border-slate-100 dark:border-white/5 ${row.paid ? "bg-emerald-50/50 dark:bg-emerald-500/5" : ""}`}>
                             <td className="px-4 py-2.5">{row.installmentNo}</td>
                             <td className="px-4 py-2.5">{row.dueDate ? new Date(row.dueDate).toLocaleDateString() : "-"}</td>
-                            <td className="px-4 py-2.5">SAR {fmt(row.emiAmount)}</td>
-                            <td className="px-4 py-2.5">{fmt(row.principal)}</td>
-                            <td className="px-4 py-2.5">{fmt(row.interest)}</td>
-                            <td className="px-4 py-2.5">{fmt(row.balance)}</td>
+                            <td className="px-4 py-2.5">SAR {formatAmount(row.emiAmount)}</td>
+                            <td className="px-4 py-2.5">{formatAmount(row.principal)}</td>
+                            <td className="px-4 py-2.5">{formatAmount(row.interest)}</td>
+                            <td className="px-4 py-2.5">{formatAmount(row.balance)}</td>
                             <td className="px-4 py-2.5">
                               <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${row.paid ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
                                 {row.paid ? t("loans:paid") : t("loans:pending")}

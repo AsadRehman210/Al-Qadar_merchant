@@ -8,7 +8,7 @@ import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { tableRows } from "global/constant";
 import { fetchBusinessExpenses, showBusinessExpenses, showBusinessExpensesTotal, showBusinessExpensesLoading } from "store/slices/financeSlice";
@@ -19,7 +19,6 @@ import { useListFilters } from "hooks/useListFilters";
 
 const { view_customer, add_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
 
 // A business expense paid straight from Bank/Cash that doesn't need a formal
 // Vendor Bill — distinct from the HR Employee Expenses module. Every row
@@ -101,7 +100,7 @@ const FinanceExpenses = () => {
                       <td className="px-4 py-4 align-middle text-xs">{row.expenseAccountCode} — {row.expenseAccountName}</td>
                       <td className="px-4 py-4 align-middle text-xs">{row.bankAccountName}</td>
                       <td className="px-4 py-4 align-middle text-end tabular-nums pr-6">
-                        {fmt(row.amount)} {row.currency}
+                        {formatAmount(row.amount)} {row.currency}
                       </td>
                     </tr>
                   ))}

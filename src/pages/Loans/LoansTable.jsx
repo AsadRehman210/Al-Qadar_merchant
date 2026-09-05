@@ -6,8 +6,8 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
 import { tableRows, loanStatusBadge } from "global/constant";
+import { formatAmount } from "global/helper";
 
-const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
 const getStatusClass = (status) => {
   return loanStatusBadge[status] || "bg-slate-100 text-slate-700 dark:bg-slate-500/20";

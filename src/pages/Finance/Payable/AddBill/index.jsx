@@ -24,21 +24,6 @@ const { add_customer, edit_customer } = rafeeqi_role_ids;
 
 const emptyLine = () => ({ key: `${Date.now()}-${Math.random()}`, description: "", amount: "", account: null });
 
-// Line-item amount is a raw controlled <input> (not FormInput/register), so it
-// gets the same money-precision rule (no negative, max 3dp, 10 chars total
-// including the decimal point) applied by hand: strip anything but
-// digits/dot, cap the fractional part at 3 digits, then cap the whole thing.
-const sanitizeAmount = (value) => {
-  let v = value.replace(/[^0-9.]/g, "");
-  const dot = v.indexOf(".");
-  if (dot !== -1) {
-    const whole = v.slice(0, dot);
-    const frac = v.slice(dot + 1).replace(/\./g, "").slice(0, 3);
-    v = frac.length || v.endsWith(".") ? `${whole}.${frac}` : whole;
-  }
-  return v.slice(0, 10);
-};
-
 // A bill only stays freely editable while it's Draft — approving it posts
 // real ledger lines (see vendor-bill-service's approve), after which it's
 // permanently locked, same rule Journal Entries follow once posted.
@@ -66,9 +51,10 @@ const AddBill = () => {
   const [lines, setLines] = useState([emptyLine()]);
   const [submitting, setSubmitting] = useState(false);
 
-  const { register, handleSubmit, reset } = useForm({
+  const { register, handleSubmit, reset, watch } = useForm({
     defaultValues: { vendorName: "", vendorContact: "", billNumber: "", billDate: new Date().toISOString().slice(0, 10), dueDate: "" },
   });
+  const billDate = watch("billDate");
 
   useEffect(() => {
     if (id && existing?.id === id) {
@@ -113,6 +99,10 @@ const AddBill = () => {
   const linesValid = lines.every((l) => l.account?.id && l.description && (parseFloat(l.amount) || 0) > 0);
 
   const onSubmit = async (data) => {
+    if (data.dueDate && data.billDate && data.dueDate < data.billDate) {
+      toast.error(t("finance:due_after_bill", { defaultValue: "Due date must be on or after bill date" }));
+      return;
+    }
     if (!linesValid) {
       toast.error(t("finance:invalid_data"));
       return;
@@ -167,10 +157,10 @@ const AddBill = () => {
         >
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <FormInput label={t("finance:supplier")} name="vendorName" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={150} register={register} required />
-            <FormInput label={t("contact")} name="vendorContact" register={register} />
+            <FormInput label={t("contact")} name="vendorContact" pattern={/[a-zA-Z0-9\s.'&,-]/} maxLength={150} register={register} />
             <FormInput label={t("finance:bill_ref")} name="billNumber" pattern={/[A-Za-z0-9\-/]/} minLength={2} maxLength={100} register={register} required />
-            <FormInput label={t("finance:posted_date")} name="billDate" type="date" register={register} required />
-            <FormInput label={t("finance:due_date")} name="dueDate" type="date" register={register} required />
+            <FormInput label={t("finance:posted_date")} name="billDate" type="date" register={register} required max={new Date().toISOString().slice(0, 10)} />
+            <FormInput label={t("finance:due_date")} name="dueDate" type="date" register={register} required min={billDate || undefined} />
           </div>
 
           <div className="flex items-center justify-between mb-3">
@@ -183,38 +173,42 @@ const AddBill = () => {
           <div className="space-y-3">
             {lines.map((line) => (
               <div key={line.key} className="grid grid-cols-1 md:grid-cols-[1fr_1fr_140px_36px] gap-3 items-end">
-                <div>
-                  <label className="text-xs font-medium mb-1 block">{t("description")}</label>
-                  <input
-                    type="text"
-                    value={line.description}
-                    onChange={(e) => updateLine(line.key, { description: e.target.value })}
-                    maxLength={200}
-                    className="h-[46px] w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium mb-1 block">{t("finance:category")}</label>
-                  <SelectDropdown
-                    data={expenseOpts}
-                    selected={line.account}
-                    setSelected={(opt) => updateLine(line.key, { account: opt })}
-                    hideClear
-                    classes="!h-[46px] !rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium mb-1 block">{t("finance:amount")}</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    maxLength={10}
-                    value={line.amount}
-                    onChange={(e) => updateLine(line.key, { amount: sanitizeAmount(e.target.value) })}
-                    className="h-[46px] w-full px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                  />
-                </div>
+                <FormInput
+                  label={t("description")}
+                  labelClass="!text-xs"
+                  name={`desc-${line.key}`}
+                  value={line.description}
+                  onValueChange={(v) => updateLine(line.key, { description: v })}
+                  maxLength={200}
+                  minLength={2}
+                  required
+                  wrapperClass="w-full"
+                  inputClass="!h-[46px] !rounded-lg"
+                />
+                <SelectDropdown
+                  label={t("finance:category")}
+                  labelClass="!text-xs"
+                  data={expenseOpts}
+                  selected={line.account}
+                  setSelected={(opt) => updateLine(line.key, { account: opt })}
+                  hideClear
+                  classes="!h-[46px] !rounded-lg"
+                />
+                <FormInput
+                  label={t("finance:amount")}
+                  labelClass="!text-xs"
+                  name={`amount-${line.key}`}
+                  type="number"
+                  min={0.01}
+                  decimal
+                  decimalPlaces={3}
+                  maxLength={10}
+                  required
+                  value={line.amount}
+                  onValueChange={(v) => updateLine(line.key, { amount: v })}
+                  wrapperClass="w-full"
+                  inputClass="!h-[46px] !rounded-lg"
+                />
                 <button
                   type="button"
                   onClick={() => removeLine(line.key)}

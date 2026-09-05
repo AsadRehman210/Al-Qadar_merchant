@@ -40,6 +40,7 @@ const uniqueSlice = createSlice({
     },
     clearUserData: (state) => {
       state.userData = {};
+      state.userRoles = [];
     },
     addUserData: (state, action) => {
       state.userData = action.payload;

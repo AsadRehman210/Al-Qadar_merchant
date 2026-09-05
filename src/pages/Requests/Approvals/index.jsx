@@ -7,6 +7,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import ReactPaginate from "react-paginate";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
+import FormTextarea from "components/FormTextarea";
 import { APPROVAL_STATUS_BADGE, APPROVAL_STATUS } from "global/approvalEngine";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
@@ -63,19 +64,18 @@ const QuickPanel = ({ stage, req, onDone }) => {
   if (open) {
     return (
       <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/15">
-        <label className="text-xs font-medium text-slate-600 dark:text-white/70 mb-1 block">
-          {t("requests:decision_note")} <span className="text-red-500">*</span>
-        </label>
-        <textarea
+        <FormTextarea
+          label={t("requests:decision_note")}
+          name="comments"
+          required
           rows={2}
           value={comments}
-          onChange={(e) => setComments(e.target.value)}
+          onValueChange={setComments}
           placeholder={t("requests:decision_note_placeholder")}
-          className={`w-full rounded-lg border bg-white dark:bg-white/10 p-2 text-xs mb-1 ${touched && isEmpty ? "border-rose-400" : "border-slate-200 dark:border-white/20"}`}
+          labelClass="!text-xs"
+          className={touched && isEmpty ? "!border-rose-400" : ""}
+          errors={touched && isEmpty ? { comments: { message: t("requests:decision_note_required") } } : undefined}
         />
-        {touched && isEmpty && (
-          <p className="text-xs text-rose-500 mb-1">{t("requests:decision_note_required")}</p>
-        )}
         <div className="flex gap-2 mt-1">
           <Button
             type="button"

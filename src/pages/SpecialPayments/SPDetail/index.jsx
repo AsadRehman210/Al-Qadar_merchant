@@ -4,9 +4,10 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { FiArrowLeft, FiArrowRight, FiDownload } from "react-icons/fi";
 import Button from "components/Button";
-import { checkRoleAuth } from "global/helper";
+import FormInput from "components/FormInput";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { SP_STATUS, SP_STATUS_BADGE } from "pages/PayrollBatch/payrollBatchFakeData";
+import { SP_STATUS, SP_STATUS_BADGE } from "global/constant";
 import {
   fetchSpecialPaymentById,
   showCurrentSpecialPayment,
@@ -25,7 +26,6 @@ import { SkeletonDetail } from "components/Skeleton";
 
 const { view_employee, add_employee } = rafeeqi_role_ids;
 
-const fmt = (n) => (n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const FLOW_STEPS = [
   { key: SP_STATUS.DRAFT, label: "Created" },
@@ -132,7 +132,7 @@ const SPDetail = () => {
               <h1 className="text-3xl font-bold">{sp.title}</h1>
               <span className={`px-3 py-1.5 rounded-full text-sm font-semibold ${SP_STATUS_BADGE[sp.status] || ""}`}>{sp.status}</span>
             </div>
-            <p className="text-mutedForeground mt-1">{type?.name || "—"} · {lines.length} employees · SAR {fmt(sp.totalAmount)}</p>
+            <p className="text-mutedForeground mt-1">{type?.name || "—"} · {lines.length} employees · SAR {formatAmount(sp.totalAmount)}</p>
           </div>
           <Button type="button" title={t("payroll:export_csv")} icon={FiDownload} iconClass="h-4 w-4"
             onClick={exportCSV}
@@ -177,9 +177,13 @@ const SPDetail = () => {
             </div>
             {showReject && (
               <div className="mt-3">
-                <input value={rejectReason} onChange={(e) => setRejectReason(e.target.value)}
+                <FormInput
+                  value={rejectReason}
+                  onValueChange={setRejectReason}
                   placeholder={t("payroll:reject_reason")}
-                  className="w-full max-w-md h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm mb-2 focus:outline-0 focus:border-teal-500" />
+                  inputClass="!h-10 !rounded-lg"
+                  wrapperClass="w-full max-w-md mb-2"
+                />
                 <div className="flex gap-2">
                   <Button type="button" title={t("payroll:confirm_reject")}
                     onClick={() => { dispatch(rejectSpecialPayment({ id, data: { reason: rejectReason } })).then(refresh); setShowReject(false); }}
@@ -198,8 +202,8 @@ const SPDetail = () => {
             { label: t("payroll:sp_type"), value: type?.name || "—", cls: "text-purple-600 dark:text-purple-400" },
             { label: t("payroll:sp_target"), value: sp.target === "department" ? `Dept: ${department?.name || "—"}` : sp.target === "individual" ? "Individual" : sp.target === "custom" ? "Custom" : "All Employees", cls: "text-slate-700 dark:text-white" },
             { label: t("payroll:sp_employees"), value: lines.length, cls: "text-slate-700 dark:text-white" },
-            { label: t("payroll:sp_per_employee"), value: `SAR ${fmt(lines.length ? sp.totalAmount / lines.length : 0)}`, cls: "text-teal-600" },
-            { label: t("payroll:sp_total"), value: `SAR ${fmt(sp.totalAmount)}`, cls: "text-emerald-600 font-bold text-lg" },
+            { label: t("payroll:sp_per_employee"), value: `SAR ${formatAmount(lines.length ? sp.totalAmount / lines.length : 0)}`, cls: "text-teal-600" },
+            { label: t("payroll:sp_total"), value: `SAR ${formatAmount(sp.totalAmount)}`, cls: "text-emerald-600 font-bold text-lg" },
           ].map((c) => (
             <div key={c.label} className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-4">
               <p className="text-xs text-slate-500 dark:text-white/60 mb-1">{c.label}</p>
@@ -255,7 +259,7 @@ const SPDetail = () => {
                       <p className="font-semibold text-slate-800 dark:text-white">{e.employeeName}</p>
                       <p className="text-xs text-slate-400">{e.employeeIdNo}</p>
                     </td>
-                    <td className="px-4 py-3 font-bold text-purple-600 dark:text-purple-400">SAR {fmt(e.amount)}</td>
+                    <td className="px-4 py-3 font-bold text-purple-600 dark:text-purple-400">SAR {formatAmount(e.amount)}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${e.paymentStatus === "Paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
                         {e.paymentStatus}
@@ -267,7 +271,7 @@ const SPDetail = () => {
               <tfoot>
                 <tr className="bg-slate-50 dark:bg-white/5 font-bold border-t-2 border-slate-200">
                   <td colSpan={2} className="px-4 py-3 pl-5 text-slate-700 dark:text-white">{t("payroll:total")}</td>
-                  <td className="px-4 py-3 text-purple-600 font-bold">SAR {fmt(sp.totalAmount)}</td>
+                  <td className="px-4 py-3 text-purple-600 font-bold">SAR {formatAmount(sp.totalAmount)}</td>
                   <td className="px-4 py-3 text-xs text-slate-400">
                     {lines.filter((e) => e.paymentStatus === "Paid").length}/{lines.length} paid
                   </td>

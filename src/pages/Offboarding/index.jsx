@@ -1,4 +1,4 @@
-ï»¿import { useEffect } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
@@ -12,7 +12,8 @@ import DataState from "components/DataState";
 import { cardRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import Button from "components/Button";
-import { EXIT_STATUS, EXIT_STATUS_BADGE } from "./offboardingFakeData";
+import { EXIT_STATUS_BADGE } from "global/constant";
+import { exitStatusFilterOptions } from "global/constant";
 import {
   fetchExits,
   fetchExitsSummary,
@@ -64,10 +65,7 @@ const Offboarding = () => {
   const totalPages = Math.ceil((totalRecords || 0) / selRows.id) || 1;
   const handleRowsChange = (v) => setFilters({ limitId: v.id, page: 1 });
 
-  const statusOpts = [
-    { id: "", title: t("offboarding:all_status", "All Statuses") },
-    ...Object.values(EXIT_STATUS).map((s) => ({ id: s, title: s })),
-  ];
+  const statusOpts = exitStatusFilterOptions;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -127,12 +125,12 @@ const Offboarding = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-11 w-11 rounded-xl bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 flex items-center justify-center font-bold shrink-0">
-                      {(e.employeeName || "â€”").split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                      {(e.employeeName || "—").split(" ").map((n) => n[0]).join("").slice(0, 2)}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-slate-800 dark:text-white truncate">{e.employeeName || "â€”"}</p>
+                      <p className="font-bold text-slate-800 dark:text-white truncate">{e.employeeName || "—"}</p>
                       <p className="text-xs text-slate-500 dark:text-white/50 flex items-center gap-1.5">
-                        <LuBriefcase className="h-3.5 w-3.5" /> {e.designation} Â· {e.department}
+                        <LuBriefcase className="h-3.5 w-3.5" /> {e.designation} · {e.department}
                       </p>
                     </div>
                   </div>

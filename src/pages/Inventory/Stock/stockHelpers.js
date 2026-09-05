@@ -5,7 +5,7 @@
 
 export const computeStatus = (quantity, minStock) => {
   if (quantity <= 0) return "out_of_stock";
-  if (quantity <= minStock) return "low_stock";
+  if (minStock > 0 && quantity < minStock) return "low_stock";
   return "in_stock";
 };
 

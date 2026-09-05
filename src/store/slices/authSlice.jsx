@@ -19,6 +19,7 @@ export const loginErp = createAsyncThunk(
     }
     dispatch(addToken(response.result.token));
     dispatch(addUserData(response.result.account));
+    dispatch(addUserRoles(response.result.account?.permissions || []));
     return response.result;
   },
 );

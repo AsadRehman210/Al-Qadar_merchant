@@ -9,9 +9,17 @@ import { toast } from "react-toastify";
 import QRCode from "qrcode";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import Button from "components/Button";
+import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, toDateInput } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import {
+  assetMaintenanceTypeOptions,
+  assetMaintenanceStatusOptions,
+  assetDisposalMethodOptions,
+  assetDocumentTypeOptions,
+  assetStatusBadge,
+} from "global/constant";
 import {
   fetchAssetById,
   assignAsset,
@@ -35,13 +43,9 @@ const TAB_CLASS = "whitespace-nowrap cursor-pointer py-3 px-5 rounded-lg h-11 fl
 
 const fmt = (n, currency = "SAR") => `${currency} ${(parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtN = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const toDateInput = (v) => (v ? String(v).slice(0, 10) : "");
 const fmtDate = (v) => (v ? String(v).slice(0, 10) : "—");
 
-const statusClass = (s) => {
-  const m = { "In use": "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300", "In storage": "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300", Maintenance: "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200", Disposed: "bg-slate-200 text-slate-700 dark:bg-white/15 dark:text-white/70" };
-  return m[s] || m["In use"];
-};
+const statusClass = (s) => assetStatusBadge[s] || assetStatusBadge["In use"];
 
 const isExpiringSoon = (dateStr) => {
   if (!dateStr) return false;
@@ -100,10 +104,7 @@ const calcCurrentBookValue = (asset) => {
   return lastRow ? lastRow.bookValue : (schedule[schedule.length - 1]?.bookValue ?? 0);
 };
 
-const MAINT_TYPES = ["Scheduled", "Breakdown", "Inspection", "Upgrade"];
-const MAINT_STATUS = ["Planned", "In Progress", "Completed"];
-const DISPOSAL_METHODS = ["Sold", "Scrapped", "Donated", "Written Off"];
-const DOC_TYPES = ["Invoice", "Warranty Card", "Manual", "Photo", "Other"];
+const DOC_TYPES = assetDocumentTypeOptions.map((o) => o.id);
 
 const AssetDetail = () => {
   const { t, i18n } = useTranslation();
@@ -116,6 +117,11 @@ const AssetDetail = () => {
   const assetLoading = useSelector(showCurrentAssetLoading);
   const employees = useSelector(showEmployees);
   const journalEntry = useSelector(showCurrentJournalEntry);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const purchaseMin = toDateInput(asset?.purchaseDate);
+  const activeAssignDate = toDateInput(
+    asset?.assignmentHistory?.find((h) => !h.returnDate)?.assignedDate,
+  );
 
   useEffect(() => {
     if (id) dispatch(fetchAssetById(id));
@@ -186,6 +192,7 @@ const AssetDetail = () => {
 
   const handleAssign = async () => {
     if (!assignEmp) return;
+    if (!assignDate) { toast.error(t("asset:date_required", { defaultValue: "Date is required" })); return; }
     try {
       await dispatch(assignAsset({ id, data: { employeeId: assignEmp.id, assignedDate: assignDate, notes: assignNotes } })).unwrap();
       toast.success(t("asset:asset_assigned"));
@@ -193,6 +200,7 @@ const AssetDetail = () => {
     } catch (message) { toast.error(message || t("asset:action_failed")); }
   };
   const handleReturn = async () => {
+    if (!returnDate) { toast.error(t("asset:date_required", { defaultValue: "Date is required" })); return; }
     try {
       await dispatch(returnAsset({ id, data: { returnDate, notes: returnNotes } })).unwrap();
       toast.success(t("asset:asset_returned"));
@@ -200,7 +208,11 @@ const AssetDetail = () => {
     } catch (message) { toast.error(message || t("asset:action_failed")); }
   };
   const handleAddMaint = async () => {
-    if (!maint.description) return;
+    if (!maint.date) { toast.error(t("asset:date_required", { defaultValue: "Date is required" })); return; }
+    if (String(maint.description || "").trim().length < 5) {
+      toast.error(t("asset:description_min", { defaultValue: "Description must be at least 5 characters" }));
+      return;
+    }
     try {
       await dispatch(addAssetMaintenance({ id, data: { ...maint, cost: parseFloat(maint.cost) || 0 } })).unwrap();
       toast.success(t("asset:maintenance_added"));
@@ -209,6 +221,20 @@ const AssetDetail = () => {
     } catch (message) { toast.error(message || t("asset:action_failed")); }
   };
   const handleSaveInsurance = async () => {
+    const anyIns = [ins.policyNo, ins.provider, ins.startDate, ins.expiryDate, ins.premiumAmount, ins.coverageAmount, ins.notes]
+      .some((x) => String(x ?? "").trim() !== "");
+    if (anyIns && (!String(ins.policyNo || "").trim() || !String(ins.provider || "").trim() || !ins.startDate || !ins.expiryDate)) {
+      toast.error(t("asset:insurance_fields_required", { defaultValue: "Policy no, insurer and both dates are required when insurance is filled" }));
+      return;
+    }
+    if (ins.startDate && ins.expiryDate && ins.expiryDate < ins.startDate) {
+      toast.error(t("asset:expiry_after_start", { defaultValue: "Must be on or after start date" }));
+      return;
+    }
+    if (ins.coverageAmount !== "" && ins.premiumAmount !== "" && Number(ins.coverageAmount) < Number(ins.premiumAmount)) {
+      toast.error(t("asset:coverage_below_premium", { defaultValue: "Coverage should be at least the premium" }));
+      return;
+    }
     try {
       await dispatch(updateAssetInsurance({
         id,
@@ -227,7 +253,14 @@ const AssetDetail = () => {
     } catch (message) { toast.error(message || t("asset:action_failed")); }
   };
   const handleDispose = async () => {
-    if (!disp.reason) return;
+    if (String(disp.reason || "").trim().length < 5) {
+      toast.error(t("asset:reason_min", { defaultValue: "Reason must be at least 5 characters" }));
+      return;
+    }
+    if (disp.method === "Sold" && !(Number(disp.salePrice) > 0)) {
+      toast.error(t("asset:sale_price_required", { defaultValue: "Sale price is required when method is Sold" }));
+      return;
+    }
     try {
       await dispatch(disposeAsset({ id, data: { ...disp, salePrice: parseFloat(disp.salePrice) || 0 } })).unwrap();
       toast.success(t("asset:asset_disposed"));
@@ -253,18 +286,26 @@ const AssetDetail = () => {
     setShowTransferForm(true);
   };
   const handleTransfer = async () => {
-    if (!String(transfer.location || "").trim()) { toast.error(t("asset:location_required")); return; }
+    const loc = String(transfer.location || "").trim();
+    if (loc.length < 2) { toast.error(t("asset:location_required")); return; }
+    if (!transfer.date) { toast.error(t("asset:date_required", { defaultValue: "Date is required" })); return; }
     try {
-      await dispatch(transferAssetLocation({ id, data: transfer })).unwrap();
+      await dispatch(transferAssetLocation({ id, data: { ...transfer, location: loc } })).unwrap();
       toast.success(t("asset:location_transferred"));
       setShowTransferForm(false);
     } catch (message) { toast.error(message || t("asset:action_failed")); }
   };
 
   const handleAddDocument = async () => {
-    if (!docName.trim()) { toast.error(t("asset:document_name_required")); return; }
+    const name = String(docName || "").trim();
+    if (name.length < 2) { toast.error(t("asset:document_name_required")); return; }
+    const url = String(docUrl || "").trim();
+    if (url && !/^https?:\/\//i.test(url)) {
+      toast.error(t("asset:document_url_invalid", { defaultValue: "URL must start with http:// or https://" }));
+      return;
+    }
     try {
-      await dispatch(addAssetDocument({ id, data: { name: docName, docType, url: docUrl || undefined } })).unwrap();
+      await dispatch(addAssetDocument({ id, data: { name, docType, url: url || undefined } })).unwrap();
       toast.success(t("asset:document_added"));
       setShowDocForm(false); setDocName(""); setDocUrl(""); setDocType(DOC_TYPES[0]);
     } catch (message) { toast.error(message || t("asset:action_failed")); }
@@ -421,21 +462,37 @@ const AssetDetail = () => {
                   {showTransferForm && (
                     <div className="mb-5 p-5 rounded-2xl border-2 border-teal-200 dark:border-teal-500/30 bg-white dark:bg-white/5 space-y-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="sm:col-span-2">
-                          <label className="text-xs font-medium text-linkText block mb-1">{t("asset:new_location")} *</label>
-                          <input value={transfer.location} onChange={(e) => setTransfer((p) => ({ ...p, location: e.target.value }))}
-                            className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-linkText block mb-1">{t("asset:transfer_date")}</label>
-                          <input type="date" value={transfer.date} onChange={(e) => setTransfer((p) => ({ ...p, date: e.target.value }))}
-                            className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                        </div>
-                        <div className="sm:col-span-2">
-                          <label className="text-xs font-medium text-linkText block mb-1">{t("asset:transfer_notes")}</label>
-                          <input value={transfer.notes} onChange={(e) => setTransfer((p) => ({ ...p, notes: e.target.value }))}
-                            className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                        </div>
+                        <FormInput
+                          wrapperClass="sm:col-span-2"
+                          label={t("asset:new_location")}
+                          labelClass="!text-xs"
+                          required
+                          value={transfer.location}
+                          onValueChange={(v) => setTransfer((p) => ({ ...p, location: v }))}
+                          inputClass="!h-9 !rounded-lg"
+                          pattern={/[a-zA-Z0-9\s.'-]/}
+                          maxLength={150}
+                        />
+                        <FormInput
+                          label={t("asset:transfer_date")}
+                          labelClass="!text-xs"
+                          type="date"
+                          required
+                          value={transfer.date}
+                          onValueChange={(v) => setTransfer((p) => ({ ...p, date: v }))}
+                          inputClass="!h-9 !rounded-lg"
+                          min={purchaseMin || undefined}
+                          max={todayStr}
+                        />
+                        <FormInput
+                          wrapperClass="sm:col-span-2"
+                          label={t("asset:transfer_notes")}
+                          labelClass="!text-xs"
+                          value={transfer.notes}
+                          onValueChange={(v) => setTransfer((p) => ({ ...p, notes: v }))}
+                          inputClass="!h-9 !rounded-lg"
+                          maxLength={500}
+                        />
                       </div>
                       <div className="flex gap-2">
                         <Button type="button" title={t("asset:confirm_transfer")} onClick={handleTransfer}
@@ -573,20 +630,33 @@ const AssetDetail = () => {
                   <div className="mb-5 p-5 rounded-2xl border-2 border-teal-200 dark:border-teal-500/30 bg-white dark:bg-white/5 space-y-3">
                     <h4 className="font-semibold text-slate-800 dark:text-white">{t("asset:assign_to_employee")}</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:employee")} *</label>
-                        <SelectDropdown data={empOptions} selected={assignEmp} setSelected={setAssignEmp} />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:assignment_date")}</label>
-                        <input type="date" value={assignDate} onChange={(e) => setAssignDate(e.target.value)}
-                          className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:notes")}</label>
-                        <input value={assignNotes} onChange={(e) => setAssignNotes(e.target.value)}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                      </div>
+                      <SelectDropdown
+                        label={t("asset:employee")}
+                        labelClass="!text-xs"
+                        required
+                        data={empOptions}
+                        selected={assignEmp}
+                        setSelected={setAssignEmp}
+                      />
+                      <FormInput
+                        label={t("asset:assignment_date")}
+                        labelClass="!text-xs"
+                        type="date"
+                        value={assignDate}
+                        onValueChange={setAssignDate}
+                        inputClass="!h-10 !rounded-lg"
+                        min={purchaseMin || undefined}
+                        max={todayStr}
+                      />
+                      <FormInput
+                        wrapperClass="sm:col-span-2"
+                        label={t("asset:notes")}
+                        labelClass="!text-xs"
+                        value={assignNotes}
+                        onValueChange={setAssignNotes}
+                        inputClass="!h-9 !rounded-lg"
+                        maxLength={500}
+                      />
                     </div>
                     <div className="flex gap-2">
                       <Button type="button" title={t("asset:confirm_assign")} onClick={handleAssign} disabled={!assignEmp}
@@ -601,16 +671,24 @@ const AssetDetail = () => {
                   <div className="mb-5 p-5 rounded-2xl border-2 border-amber-200 dark:border-amber-500/30 bg-white dark:bg-white/5 space-y-3">
                     <h4 className="font-semibold text-slate-800 dark:text-white">{t("asset:return_asset")}</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:return_date")}</label>
-                        <input type="date" value={returnDate} onChange={(e) => setReturnDate(e.target.value)}
-                          className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-amber-400" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:return_notes")}</label>
-                        <input value={returnNotes} onChange={(e) => setReturnNotes(e.target.value)}
-                          className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-amber-400" />
-                      </div>
+                      <FormInput
+                        label={t("asset:return_date")}
+                        labelClass="!text-xs"
+                        type="date"
+                        value={returnDate}
+                        onValueChange={setReturnDate}
+                        inputClass="!h-10 !rounded-lg"
+                        min={activeAssignDate || purchaseMin || undefined}
+                        max={todayStr}
+                      />
+                      <FormInput
+                        label={t("asset:return_notes")}
+                        labelClass="!text-xs"
+                        value={returnNotes}
+                        onValueChange={setReturnNotes}
+                        inputClass="!h-10 !rounded-lg"
+                        maxLength={500}
+                      />
                     </div>
                     <div className="flex gap-2">
                       <Button type="button" title={t("asset:confirm_return")} onClick={handleReturn}
@@ -668,36 +746,51 @@ const AssetDetail = () => {
                     <h4 className="font-semibold text-slate-800 dark:text-white">{t("asset:add_maintenance_record")}</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {[
-                        { label: t("asset:maint_date"), type: "date", field: "date" },
-                        { label: t("asset:maint_cost"), type: "number", field: "cost" },
-                        { label: t("asset:maint_vendor"), type: "text", field: "vendor" },
-                        { label: t("asset:next_maintenance"), type: "date", field: "nextMaintenanceDate" },
-                      ].map(({ label, type, field }) => (
-                        <div key={field}>
-                          <label className="text-xs font-medium text-linkText block mb-1">{label}</label>
-                          <input type={type} value={maint[field] || ""} onChange={(e) => setMaint((p) => ({ ...p, [field]: e.target.value }))}
-                            className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                        </div>
+                        { label: t("asset:maint_date"), type: "date", field: "date", min: purchaseMin || undefined, max: todayStr },
+                        { label: t("asset:maint_cost"), type: "number", field: "cost", decimal: true, min: 0, decimalPlaces: 3, maxLength: 10 },
+                        { label: t("asset:maint_vendor"), type: "text", field: "vendor", pattern: /[a-zA-Z0-9\s.'-]/, minLength: 2, maxLength: 150 },
+                        { label: t("asset:next_maintenance"), type: "date", field: "nextMaintenanceDate", min: maint.date || undefined },
+                      ].map(({ label, type, field, decimal, ...rest }) => (
+                        <FormInput
+                          key={field}
+                          label={label}
+                          labelClass="!text-xs"
+                          type={type}
+                          decimal={decimal}
+                          value={maint[field] || ""}
+                          onValueChange={(v) => setMaint((p) => ({ ...p, [field]: v }))}
+                          inputClass="!h-9 !rounded-lg"
+                          {...rest}
+                        />
                       ))}
-                      <div>
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:maint_type")}</label>
-                        <select value={maint.type} onChange={(e) => setMaint((p) => ({ ...p, type: e.target.value }))}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500">
-                          {MAINT_TYPES.map((x) => <option key={x}>{x}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:maint_status")}</label>
-                        <select value={maint.status} onChange={(e) => setMaint((p) => ({ ...p, status: e.target.value }))}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500">
-                          {MAINT_STATUS.map((x) => <option key={x}>{x}</option>)}
-                        </select>
-                      </div>
-                      <div className="sm:col-span-2 lg:col-span-3">
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:description")} *</label>
-                        <input value={maint.description} onChange={(e) => setMaint((p) => ({ ...p, description: e.target.value }))}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                      </div>
+                      <SelectDropdown
+                        label={t("asset:maint_type")}
+                        labelClass="!text-xs"
+                        data={assetMaintenanceTypeOptions}
+                        selected={assetMaintenanceTypeOptions.find((o) => o.id === maint.type) || assetMaintenanceTypeOptions[0]}
+                        setSelected={(opt) => setMaint((p) => ({ ...p, type: opt?.id ?? assetMaintenanceTypeOptions[0].id }))}
+                        hideClear
+                        classes="!h-9 !rounded-lg"
+                      />
+                      <SelectDropdown
+                        label={t("asset:maint_status")}
+                        labelClass="!text-xs"
+                        data={assetMaintenanceStatusOptions}
+                        selected={assetMaintenanceStatusOptions.find((o) => o.id === maint.status) || assetMaintenanceStatusOptions[0]}
+                        setSelected={(opt) => setMaint((p) => ({ ...p, status: opt?.id ?? assetMaintenanceStatusOptions[0].id }))}
+                        hideClear
+                        classes="!h-9 !rounded-lg"
+                      />
+                      <FormInput
+                        wrapperClass="sm:col-span-2 lg:col-span-3"
+                        label={t("asset:description")}
+                        labelClass="!text-xs"
+                        required
+                        value={maint.description}
+                        onValueChange={(v) => setMaint((p) => ({ ...p, description: v }))}
+                        inputClass="!h-9 !rounded-lg"
+                        maxLength={500}
+                      />
                     </div>
                     <div className="flex gap-2 pt-1">
                       <Button type="button" title={t("save")} onClick={handleAddMaint} disabled={!maint.description}
@@ -756,24 +849,34 @@ const AssetDetail = () => {
                     <h4 className="font-semibold text-slate-800 dark:text-white">{t("asset:insurance_details")}</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {[
-                        { label: t("asset:policy_no"),       field: "policyNo",       type: "text" },
-                        { label: t("asset:insurer"),          field: "provider",       type: "text" },
+                        { label: t("asset:policy_no"),       field: "policyNo",       type: "text", pattern: /[A-Za-z0-9\-_/]/, minLength: 2, maxLength: 100 },
+                        { label: t("asset:insurer"),          field: "provider",       type: "text", pattern: /[a-zA-Z0-9\s.'-]/, minLength: 2, maxLength: 150 },
                         { label: t("asset:policy_start"),     field: "startDate",      type: "date" },
-                        { label: t("asset:policy_expiry"),    field: "expiryDate",     type: "date" },
-                        { label: t("asset:premium_amount"),   field: "premiumAmount",  type: "number" },
-                        { label: t("asset:coverage_amount"),  field: "coverageAmount", type: "number" },
-                      ].map(({ label, field, type }) => (
-                        <div key={field}>
-                          <label className="text-xs font-medium text-linkText block mb-1">{label}</label>
-                          <input type={type} value={ins[field] || ""} onChange={(e) => setIns((p) => ({ ...p, [field]: e.target.value }))}
-                            className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                        </div>
+                        { label: t("asset:policy_expiry"),    field: "expiryDate",     type: "date", min: ins.startDate || undefined },
+                        { label: t("asset:premium_amount"),   field: "premiumAmount",  type: "number", decimal: true, min: 0, decimalPlaces: 3, maxLength: 10 },
+                        { label: t("asset:coverage_amount"),  field: "coverageAmount", type: "number", decimal: true, min: 0, decimalPlaces: 3, maxLength: 10 },
+                      ].map(({ label, field, type, decimal, ...rest }) => (
+                        <FormInput
+                          key={field}
+                          label={label}
+                          labelClass="!text-xs"
+                          type={type}
+                          decimal={decimal}
+                          value={ins[field] || ""}
+                          onValueChange={(v) => setIns((p) => ({ ...p, [field]: v }))}
+                          inputClass="!h-9 !rounded-lg"
+                          {...rest}
+                        />
                       ))}
-                      <div className="sm:col-span-2 lg:col-span-3">
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:notes")}</label>
-                        <input value={ins.notes || ""} onChange={(e) => setIns((p) => ({ ...p, notes: e.target.value }))}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                      </div>
+                      <FormInput
+                        wrapperClass="sm:col-span-2 lg:col-span-3"
+                        label={t("asset:notes")}
+                        labelClass="!text-xs"
+                        value={ins.notes || ""}
+                        onValueChange={(v) => setIns((p) => ({ ...p, notes: v }))}
+                        inputClass="!h-9 !rounded-lg"
+                        maxLength={500}
+                      />
                     </div>
                     <div className="flex gap-2">
                       <Button type="button" title={t("save")} onClick={handleSaveInsurance}
@@ -834,23 +937,35 @@ const AssetDetail = () => {
                 {showDocForm && (
                   <div className="mb-6 p-5 rounded-2xl border-2 border-teal-200 dark:border-teal-500/30 bg-white dark:bg-white/5 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:document_type")}</label>
-                        <select value={docType} onChange={(e) => setDocType(e.target.value)}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500">
-                          {DOC_TYPES.map((x) => <option key={x}>{x}</option>)}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:document_name")} *</label>
-                        <input value={docName} onChange={(e) => setDocName(e.target.value)}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:document_url")}</label>
-                        <input value={docUrl} onChange={(e) => setDocUrl(e.target.value)} placeholder="https://..."
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500" />
-                      </div>
+                      <SelectDropdown
+                        label={t("asset:document_type")}
+                        labelClass="!text-xs"
+                        data={assetDocumentTypeOptions}
+                        selected={assetDocumentTypeOptions.find((o) => o.id === docType) || assetDocumentTypeOptions[0]}
+                        setSelected={(opt) => setDocType(opt?.id ?? DOC_TYPES[0])}
+                        hideClear
+                        classes="!h-9 !rounded-lg"
+                      />
+                      <FormInput
+                        label={t("asset:document_name")}
+                        labelClass="!text-xs"
+                        required
+                        value={docName}
+                        onValueChange={setDocName}
+                        inputClass="!h-9 !rounded-lg"
+                        pattern={/[a-zA-Z0-9\s.'-]/}
+                        maxLength={150}
+                      />
+                      <FormInput
+                        wrapperClass="sm:col-span-2"
+                        label={t("asset:document_url")}
+                        labelClass="!text-xs"
+                        value={docUrl}
+                        onValueChange={setDocUrl}
+                        placeholder="https://..."
+                        inputClass="!h-9 !rounded-lg"
+                        maxLength={500}
+                      />
                     </div>
                     <div className="flex gap-2">
                       <Button type="button" title={t("save")} onClick={handleAddDocument} disabled={!docName.trim()}
@@ -921,27 +1036,40 @@ const AssetDetail = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {[
-                        { label: t("asset:disposal_date"),   field: "date",        type: "date" },
-                        { label: t("asset:sale_price"),       field: "salePrice",   type: "number" },
-                      ].map(({ label, field, type }) => (
-                        <div key={field}>
-                          <label className="text-xs font-medium text-linkText block mb-1">{label}</label>
-                          <input type={type} value={disp[field] || ""} onChange={(e) => setDisp((p) => ({ ...p, [field]: e.target.value }))}
-                            className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-rose-400" />
-                        </div>
+                        { label: t("asset:disposal_date"),   field: "date",        type: "date", min: purchaseMin || undefined, max: todayStr },
+                        { label: t("asset:sale_price"),       field: "salePrice",   type: "number", decimal: true, min: 0, decimalPlaces: 3, maxLength: 10 },
+                      ].map(({ label, field, type, decimal, ...rest }) => (
+                        <FormInput
+                          key={field}
+                          label={label}
+                          labelClass="!text-xs"
+                          type={type}
+                          decimal={decimal}
+                          value={disp[field] || ""}
+                          onValueChange={(v) => setDisp((p) => ({ ...p, [field]: v }))}
+                          inputClass="!h-9 !rounded-lg"
+                          {...rest}
+                        />
                       ))}
-                      <div>
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:disposal_method")}</label>
-                        <select value={disp.method} onChange={(e) => setDisp((p) => ({ ...p, method: e.target.value }))}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-rose-400">
-                          {DISPOSAL_METHODS.map((x) => <option key={x}>{x}</option>)}
-                        </select>
-                      </div>
-                      <div className="sm:col-span-2">
-                        <label className="text-xs font-medium text-linkText block mb-1">{t("asset:disposal_reason")} *</label>
-                        <input value={disp.reason || ""} onChange={(e) => setDisp((p) => ({ ...p, reason: e.target.value }))}
-                          className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-rose-400" />
-                      </div>
+                      <SelectDropdown
+                        label={t("asset:disposal_method")}
+                        labelClass="!text-xs"
+                        data={assetDisposalMethodOptions}
+                        selected={assetDisposalMethodOptions.find((o) => o.id === disp.method) || assetDisposalMethodOptions[0]}
+                        setSelected={(opt) => setDisp((p) => ({ ...p, method: opt?.id ?? assetDisposalMethodOptions[0].id }))}
+                        hideClear
+                        classes="!h-9 !rounded-lg"
+                      />
+                      <FormInput
+                        wrapperClass="sm:col-span-2"
+                        label={t("asset:disposal_reason")}
+                        labelClass="!text-xs"
+                        required
+                        value={disp.reason || ""}
+                        onValueChange={(v) => setDisp((p) => ({ ...p, reason: v }))}
+                        inputClass="!h-9 !rounded-lg"
+                        maxLength={500}
+                      />
                     </div>
                     <div className="flex gap-2">
                       <Button type="button" title={t("asset:confirm_dispose")} onClick={handleDispose} disabled={!disp.reason}

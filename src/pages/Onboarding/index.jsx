@@ -1,4 +1,4 @@
-ï»¿import { useEffect } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
@@ -16,10 +16,11 @@ import ReactPaginate from "react-paginate";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import DataState from "components/DataState";
-import { cardRows } from "global/constant";
+import { cardRows, onboardingTaskCategoryOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import Button from "components/Button";
-import { progressOf, categoryLabel, ONBOARDING_STATUS } from "./onboardingFakeData";
+import { onboardingProgressOf, onboardingCategoryLabel } from "global/helper";
+import { ONBOARDING_STATUS } from "global/constant";
 import {
   fetchOnboardings,
   fetchOnboardingsSummary,
@@ -168,7 +169,7 @@ const Onboarding = () => {
         <DataState loading={loading} data={list} text={t("hrhub:no_onboarding")}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {list.map((o) => {
-              const p = progressOf(o);
+              const p = onboardingProgressOf(o);
               const isDone = o.status === ONBOARDING_STATUS.COMPLETED;
               const grouped = groupTasksByCategory(o.tasks);
               return (
@@ -180,14 +181,14 @@ const Onboarding = () => {
                   <div className="flex items-start justify-between gap-3">
                     <Link to={`/employees/details/${o.employeeId}`} className="flex items-center gap-3 min-w-0 group">
                       <div className="h-11 w-11 rounded-xl bg-teal-50 dark:bg-teal-500/15 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold shrink-0">
-                        {(o.employeeName || "â€”").split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                        {(o.employeeName || "—").split(" ").map((n) => n[0]).join("").slice(0, 2)}
                       </div>
                       <div className="min-w-0">
                         <p className="font-bold text-slate-800 dark:text-white truncate group-hover:text-teal-600 dark:group-hover:text-teal-300">
-                          {o.employeeName || "â€”"}
+                          {o.employeeName || "—"}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-white/50 flex items-center gap-1.5">
-                          <LuBriefcase className="h-3.5 w-3.5" /> {o.position} Â· {o.department}
+                          <LuBriefcase className="h-3.5 w-3.5" /> {o.position} · {o.department}
                         </p>
                       </div>
                     </Link>
@@ -207,7 +208,7 @@ const Onboarding = () => {
                         {t("hrhub:required_progress", { done: p.requiredDone, total: p.requiredTotal })}
                         {p.optionalTotal > 0 && (
                           <span className="text-slate-400 dark:text-white/40">
-                            {" Â· "}
+                            {" · "}
                             {t("hrhub:optional_progress", { done: p.optionalDone, total: p.optionalTotal })}
                           </span>
                         )}
@@ -224,7 +225,7 @@ const Onboarding = () => {
                     {grouped.map(([catId, tasks]) => (
                       <div key={catId}>
                         <h4 className="text-[11px] font-semibold uppercase tracking-wider text-mutedForeground dark:text-white/40 mb-1">
-                          {categoryLabel(catId)}
+                          {onboardingCategoryLabel(catId, onboardingTaskCategoryOptions)}
                         </h4>
                         <div className="space-y-1">
                           {tasks.map((task) => (

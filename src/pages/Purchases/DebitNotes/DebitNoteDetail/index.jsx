@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiX } from "react-icons/fi";
 import Button from "components/Button";
+import SelectDropdown from "components/SelectDropdown";
 import { toast } from "react-toastify";
 import {
   fetchDebitNoteById,
@@ -11,24 +12,19 @@ import {
   showCurrentDebitNote,
   showCurrentDebitNoteLoading,
 } from "store/slices/debitNoteSlice";
-import { lineTotal } from "../../purchaseInvoiceHelpers";
 import { SkeletonDetail } from "components/Skeleton";
+import { checkRoleAuth, lineTotal } from "global/helper";
+import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+
+const { status_purchase_debit_note } = rafeeqi_role_ids;
 
 const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-import { noteStatusBadge as STATUS_BADGE } from "global/constant";
+import { noteStatusBadge as STATUS_BADGE, noteNextStatusMap as NEXT_STATUS } from "global/constant";
 
-// Mirrors the backend's VALID_NEXT_STATUS guard in debit-note-service.ts —
-// Applied/Voided are terminal (stock/journal effects already fired), so
-// once reached there is nothing left to transition to.
-const NEXT_STATUS = {
-  Draft: ["Approved", "Voided"],
-  Approved: ["Applied", "Voided"],
-};
-
-// Mirrors NO_STOCK_MOVEMENT_REASONS in debit-note-service.ts — these two
+// Mirrors NO_STOCK_MOVEMENT_REASONS in debit-note-service.ts — these
 // reasons never move stock when Applied.
-const NO_STOCK_MOVEMENT_REASONS = new Set(["Price discrepancy", "Short shipment"]);
+const NO_STOCK_MOVEMENT_REASONS = new Set(["Price discrepancy", "Short shipment", "Wrong entry"]);
 
 const DebitNoteDetail = () => {
   const { t, i18n } = useTranslation();
@@ -76,9 +72,8 @@ const DebitNoteDetail = () => {
   };
 
   const panelCls = "bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-amber-400";
-  // "Different per product" mode leaves a real (non-null) taxPercent override
-  // on at least one line — same detection rule Purchase Detail's own table uses.
-  const hasDifferentTax = (dn.products || []).some((l) => l.taxPercent !== null && l.taxPercent !== undefined);
+  const lineTaxPercent = (l) =>
+    l.taxPercent !== undefined && l.taxPercent !== null ? Number(l.taxPercent) || 0 : Number(dn.taxPercent) || 0;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -94,13 +89,13 @@ const DebitNoteDetail = () => {
             </div>
             <p className="text-mutedForeground text-sm mt-1">{dn.supplierName} · {String(dn.date).slice(0, 10)}</p>
           </div>
-          {dn.status === "Draft" && (
+          {checkRoleAuth(status_purchase_debit_note) && dn.status === "Draft" && (
             <button type="button" onClick={() => { setNewStatus("Approved"); setShowStatusEdit(true); }}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500 text-white text-sm font-semibold hover:bg-emerald-600">
               <FiCheck className="h-4 w-4" /> {t("purchase:approve_dn")}
             </button>
           )}
-          {!!(NEXT_STATUS[dn.status] || []).length && (
+          {checkRoleAuth(status_purchase_debit_note) && !!(NEXT_STATUS[dn.status] || []).length && (
             <button type="button" onClick={() => { setNewStatus(NEXT_STATUS[dn.status][0]); setShowStatusEdit(!showStatusEdit); }}
               className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/20 text-sm font-semibold">
               {t("purchase:update_status")}
@@ -108,25 +103,29 @@ const DebitNoteDetail = () => {
           )}
         </div>
 
-        {showStatusEdit && (
+        {checkRoleAuth(status_purchase_debit_note) && showStatusEdit && (
           <div className="mb-5 p-4 rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-500/10 flex flex-wrap items-end gap-3">
-            <div>
-              <label className="text-xs font-medium text-linkText block mb-1">{t("purchase:status")}</label>
-              <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)}
-                className="h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0">
-                {(NEXT_STATUS[dn.status] || []).map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+            <div className="w-44">
+              <SelectDropdown
+                label={t("purchase:status")}
+                labelClass="!text-xs"
+                data={(NEXT_STATUS[dn.status] || []).map((s) => ({ id: s, title: s }))}
+                selected={{ id: newStatus, title: newStatus }}
+                setSelected={(o) => setNewStatus(o?.id || newStatus)}
+                valueKey="id"
+                hideClear
+                classes="!h-9 !rounded-lg"
+              />
             </div>
             <button type="button" onClick={handleStatusSave} className="h-9 px-3 rounded-lg bg-teal-500 text-white text-sm font-semibold"><FiCheck className="h-4 w-4" /></button>
             <button type="button" onClick={() => setShowStatusEdit(false)} className="h-9 px-3 rounded-lg bg-slate-200 dark:bg-white/20 text-slate-600 dark:text-white text-sm"><FiX className="h-4 w-4" /></button>
           </div>
         )}
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
           {[
             { label: t("purchase:subtotal"), value: `${dn.currency} ${fmt(dn.subtotal)}`,  color: "border-slate-200 bg-white dark:bg-white/10 dark:border-white/20" },
             { label: t("purchase:tax"),      value: `${dn.currency} ${fmt(dn.taxAmount)}`, color: "border-amber-200 bg-amber-50 dark:bg-amber-500/10" },
-            { label: t("purchase:discount"), value: `${dn.currency} ${fmt(dn.discount)}`,  color: "border-rose-200 bg-rose-50 dark:bg-rose-500/10" },
             { label: t("purchase:total"),    value: `${dn.currency} ${fmt(dn.total)}`,     color: "border-amber-400 bg-amber-50 dark:bg-amber-500/10" },
           ].map((c) => (
             <div key={c.label} className={`p-4 rounded-2xl border ${c.color}`}>
@@ -162,38 +161,44 @@ const DebitNoteDetail = () => {
 
           <h3 className="font-bold mb-3">{t("purchase:line_items")}</h3>
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
-            <table className="w-full text-sm min-w-[900px]">
+            <table className="w-full text-sm min-w-[1200px]">
               <thead>
                 <tr className="bg-amber-500">
-                  {[
-                    t("purchase:product"),
-                    t("purchase:expiry_date", { defaultValue: "Expiry date" }),
-                    t("purchase:qty"),
-                    t("purchase:unit"),
-                    t("purchase:price"),
-                    ...(hasDifferentTax ? [t("purchase:tax_percent")] : []),
-                    t("purchase:tax_amount"),
-                    t("purchase:line_total"),
-                  ].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-start text-xs font-semibold text-white/90">{h}</th>
-                  ))}
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90 w-12">{t("purchase:sr_no")}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:product")}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:qty_to_return", { defaultValue: "Qty to return" })}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:price")}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:unit")}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:expiry_date", { defaultValue: "Expiry date" })}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:billed_qty", { defaultValue: "Billed qty" })}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90 whitespace-nowrap">{t("purchase:already_debited", { defaultValue: "Already debited" })}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:base_amount")}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:tax_percent")}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:tax_amount")}</th>
+                  <th className="px-3 py-2.5 text-start text-xs font-semibold text-white/90">{t("purchase:subtotal")}</th>
                 </tr>
               </thead>
               <tbody>
-                {(dn.products || []).map((l, idx) => (
-                  <tr key={l.id || l.variantId || idx} className="border-t border-slate-100 dark:border-white/5">
-                    <td className="px-4 py-2.5">{l.productName}</td>
-                    <td className="px-4 py-2.5 text-xs text-slate-500 whitespace-nowrap">{l.expiryDate ? String(l.expiryDate).slice(0, 10) : "—"}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{l.qty}</td>
-                    <td className="px-4 py-2.5">{l.unit}</td>
-                    <td className="px-4 py-2.5 tabular-nums">{fmt(l.price)}</td>
-                    {hasDifferentTax && (
-                      <td className="px-4 py-2.5">{l.taxPercent !== null && l.taxPercent !== undefined ? `${l.taxPercent}%` : "—"}</td>
-                    )}
-                    <td className="px-4 py-2.5 tabular-nums text-slate-500">{fmt(l.taxAmount)}</td>
-                    <td className="px-4 py-2.5 font-semibold tabular-nums text-amber-700">{fmt(lineTotal(l) + (l.taxAmount || 0))}</td>
-                  </tr>
-                ))}
+                {(dn.products || []).map((l, idx) => {
+                  const base = lineTotal(l);
+                  const taxAmt = l.taxAmount ?? base * (lineTaxPercent(l) / 100);
+                  return (
+                    <tr key={l.id || l.variantId || idx} className="border-t border-slate-100 dark:border-white/5">
+                      <td className="px-3 py-2.5 tabular-nums text-slate-600 dark:text-white/70 font-medium">{idx + 1}</td>
+                      <td className="px-3 py-2.5">{l.productName}</td>
+                      <td className="px-3 py-2.5 tabular-nums">{l.qty}</td>
+                      <td className="px-3 py-2.5 tabular-nums">{fmt(l.price)}</td>
+                      <td className="px-3 py-2.5">{l.unit}</td>
+                      <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">{l.expiryDate ? String(l.expiryDate).slice(0, 10) : "—"}</td>
+                      <td className="px-3 py-2.5 tabular-nums text-slate-500">{l.billedQty ?? "—"}</td>
+                      <td className="px-3 py-2.5 tabular-nums text-slate-500">{l.alreadyDebitedQty ?? "—"}</td>
+                      <td className="px-3 py-2.5 tabular-nums font-semibold">{fmt(base)}</td>
+                      <td className="px-3 py-2.5 tabular-nums text-slate-500">{lineTaxPercent(l)}%</td>
+                      <td className="px-3 py-2.5 tabular-nums text-slate-500">{fmt(taxAmt)}</td>
+                      <td className="px-3 py-2.5 tabular-nums font-semibold">{fmt(base + taxAmt)}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

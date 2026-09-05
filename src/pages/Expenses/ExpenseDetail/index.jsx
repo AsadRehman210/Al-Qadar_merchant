@@ -6,10 +6,11 @@ import { toast } from "react-toastify";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiX } from "react-icons/fi";
 import { LuBadgeDollarSign } from "react-icons/lu";
 import Button from "components/Button";
+import FormTextarea from "components/FormTextarea";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { EXPENSE_STATUS } from "../expenseFakeData";
+import { EXPENSE_STATUS } from "global/constant";
 import {
   fetchExpenseById,
   managerApproveExpense,
@@ -189,12 +190,12 @@ const ExpenseDetail = () => {
               <p className={`text-sm font-semibold mb-2 ${isPendingManager ? "text-amber-700 dark:text-amber-300" : "text-blue-700 dark:text-blue-300"}`}>
                 {isPendingManager ? t("requests:manager_approvals") : t("requests:hr_approvals")}
               </p>
-              <textarea
+              <FormTextarea
                 rows={2}
                 value={comments}
-                onChange={(e) => setComments(e.target.value)}
+                onValueChange={setComments}
                 placeholder={t("requests:comments_placeholder")}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-2 text-sm mb-3"
+                wrapperClass="mb-3"
               />
               <div className="flex gap-2">
                 <Button

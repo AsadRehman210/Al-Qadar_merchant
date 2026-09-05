@@ -17,7 +17,12 @@ export default function FormTextarea({
   validate,
   isErrorHide,
   className,
+  value,
+  onValueChange,
+  wrapperClass,
 }) {
+  const isControlled = typeof register !== "function";
+
   const getErrorMessage = () => {
     if (!name) return null;
     const nameParts = name.split(/[[\].]+/).filter(Boolean);
@@ -30,7 +35,7 @@ export default function FormTextarea({
   };
 
   return (
-    <div className="grow">
+    <div className={wrapperClass || "grow"}>
       {label ? (
         <label
           className={`text-sm text-linkText font-medium leading-6 mb-1 block ${
@@ -50,13 +55,18 @@ export default function FormTextarea({
         className={`w-full rounded-md border bg-white placeholder:text-gray placeholder:font-normal text-black transition duration-300 text-sm hover:border-[#ffba32] border-[#E0E5F2] focus:border-[#ffba32] focus:outline-0 p-[11px_16px] resize-y min-h-[2.5rem] disabled:cursor-not-allowed dark:bg-white/10 dark:border-white/20 dark:text-white dark:placeholder:text-white/40 ${
           errors && errors[name] ? "border-red" : ""
         } ${className || ""}`}
-        {...register(name, {
-          required,
-          minLength,
-          maxLength,
-          pattern,
-          validate,
-        })}
+        {...(isControlled
+          ? {
+              value: value ?? "",
+              onChange: (e) => onValueChange?.(e.target.value),
+            }
+          : register(name, {
+              required,
+              minLength,
+              maxLength,
+              pattern,
+              validate,
+            }))}
       />
       {!isErrorHide && getErrorMessage() && (
         <p className="text-red text-xs flex items-center gap-2 mt-1 font-medium">

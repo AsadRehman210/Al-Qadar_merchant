@@ -8,20 +8,11 @@ import SelectDropdown from "components/SelectDropdown";
 import PhoneNumberInput from "components/PhoneNumberInput";
 import PaginatedSelectBox from "components/PaginatedSelectBox";
 import { DEFAULT_ADD_CUSTOMER_VALUES } from "../customerFakeData";
-
-const segmentOptions = [
-  { title: "customers:retail", id: "Retail" },
-  { title: "customers:wholesale", id: "Wholesale" },
-  { title: "customers:corporate", id: "Corporate" },
-];
-const customerTypeOptions = [
-  { title: "customers:individual", id: "Individual" },
-  { title: "customers:business", id: "Business" },
-];
-const statusOptions = [
-  { title: "customers:active", id: "Active" },
-  { title: "customers:inactive", id: "Inactive" },
-];
+import {
+  customerSegmentOptions,
+  customerTypeOptions,
+  customerStatusOptions,
+} from "global/constant";
 
 const BasicInfoTab = ({ existing }) => {
   const {
@@ -41,14 +32,14 @@ const BasicInfoTab = ({ existing }) => {
   );
   const [selSegment, setSelSegment] = useState(
     () =>
-      segmentOptions.find(
+      customerSegmentOptions.find(
         (o) => o.id === DEFAULT_ADD_CUSTOMER_VALUES.customerSegment,
-      ) || segmentOptions[0],
+      ) || customerSegmentOptions[0],
   );
   const [selStatus, setSelStatus] = useState(
     () =>
-      statusOptions.find((o) => o.id === DEFAULT_ADD_CUSTOMER_VALUES.status) ||
-      statusOptions[0],
+      customerStatusOptions.find((o) => o.id === DEFAULT_ADD_CUSTOMER_VALUES.status) ||
+      customerStatusOptions[0],
   );
 
   const customerTypeVal = watch("customerType");
@@ -66,14 +57,14 @@ const BasicInfoTab = ({ existing }) => {
   useEffect(() => {
     if (segmentVal == null || segmentVal === "") return;
     const opt =
-      segmentOptions.find((o) => o.id === segmentVal) || segmentOptions[0];
+      customerSegmentOptions.find((o) => o.id === segmentVal) || customerSegmentOptions[0];
     setSelSegment(opt);
   }, [segmentVal]);
 
   useEffect(() => {
     if (statusVal == null || statusVal === "") return;
     const opt =
-      statusOptions.find((o) => o.id === statusVal) || statusOptions[0];
+      customerStatusOptions.find((o) => o.id === statusVal) || customerStatusOptions[0];
     setSelStatus(opt);
   }, [statusVal]);
 
@@ -238,7 +229,7 @@ const BasicInfoTab = ({ existing }) => {
         />
         <SelectDropdown
           label={t("customers:business_type")}
-          data={segmentOptions}
+          data={customerSegmentOptions}
           selected={selSegment}
           setSelected={setSelSegment}
           name="customerSegment"
@@ -251,7 +242,7 @@ const BasicInfoTab = ({ existing }) => {
         />
         <SelectDropdown
           label={t("customers:status")}
-          data={statusOptions}
+          data={customerStatusOptions}
           selected={selStatus}
           setSelected={setSelStatus}
           name="status"
@@ -325,6 +316,32 @@ const BasicInfoTab = ({ existing }) => {
           minLength={3}
           maxLength={50}
         />
+        <div>
+          <FormInput
+            label={t("customers:opening_balance")}
+            labelClass="text-sm text-linkText font-medium"
+            placeholder={t("customers:opening_balance")}
+            type="number"
+            name="openingBalance"
+            register={register}
+            errors={errors}
+            min={0}
+            decimal
+            decimalPlaces={3}
+            maxLength={10}
+            disabled={Boolean(existing?.openingBalanceLocked)}
+            inputClass={
+              existing?.openingBalanceLocked
+                ? "disabled:bg-slate-100 dark:disabled:bg-white/5 disabled:text-slate-500"
+                : undefined
+            }
+          />
+          <p className="text-xs text-slate-500 dark:text-white/50 mt-1.5">
+            {existing?.openingBalanceLocked
+              ? t("customers:opening_balance_locked_hint")
+              : t("customers:opening_balance_hint")}
+          </p>
+        </div>
       </div>
     </div>
   );

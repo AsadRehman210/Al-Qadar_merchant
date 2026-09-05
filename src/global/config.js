@@ -79,8 +79,10 @@ export const erpUrls = {
   products: "/inventory/product",
   variants: "/inventory/variant",
   production: "/inventory/production",
+  quarantineLots: "/inventory/quarantine-lot",
   stock: "/inventory/stock",
   stockBatches: "/inventory/stock-batch",
+  openingStockImport: "/inventory/opening-stock-import",
 
   warehouses: "/warehouse/warehouse",
   stockTransfers: "/warehouse/stock-transfer",
@@ -97,6 +99,10 @@ export const erpUrls = {
 
   countries: "/geo/countries",
   currencies: "/geo/currencies",
+
+  users: "/user",
+  roles: "/role",
+  activeRoles: "/role/active",
 };
 export const SOCKET_URL = import.meta.env.VITE_APP_BASE_URL;
 export const BANK_KEY = import.meta.env.VITE_APP_BANK_KEY;

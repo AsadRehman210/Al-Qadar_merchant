@@ -67,22 +67,8 @@ export function startReview(id) {
 export function finalizeAppraisal(id, overallRating, hrComment) {
   _appraisals = _appraisals.map((a) => a.id === id ? { ...a, status: "Finalized", overallRating, hrComment, finalizedAt: dayjs().format("YYYY-MM-DD") } : a);
 }
+export {
+  appraisalStatusOptions as APPRAISAL_STATUS_OPTS,
+  appraisalCycleOptions as CYCLE_OPTS,
+} from "global/constant";
 
-export const APPRAISAL_STATUS_OPTS = [
-  { id: "Draft",        title: "Draft" },
-  { id: "Submitted",    title: "Submitted" },
-  { id: "Under Review", title: "Under Review" },
-  { id: "Finalized",    title: "Finalized" },
-];
-
-export const CYCLE_OPTS = [
-  { id: "Q1",     title: "Q1 (Jan–Mar)" },
-  { id: "Q2",     title: "Q2 (Apr–Jun)" },
-  { id: "Q3",     title: "Q3 (Jul–Sep)" },
-  { id: "Q4",     title: "Q4 (Oct–Dec)" },
-  { id: "Annual", title: "Annual" },
-  { id: "H1",     title: "H1 (Jan–Jun)" },
-  { id: "H2",     title: "H2 (Jul–Dec)" },
-];
-
-export const KPI_CATEGORIES = ["Productivity", "Quality", "Collaboration", "Initiative", "Attendance", "Innovation", "Leadership", "Customer Focus"];

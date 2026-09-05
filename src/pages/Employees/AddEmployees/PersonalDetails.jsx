@@ -10,47 +10,29 @@ import Datepicker from "components/Datepicker";
 import UploadSingleFile from "components/UploadSingleFile";
 import Button from "components/Button";
 import Calender from "images/icons/calender.png";
-
-const NATIONALITY_TYPES = [
-  { title: "Saudi", id: "Saudi" },
-  { title: "Expatriate", id: "Expatriate" },
-];
-
-const GENDER_OPTIONS = [
-  { title: "Male", id: "male" },
-  { title: "Female", id: "female" },
-];
-const BLOOD_GROUPS = [
-  { title: "A+", id: "A+" },
-  { title: "A−", id: "A-" },
-  { title: "B+", id: "B+" },
-  { title: "B−", id: "B-" },
-  { title: "AB+", id: "AB+" },
-  { title: "AB−", id: "AB-" },
-  { title: "O+", id: "O+" },
-  { title: "O−", id: "O-" },
-];
-const MARITAL_OPTIONS = [
-  { title: "Single", id: "single" },
-  { title: "Married", id: "married" },
-];
+import {
+  nationalityOptions,
+  genderOptions,
+  bloodGroupOptions,
+  maritalStatusOptions,
+} from "global/constant";
 
 const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
   const { t } = useTranslation();
   const [selGender, setSelGender] = useState(
-    () => GENDER_OPTIONS.find((g) => g.id === existing?.gender) ?? null,
+    () => genderOptions.find((g) => g.id === existing?.gender) ?? null,
   );
   const [selBlood, setSelBlood] = useState(
-    () => BLOOD_GROUPS.find((b) => b.id === existing?.blood_group) ?? null,
+    () => bloodGroupOptions.find((b) => b.id === existing?.blood_group) ?? null,
   );
   const [selMarital, setSelMarital] = useState(
-    () => MARITAL_OPTIONS.find((m) => m.id === existing?.marital_status) ?? null,
+    () => maritalStatusOptions.find((m) => m.id === existing?.marital_status) ?? null,
   );
   const [selDob, setSelDob] = useState(() =>
     existing?.dob ? moment(existing.dob).format("DD-MM-YYYY") : "",
   );
   const [selNationalityType, setSelNationalityType] = useState(
-    () => NATIONALITY_TYPES.find((n) => n.id === existing?.nationality_type) || NATIONALITY_TYPES[0],
+    () => nationalityOptions.find((n) => n.id === existing?.nationality_type) || nationalityOptions[0],
   );
   const [selNationalIdExpiry, setSelNationalIdExpiry] = useState(() =>
     existing?.national_id_expiry ? moment(existing.national_id_expiry).format("DD-MM-YYYY") : "",
@@ -64,7 +46,11 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
     setValue,
     trigger,
     getFieldState,
+    watch,
+    getValues,
   } = useFormContext();
+  const workPermitNo = watch("work_permit_no");
+  const minExpiry = moment().add(1, "day").format("DD-MM-YYYY");
 
   const maxDob = moment().subtract(18, "years").format("DD-MM-YYYY");
   const minDob = moment().subtract(70, "years").format("DD-MM-YYYY");
@@ -98,6 +84,16 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
   const onNext = async (e) => {
     e.preventDefault();
     const valid = await trigger(STEP_FIELDS);
+    const phoneDigits = String(getValues("phone") || "").replace(/\D/g, "");
+    const emergencyDigits = String(getValues("emergency_contact") || "").replace(/\D/g, "");
+    if (phoneDigits && emergencyDigits && phoneDigits === emergencyDigits) {
+      toast.error(t("employees:emergency_must_differ", "Emergency contact must be different from phone"));
+      return;
+    }
+    if (workPermitNo && !selWorkPermitExpiry) {
+      toast.error(t("employees:work_permit_expiry_required", "Work permit expiry is required when work permit no. is filled"));
+      return;
+    }
     if (valid) {
       setValidValues(1);
       setSelectedIndex(1);
@@ -148,7 +144,7 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
         />
         <SelectDropdown
           label={t("employees:gender")}
-          data={GENDER_OPTIONS}
+          data={genderOptions}
           selected={selGender}
           setSelected={setSelGender}
           name="gender"
@@ -199,6 +195,7 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
           errors={errors}
           className="col-span-full"
           required
+          pattern={/[a-zA-Z0-9\s.'-]/}
           minLength={5}
           maxLength={255}
         />
@@ -213,7 +210,7 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
         />
         <SelectDropdown
           label={t("employees:blood_group")}
-          data={BLOOD_GROUPS}
+          data={bloodGroupOptions}
           selected={selBlood}
           setSelected={setSelBlood}
           name="blood_group"
@@ -224,7 +221,7 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
         />
         <SelectDropdown
           label={t("employees:marital_status")}
-          data={MARITAL_OPTIONS}
+          data={maritalStatusOptions}
           selected={selMarital}
           setSelected={setSelMarital}
           name="marital_status"
@@ -267,11 +264,13 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
             selected={selNationalIdExpiry}
             setSelected={setSelNationalIdExpiry}
             defaultValue={false}
+            min={minExpiry}
+            minErrorMessage={t("employees:expiry_after_today", "Expiry date must be after today")}
           />
         </div>
         <SelectDropdown
           label={t("employees:nationality_type")}
-          data={NATIONALITY_TYPES}
+          data={nationalityOptions}
           selected={selNationalityType}
           setSelected={setSelNationalityType}
           name="nationality_type"
@@ -306,6 +305,9 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
                 selected={selWorkPermitExpiry}
                 setSelected={setSelWorkPermitExpiry}
                 defaultValue={false}
+                required={!!workPermitNo}
+                min={minExpiry}
+                minErrorMessage={t("employees:expiry_after_today", "Expiry date must be after today")}
               />
             </div>
           </>

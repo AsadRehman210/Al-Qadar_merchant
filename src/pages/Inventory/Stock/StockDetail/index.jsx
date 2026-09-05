@@ -233,14 +233,6 @@ const StockDetail = () => {
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 dark:text-white/60 mb-1">
-              {t("product:stock_min_level")}
-            </p>
-            <p className="text-sm text-slate-900 dark:text-white/90">
-              {minStock}
-            </p>
-          </div>
-          <div>
-            <p className="text-xs font-medium text-slate-500 dark:text-white/60 mb-1">
               {t("product:stock_stock_status")}
             </p>
             <span

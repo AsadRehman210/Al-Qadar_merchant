@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
+import { stockLevelFilterOptions } from "global/constant";
 
 const StockFilters = ({
   search,
@@ -15,15 +16,7 @@ const StockFilters = ({
 }) => {
   const { t } = useTranslation();
 
-  const statusOptions = useMemo(
-    () => [
-      { id: "all", title: t("product:stock_filter_all") },
-      { id: "in_stock", title: t("product:stock_status_in_stock") },
-      { id: "low_stock", title: t("product:stock_status_low_stock") },
-      { id: "out_of_stock", title: t("product:stock_status_out_of_stock") },
-    ],
-    [t]
-  );
+  const statusOptions = stockLevelFilterOptions;
 
   const selectedStatus = useMemo(
     () => statusOptions.find((o) => o.id === statusId) || statusOptions[0],

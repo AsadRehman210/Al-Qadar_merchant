@@ -18,7 +18,16 @@ import {
   showCurrentSaleInvoiceLoading,
 } from "store/slices/saleInvoiceSlice";
 import { SkeletonDetail } from "components/Skeleton";
-import { lineTotal } from "../saleInvoiceHelpers";
+import { checkRoleAuth, canCancelDelivery, formatAmount, lineTotal } from "global/helper";
+import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import {
+  salePaymentStatusBadge,
+  saleDeliveryStatusBadge,
+  deliveryStatusOptions,
+  deliveryCancelledOption,
+} from "global/constant";
+
+const { status_sales_invoice } = rafeeqi_role_ids;
 import InvoicePreviewModal from "../InvoicePreviewModal";
 import InvoiceDetailsTab from "./InvoiceDetailsTab";
 import PaymentHistoryTab from "./PaymentHistoryTab";
@@ -26,25 +35,8 @@ import ReturnsTab from "./ReturnsTab";
 import NotesTab from "./NotesTab";
 import DownloadInvoiceTab from "./DownloadInvoiceTab";
 
-const DELIVERY_STATUS_OPTS = [
-  { title: "Pending", id: "Pending" },
-  { title: "InTransit", id: "InTransit" },
-  { title: "Delivered", id: "Delivered" },
-];
-// Cancel only ever makes sense while still Pending — reverses the stock
-// that left at creation. Once InTransit/Delivered the order has physically
-// started moving/finished, so it's not offered as a choice at all past that
-// point (the backend enforces the same rule independently).
-const CANCEL_OPT = { title: "Cancelled", id: "Cancelled" };
-
 const TAB_CLASS =
   "min-w-[140px] whitespace-nowrap cursor-pointer py-3 px-5 rounded-lg h-11 flex justify-center items-center font-medium text-sm text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:text-white data-[selected]:font-semibold hover:text-teal-700 hover:bg-teal-500/10 dark:hover:text-white dark:hover:bg-teal-500/20";
-
-const PAYMENT_STATUS_BADGE = {
-  Pending: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 ring-1 ring-inset ring-amber-200 dark:ring-amber-500/30",
-  Partial: "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300 ring-1 ring-inset ring-sky-200 dark:ring-sky-500/30",
-  Paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 ring-1 ring-inset ring-emerald-200 dark:ring-emerald-500/30",
-};
 
 const SaleDetail = () => {
   const { t, i18n } = useTranslation();
@@ -53,7 +45,7 @@ const SaleDetail = () => {
   const { id } = useParams();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [showStatusEdit, setShowStatusEdit] = useState(false);
-  const [selNewStatus, setSelNewStatus] = useState(DELIVERY_STATUS_OPTS[0]);
+  const [selNewStatus, setSelNewStatus] = useState(deliveryStatusOptions[0]);
 
   const invoice = useSelector(showCurrentSaleInvoice);
   const invoiceLoading = useSelector(showCurrentSaleInvoiceLoading);
@@ -63,8 +55,6 @@ const SaleDetail = () => {
   useEffect(() => {
     if (id) dispatch(fetchSaleInvoiceById(id));
   }, [id, dispatch]);
-
-  const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
   if (invoiceLoading && !invoice) {
     return (
@@ -119,11 +109,17 @@ const SaleDetail = () => {
               </h1>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  PAYMENT_STATUS_BADGE[invoice.paymentStatus] ||
-                  "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300 ring-1 ring-inset ring-slate-200 dark:ring-slate-500/30"
+                  salePaymentStatusBadge[invoice.paymentStatus] || salePaymentStatusBadge.Pending
                 }`}
               >
                 {invoice.paymentStatus}
+              </span>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  saleDeliveryStatusBadge[invoice.deliveryStatus] || saleDeliveryStatusBadge.Pending
+                }`}
+              >
+                {invoice.deliveryStatus || "Pending"}
               </span>
               {invoice.convertedFromQuotationId && (
                 <Link
@@ -181,11 +177,11 @@ const SaleDetail = () => {
               iconClass="!text-lg"
               onClick={() => setPreviewOpen(true)}
             />
-            {invoice.deliveryStatus !== "Delivered" && invoice.deliveryStatus !== "Cancelled" && (
+            {checkRoleAuth(status_sales_invoice) && invoice.deliveryStatus !== "Delivered" && invoice.deliveryStatus !== "Cancelled" && (
               <button
                 type="button"
                 onClick={() => {
-                  setSelNewStatus(DELIVERY_STATUS_OPTS.find((o) => o.id === invoice.deliveryStatus) || DELIVERY_STATUS_OPTS[0]);
+                  setSelNewStatus(deliveryStatusOptions.find((o) => o.id === invoice.deliveryStatus) || deliveryStatusOptions[0]);
                   setShowStatusEdit(!showStatusEdit);
                 }}
                 className="px-4 py-2 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-50"
@@ -204,15 +200,16 @@ const SaleDetail = () => {
           </div>
         </div>
 
-        {showStatusEdit && (
+        {checkRoleAuth(status_sales_invoice) && showStatusEdit && (
           <div className="mb-5 p-4 rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-500/10 flex flex-col gap-3">
             <div className="flex items-end gap-3">
               <div className="min-w-[160px]">
-                <label className="text-xs font-medium text-linkText block mb-1">{t("sales:delivery_status")}</label>
                 <SelectDropdown
-                  data={invoice.deliveryStatus === "Pending" ? [...DELIVERY_STATUS_OPTS, CANCEL_OPT] : DELIVERY_STATUS_OPTS}
+                  label={t("sales:delivery_status")}
+                  labelClass="!text-xs"
+                  data={canCancelDelivery(invoice.deliveryStatus) ? [...deliveryStatusOptions, deliveryCancelledOption] : deliveryStatusOptions}
                   selected={selNewStatus}
-                  setSelected={(o) => setSelNewStatus(o || DELIVERY_STATUS_OPTS[0])}
+                  setSelected={(o) => setSelNewStatus(o || deliveryStatusOptions[0])}
                   hideClear
                   classes="!h-9 !rounded-md"
                 />
@@ -224,7 +221,7 @@ const SaleDetail = () => {
                     await dispatch(updateSaleDeliveryStatus({ id: invoice.id, status: selNewStatus.id })).unwrap();
                     toast.success(
                       selNewStatus.id === "Cancelled"
-                        ? t("sales:sale_cancelled", { defaultValue: "Sale cancelled — stock has been returned." })
+                        ? t("sales:sale_cancelled", { defaultValue: "Sale cancelled — invoice has been reversed on the ledger." })
                         : t("sales:delivery_status_updated"),
                     );
                     setShowStatusEdit(false);

@@ -6,8 +6,9 @@ import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { AiOutlineEdit } from "react-icons/ai";
 import { toast } from "react-toastify";
 import Button from "components/Button";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { financePayableStatusBadge as STATUS_BADGE } from "global/constant";
 import {
   fetchVendorBillById,
   approveVendorBill,
@@ -17,10 +18,6 @@ import {
 import { SkeletonDetail } from "components/Skeleton";
 
 const { edit_customer } = rafeeqi_role_ids;
-
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
-
-import { financePayableStatusBadge as STATUS_BADGE } from "global/constant";
 
 const BillDetail = () => {
   const { t, i18n } = useTranslation();
@@ -139,7 +136,7 @@ const BillDetail = () => {
                 <tr key={idx} className="border-b border-slate-100 dark:border-white/5">
                   <td className="py-2">{line.description}</td>
                   <td className="py-2 text-xs text-mutedForeground">{line.expenseAccountCode} — {line.expenseAccountName}</td>
-                  <td className="py-2 text-end tabular-nums">{fmt(line.amount)}</td>
+                  <td className="py-2 text-end tabular-nums">{formatAmount(line.amount)}</td>
                 </tr>
               ))}
             </tbody>
@@ -147,23 +144,23 @@ const BillDetail = () => {
 
           {bill.vatAmount > 0 && (
             <div className="flex justify-end gap-8 text-sm mb-4 text-slate-600 dark:text-white/70">
-              <span>{t("finance:subtotal")}: {fmt(bill.subtotal)}</span>
-              <span>{t("finance:vat_rate")} ({bill.vatRate}%): {fmt(bill.vatAmount)}</span>
+              <span>{t("finance:subtotal")}: {formatAmount(bill.subtotal)}</span>
+              <span>{t("finance:vat_rate")} ({bill.vatRate}%): {formatAmount(bill.vatAmount)}</span>
             </div>
           )}
 
           <div className="grid sm:grid-cols-3 gap-4">
             <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
               <p className="text-xs text-mutedForeground">{t("finance:inv_total")}</p>
-              <p className="text-xl font-bold tabular-nums mt-1">{fmt(bill.total)} {bill.currency}</p>
+              <p className="text-xl font-bold tabular-nums mt-1">{formatAmount(bill.total)} {bill.currency}</p>
             </div>
             <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
               <p className="text-xs text-mutedForeground">{t("finance:paid_to_date")}</p>
-              <p className="text-xl font-bold tabular-nums mt-1">{fmt(bill.paidToDate)} {bill.currency}</p>
+              <p className="text-xl font-bold tabular-nums mt-1">{formatAmount(bill.paidToDate)} {bill.currency}</p>
             </div>
             <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10 p-4">
               <p className="text-xs text-mutedForeground">{t("finance:balance_due")}</p>
-              <p className="text-xl font-bold tabular-nums mt-1 text-emerald-700 dark:text-emerald-300">{fmt(bill.balanceDue)} {bill.currency}</p>
+              <p className="text-xl font-bold tabular-nums mt-1 text-emerald-700 dark:text-emerald-300">{formatAmount(bill.balanceDue)} {bill.currency}</p>
             </div>
           </div>
         </div>

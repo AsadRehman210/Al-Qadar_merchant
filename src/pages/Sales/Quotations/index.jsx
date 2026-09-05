@@ -12,7 +12,7 @@ import SearchInput from "components/SearchInput";
 import ActionPopup from "components/ActionPopup";
 import TableState from "components/TableState";
 import { useListFilters } from "hooks/useListFilters";
-import { tableRows } from "global/constant";
+import { tableRows, quotationStatusBadge as STATUS_BADGE, quotationStatusList, quotationStatusFilterOptions } from "global/constant";
 import {
   fetchQuotations,
   deleteQuotation,
@@ -22,13 +22,12 @@ import {
 } from "store/slices/quotationSlice";
 import QuotationPreviewModal from "./QuotationPreviewModal";
 import dayjs from "dayjs";
+import { formatAmount } from "global/helper";
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = formatAmount;
 
-import { quotationStatusBadge as STATUS_BADGE } from "global/constant";
-
-export const QUOTE_STATUS = ["Draft", "Sent", "Accepted", "Rejected", "Expired", "Converted"];
-const statusOpts = [{ id: "", title: "sales:all_status" }, ...QUOTE_STATUS.map((s) => ({ id: s, title: s }))];
+export const QUOTE_STATUS = quotationStatusList;
+const statusOpts = quotationStatusFilterOptions;
 
 const Quotations = () => {
   const { t } = useTranslation();

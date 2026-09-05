@@ -2,61 +2,35 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import PaginatedSelectBox from "components/PaginatedSelectBox";
 import Button from "components/Button";
 import Table from "components/Table";
 import { erpGet, buildQuery } from "api/erpClient";
 import { erpUrls } from "global/config";
+import {
+  salesTaxModeOptions,
+  invoiceTemplateOptions,
+  salePaymentStatusOptions,
+  paidUnpaidOptions,
+  deliveryStatusOptions,
+  deliveryCancelledOption,
+} from "global/constant";
+import {
+  lineTotal,
+  lineProfit,
+  computeInvoiceProfit,
+  effectiveLineTaxPercent,
+  deliveryFrozen,
+  canCancelDelivery,
+} from "global/helper";
 import { HiOutlinePlusCircle, HiOutlineTrash } from "react-icons/hi2";
 
-// Pure helpers — no fake data, just arithmetic over a line/lines array.
-const defaultLine = () => ({ variantId: "", productName: "", qty: 1, price: 0, costPrice: 0, unit: "pcs", batchId: "", taxPercent: null });
-const lineTotal = (l) => (Number(l?.qty) || 0) * (Number(l?.price) || 0);
-const lineProfit = (l) => lineTotal(l) - (Number(l?.qty) || 0) * (Number(l?.costPrice) || 0);
-const computeInvoiceProfit = (lines) => (lines || []).reduce((sum, l) => sum + lineProfit(l), 0);
+// Local default keeps batchId/taxPercent used by the sale line picker.
+const defaultLine = () => ({ variantId: "", productName: "", qty: 1, price: 0, costPrice: 0, unit: "", batchId: "", taxPercent: null });
 
-// A line's own tax rate if it's carrying an override, otherwise the shared
-// invoice-level rate — mirrors the backend's effectiveLineTaxPercent exactly,
-// same "same for all"/"different per product" flow as Purchase Invoice.
-const effectiveLineTaxPercent = (line, invoiceTaxPercent) =>
-  line?.taxPercent !== undefined && line?.taxPercent !== null && line?.taxPercent !== ""
-    ? Number(line.taxPercent) || 0
-    : Number(invoiceTaxPercent) || 0;
-
-const TAX_MODE_OPTS = [
-  { title: "sales:tax_mode_same", id: "same" },
-  { title: "sales:tax_mode_different", id: "different" },
-];
-
-const TEMPLATE_OPTIONS = [
-  { title: "sales:template_standard", id: "Standard" },
-  { title: "sales:template_modern", id: "Modern" },
-  { title: "sales:template_corporate", id: "Corporate" },
-];
-
-const PAYMENT_STATUS_OPTS = [
-  { title: "sales:pending", id: "Pending" },
-  { title: "sales:partial", id: "Partial" },
-  { title: "sales:paid", id: "Paid" },
-];
-
-const PAYMENT_TYPE_OPTS = [
-  { title: "sales:paid", id: "Paid" },
-  { title: "sales:unpaid", id: "Unpaid" },
-];
-
-const DELIVERY_STATUS_OPTS = [
-  { title: "sales:pending", id: "Pending" },
-  { title: "sales:in_transit", id: "InTransit" },
-  { title: "sales:delivered", id: "Delivered" },
-];
-// Cancel only ever makes sense while still Pending — reverses the stock
-// that left the warehouse at creation. Offered as a choice here only when
-// editing an invoice that's currently Pending (see the dropdown below).
-const CANCEL_OPT = { title: "sales:cancelled", id: "Cancelled" };
-
-const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockProductFields = false }) => {
+const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockProductFields = false, stockApplied = false }) => {
   const { t } = useTranslation();
   const {
     register,
@@ -69,11 +43,9 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
 
   const { fields, append, remove } = useFieldArray({ control, name: "products" });
 
-  // Lines move real stock on save (see sale-invoice-service.update), so the
-  // backend only accepts line changes while still Pending — mirror that
-  // here by freezing the whole product table once it's moved past Pending,
-  // instead of letting the user edit fields that would silently not save.
-  const linesLocked = isEdit && currentDeliveryStatus && currentDeliveryStatus !== "Pending";
+  // Lines are frozen once Delivered (stock/COGS posted) or Cancelled.
+  // Pending and In Transit still allow product edits — stock hasn't left.
+  const linesLocked = isEdit && deliveryFrozen(currentDeliveryStatus);
 
   const warehouseId = watch("warehouseId");
 
@@ -157,7 +129,7 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
             salePrice: v.salePrice,
             costPrice: v.costPrice,
             availableQty: v.availableQty,
-            unit: v.unit || "pcs",
+            unit: v.unit || "",
           };
         }),
         hasNextPage: page < (res.total_pages || 0),
@@ -196,7 +168,7 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
   // taxPercent is cleared so it falls back to the shared invoice-level rate;
   // in "different" mode each line carries its own explicit override. The
   // backend computes totals with the exact same fallback rule.
-  const [taxMode, setTaxMode] = useState(TAX_MODE_OPTS[0]);
+  const [taxMode, setTaxMode] = useState(salesTaxModeOptions[0]);
 
   // Editing an existing invoice that already carries per-line overrides
   // (saved earlier in "different" mode) — detect that once the real lines
@@ -206,12 +178,12 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
   useEffect(() => {
     if (hydratedModeRef.current || !lines.length) return;
     const hasOverride = lines.some((l) => l?.taxPercent !== undefined && l?.taxPercent !== null && l?.taxPercent !== "");
-    if (hasOverride) setTaxMode(TAX_MODE_OPTS[1]);
+    if (hasOverride) setTaxMode(salesTaxModeOptions[1]);
     hydratedModeRef.current = true;
   }, [lines]);
 
   const handleTaxModeChange = (opt) => {
-    const next = opt || TAX_MODE_OPTS[0];
+    const next = opt || salesTaxModeOptions[0];
     setTaxMode(next);
     if (next.id === "same") {
       fields.forEach((_, idx) => setValue(`products.${idx}.taxPercent`, null));
@@ -254,14 +226,14 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
       maximumFractionDigits: 2,
     });
 
-  const [selTemplate, setSelTemplate] = useState(TEMPLATE_OPTIONS[0]);
+  const [selTemplate, setSelTemplate] = useState(invoiceTemplateOptions[0]);
   // Defaults to Pending for a brand-new invoice; hydrated to the invoice's
   // real, backend-computed value (Partial/Paid) on edit via the `ps` effect
   // below — it's a derived value (see the disabled dropdown further down),
   // never something this form itself sets.
-  const [selPayStatus, setSelPayStatus] = useState(PAYMENT_STATUS_OPTS[0]);
-  const [selPayType, setSelPayType] = useState(PAYMENT_TYPE_OPTS[1]);
-  const [selDelivery, setSelDelivery] = useState(DELIVERY_STATUS_OPTS[0]);
+  const [selPayStatus, setSelPayStatus] = useState(salePaymentStatusOptions[0]);
+  const [selPayType, setSelPayType] = useState(paidUnpaidOptions[1]);
+  const [selDelivery, setSelDelivery] = useState(deliveryStatusOptions[0]);
 
   const tpl = watch("invoiceTemplate");
   const ps = watch("paymentStatus");
@@ -271,26 +243,26 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
   useEffect(() => {
     if (tpl)
       setSelTemplate(
-        TEMPLATE_OPTIONS.find((o) => o.id === tpl) || TEMPLATE_OPTIONS[0],
+        invoiceTemplateOptions.find((o) => o.id === tpl) || invoiceTemplateOptions[0],
       );
   }, [tpl]);
   useEffect(() => {
     if (ps)
       setSelPayStatus(
-        PAYMENT_STATUS_OPTS.find((o) => o.id === ps) || PAYMENT_STATUS_OPTS[0],
+        salePaymentStatusOptions.find((o) => o.id === ps) || salePaymentStatusOptions[0],
       );
   }, [ps]);
   useEffect(() => {
     if (pt)
       setSelPayType(
-        PAYMENT_TYPE_OPTS.find((o) => o.id === pt) || PAYMENT_TYPE_OPTS[0],
+        paidUnpaidOptions.find((o) => o.id === pt) || paidUnpaidOptions[0],
       );
   }, [pt]);
   useEffect(() => {
     if (ds)
       setSelDelivery(
-        DELIVERY_STATUS_OPTS.find((o) => o.id === ds) ||
-          DELIVERY_STATUS_OPTS[0],
+        deliveryStatusOptions.find((o) => o.id === ds) ||
+          deliveryStatusOptions[0],
       );
   }, [ds]);
 
@@ -317,21 +289,13 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
             <input type="hidden" {...register("customerId", { required: t("sales:customer_required") })} />
           </div>
           <FormInput
-            label={t("sales:invoice_number")}
-            name="invoiceNumber"
+            label={t("sales:shipping_address")}
+            name="shippingAddress"
             register={register}
             errors={errors}
-            pattern={/[A-Za-z0-9-]/}
-            maxLength={100}
+            maxLength={250}
             labelClass="text-sm text-linkText font-medium"
-          />
-          <FormInput
-            label={t("sales:date")}
-            name="date"
-            type="date"
-            register={register}
-            errors={errors}
-            labelClass="text-sm text-linkText font-medium"
+            disabled
           />
           <div>
             <PaginatedSelectBox
@@ -345,6 +309,15 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
             />
             <input type="hidden" {...register("warehouseId")} />
           </div>
+          <FormInput
+            label={t("sales:delivery_date")}
+            name="deliveryDate"
+            type="date"
+            register={register}
+            errors={errors}
+            required
+            labelClass="text-sm text-linkText font-medium"
+          />
           <FormInput
             label={t("sales:receiver_name")}
             name="receiverName"
@@ -363,7 +336,7 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
           {linesLocked && (
             <p className="text-xs text-slate-400 dark:text-white/40">
               {t("sales:lines_locked_hint", {
-                defaultValue: "Products are locked once a sale is past Pending — stock has already been committed.",
+                defaultValue: "Products are locked once a sale is Delivered or Cancelled.",
               })}
             </p>
           )}
@@ -379,7 +352,7 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
               <div className="flex-1 min-w-[220px] max-w-xs">
                 <SelectDropdown
                   label={t("sales:tax_mode")}
-                  data={TAX_MODE_OPTS}
+                  data={salesTaxModeOptions}
                   selected={taxMode}
                   setSelected={handleTaxModeChange}
                   valueKey="id"
@@ -389,26 +362,18 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
               </div>
               {taxMode.id === "same" && (
                 <div className="w-32">
-                  <label
-                    htmlFor="sale-tax-pct"
-                    className="mb-1 block text-sm text-linkText font-medium leading-6"
-                  >
-                    {t("sales:tax_percent")}
-                  </label>
-                  <input
-                    id="sale-tax-pct"
+                  <FormInput
+                    label={t("sales:tax_percent")}
+                    name="taxPercent"
                     type="number"
-                    step="any"
-                    {...register("taxPercent", {
-                      valueAsNumber: true,
-                      min: { value: 0, message: "Minimum value is 0" },
-                      max: { value: 100, message: "Maximum value is 100" },
-                    })}
-                    className="w-full h-10 rounded-md border border-slate-200 bg-white py-2 px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-white/20 dark:bg-white/10 dark:text-white"
+                    min={0}
+                    max={100}
+                    decimal
+                    decimalPlaces={2}
+                    register={register}
+                    errors={errors}
+                    inputClass="!h-10 !rounded-md"
                   />
-                  {errors.taxPercent && (
-                    <p className="text-red text-xs mt-1 font-medium">{errors.taxPercent.message}</p>
-                  )}
                 </div>
               )}
             </>
@@ -440,7 +405,7 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
                 </th>
                 <th className="p-2 font-semibold">{t("sales:product")}</th>
                 <th className="p-2 font-semibold w-44">{t("sales:batch")}</th>
-                <th className="p-2 font-semibold w-20">{t("sales:qty")}</th>
+                <th className="p-2 font-semibold w-44">{t("sales:qty")}</th>
                 <th className="p-2 font-semibold w-24">{t("sales:price")}</th>
                 <th className="p-2 font-semibold w-24">{t("sales:cost")}</th>
                 <th className="p-2 font-semibold w-28">{t("sales:unit")}</th>
@@ -470,7 +435,7 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
                   canRemove={fields.length > 1}
                   locked={linesLocked}
                   lockProductFields={lockProductFields}
-                  isEdit={isEdit}
+                  stockApplied={stockApplied}
                   taxMode={taxMode.id}
                   invoiceTaxPercent={taxPercent}
                   fmtMoney={fmtMoney}
@@ -530,24 +495,6 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <FormInput
-          label={t("sales:shipping_address")}
-          name="shippingAddress"
-          register={register}
-          errors={errors}
-          maxLength={250}
-          labelClass="text-sm text-linkText font-medium"
-          disabled
-        />
-        <FormInput
-          label={t("sales:delivery_date")}
-          name="deliveryDate"
-          type="date"
-          register={register}
-          errors={errors}
-          labelClass="text-sm text-linkText font-medium"
-        />
-
         {/* Always Pending and locked here — a Sale Invoice always starts
             Pending (the backend hardcodes it at create) and payments are
             only ever recorded afterwards, through the Detail page's own
@@ -555,7 +502,7 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
             never from this form. */}
         <SelectDropdown
           label={t("sales:payment_status")}
-          data={PAYMENT_STATUS_OPTS}
+          data={salePaymentStatusOptions}
           selected={selPayStatus}
           setSelected={() => {}}
           name="paymentStatus"
@@ -568,29 +515,10 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
           hideClear
           classes="!rounded-md opacity-70"
         />
-        <FormInput
-          label={t("sales:tracking_number")}
-          name="trackingNumber"
-          register={register}
-          errors={errors}
-          pattern={/[A-Za-z0-9-]/}
-          maxLength={100}
-          labelClass="text-sm text-linkText font-medium"
-        />
-        <FormInput
-          label={t("sales:transporter_name")}
-          name="transporterName"
-          register={register}
-          errors={errors}
-          pattern={/[a-zA-Z0-9\s.'&,-]/}
-          minLength={2}
-          maxLength={150}
-          labelClass="text-sm text-linkText font-medium"
-        />
         <div>
         <SelectDropdown
           label={t("sales:delivery_status")}
-          data={isEdit && currentDeliveryStatus === "Pending" ? [...DELIVERY_STATUS_OPTS, CANCEL_OPT] : DELIVERY_STATUS_OPTS}
+          data={isEdit && canCancelDelivery(currentDeliveryStatus) ? [...deliveryStatusOptions, deliveryCancelledOption] : deliveryStatusOptions}
           selected={selDelivery}
           setSelected={(o) => {
             setSelDelivery(o);
@@ -610,39 +538,57 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
         {isEdit && (currentDeliveryStatus === "Delivered" || currentDeliveryStatus === "Cancelled") && (
           <p className="text-xs text-slate-400 dark:text-white/40 mt-1">
             {currentDeliveryStatus === "Cancelled"
-              ? t("sales:cancelled_locked_hint", { defaultValue: "This sale is cancelled — its stock has already been returned." })
+              ? t("sales:cancelled_locked_hint", { defaultValue: "This sale is cancelled — the invoice has been reversed on the ledger." })
               : t("sales:delivery_status_locked_hint", {
-                  defaultValue: "Delivery status is locked once a sale is Delivered — stock has already been deducted.",
+                  defaultValue: "Delivery status is locked once Delivered — stock and COGS have been posted.",
                 })}
           </p>
         )}
-        {isEdit && selDelivery.id === "Cancelled" && currentDeliveryStatus === "Pending" && (
+        {isEdit && selDelivery.id === "Cancelled" && canCancelDelivery(currentDeliveryStatus) && (
           <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
             {t("sales:cancel_warning", {
-              defaultValue: "Cancelling this sale will return the sold stock to the warehouse. This cannot be undone.",
+              defaultValue: "Cancelling this sale will reverse the invoice on the ledger. This cannot be undone.",
             })}
           </p>
         )}
         </div>
+        <FormInput
+          label={t("sales:tracking_number")}
+          name="trackingNumber"
+          register={register}
+          errors={errors}
+          pattern={/[A-Za-z0-9-]/}
+          maxLength={100}
+          labelClass="text-sm text-linkText font-medium"
+        />
+        <FormInput
+          label={t("sales:transporter_name")}
+          name="transporterName"
+          register={register}
+          errors={errors}
+          pattern={/[a-zA-Z0-9\s.'&,-]/}
+          minLength={2}
+          maxLength={150}
+          labelClass="text-sm text-linkText font-medium"
+        />
       </div>
 
-      <div>
-        <h4>{t("sales:notes")}</h4>
-        <textarea
-          rows={3}
-          {...register("notes", { maxLength: { value: 500, message: "Maximum length is 500 characters" } })}
-          className="w-full rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm"
-          placeholder={t("sales:notes")}
-        />
-        {errors.notes && <p className="text-red text-xs mt-1 font-medium">{errors.notes.message}</p>}
-      </div>
+      <FormTextarea
+        label={t("sales:notes")}
+        name="notes"
+        register={register}
+        errors={errors}
+        rows={3}
+        maxLength={500}
+        placeholder={t("sales:notes")}
+        className="!rounded-md"
+      />
     </div>
   );
 };
 
-function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseSelected, warehouseId, remove, append, canRemove, locked, lockProductFields, isEdit, taxMode, invoiceTaxPercent, fmtMoney, allLines, t }) {
-  const { watch, formState: { errors } } = useFormContext();
-  const lineErrors = errors?.products?.[index] || {};
+function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseSelected, warehouseId, remove, append, canRemove, locked, lockProductFields, stockApplied, taxMode, invoiceTaxPercent, fmtMoney, allLines, t }) {
+  const { watch, getValues, formState: { errors } } = useFormContext();
   const row = watch(`products.${index}`) || {};
   // Converting a quotation locks everything a quote already committed to —
   // product, qty, price, tax — leaving only the batch picker below live,
@@ -666,19 +612,17 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
   const [batchOptionsRaw, setBatchOptionsRaw] = useState([]);
   const [batchesLoading, setBatchesLoading] = useState(false);
 
-  // Captured once, at mount — what this row's batch/qty were when the
-  // invoice loaded (edit mode) or "" / 0 for a freshly-added row. This line
-  // itself is *why* that batch's remainingQty is down by `qty` (this same
-  // sale already reserved it), so when re-editing an EXISTING sale, that
-  // reservation has to be added back on top of the batch's current
-  // remainingQty to know what's truly still pickable for this row —
-  // otherwise a batch this row already fully consumed (remainingQty now 0)
-  // silently vanishes from its own dropdown. Only applies to a genuine
-  // edit (isEdit) — a brand-new invoice (including one prefilled from a
-  // quotation's own reference batch, which was never actually reserved)
-  // hasn't reserved anything yet, so the raw remainingQty from the API is
-  // already the real, current availability and must not be inflated.
-  const originalRef = useRef({ batchId: isEdit ? row.batchId || null : null, qty: Number(row.qty) || 0 });
+  // remainingQty only drops when this invoice is Delivered (stockApplied).
+  // Pending / In Transit / new / quotation-convert have not taken stock, so
+  // adding this row's own qty back would invent units that were never
+  // reserved — two lines on the same 10-unit batch would each see "10 left"
+  // and save as 20. Only a delivered invoice (products are frozen anyway)
+  // needs that add-back, in case we ever re-open batch math against a
+  // remainingQty this line already consumed.
+  const originalRef = useRef({
+    batchId: stockApplied ? row.batchId || null : null,
+    qty: stockApplied ? Number(row.qty) || 0 : 0,
+  });
 
   useEffect(() => {
     if (!row.variantId || !warehouseId) {
@@ -722,10 +666,11 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
     const siblingReserved = new Map();
     (allLines || []).forEach((l, i) => {
       if (i === index || !l?.batchId) return;
-      siblingReserved.set(l.batchId, (siblingReserved.get(l.batchId) || 0) + (Number(l.qty) || 0));
+      const id = String(l.batchId);
+      siblingReserved.set(id, (siblingReserved.get(id) || 0) + (Number(l.qty) || 0));
     });
     return batchOptionsRaw
-      .map((b) => ({ ...b, remainingQty: Math.max(0, (Number(b.remainingQty) || 0) - (siblingReserved.get(b.id) || 0)) }))
+      .map((b) => ({ ...b, remainingQty: Math.max(0, (Number(b.remainingQty) || 0) - (siblingReserved.get(String(b.id)) || 0)) }))
       // Keep this row's own current selection visible even if siblings have
       // just claimed the rest of it — otherwise the dropdown blanks out
       // mid-edit before the user's finished splitting the quantities.
@@ -734,10 +679,12 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
 
   // FEFO default — batches come back sorted earliest-expiry-first, so once
   // they load for a freshly-picked product with no batch chosen yet, take
-  // the top one automatically. The user can still override via the dropdown.
+  // the top one that still has leftover after sibling rows. Never auto-pick
+  // a drained batch (remainingQty 0) just because it's first in the list.
   useEffect(() => {
     if (batchOptions.length && !row.batchId) {
-      const first = batchOptions[0];
+      const first = batchOptions.find((b) => (Number(b.remainingQty) || 0) > 0);
+      if (!first) return;
       setValue(`products.${index}.batchId`, first.id);
       setValue(`products.${index}.costPrice`, first.unitCost ?? 0);
     }
@@ -746,8 +693,14 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
 
   const selectedBatch = batchOptions.find((b) => b.id === row.batchId) || null;
   const batchAvailable = selectedBatch ? Number(selectedBatch.remainingQty) || 0 : null;
+  const siblingVariantQty = (allLines || []).reduce((s, l, i) => {
+    if (i === index || !l?.variantId || l.variantId !== row.variantId) return s;
+    return s + (Number(l.qty) || 0);
+  }, 0);
+  const variantAvailable =
+    selMeta?.availableQty != null ? Math.max(0, Number(selMeta.availableQty) - siblingVariantQty) : null;
   const overStock =
-    (selMeta && selMeta.availableQty != null && Number(row.qty) > selMeta.availableQty) ||
+    (variantAvailable != null && Number(row.qty) > variantAvailable) ||
     (batchAvailable != null && Number(row.qty) > batchAvailable);
 
   // More than one batch to choose from for this same product — offer a
@@ -761,7 +714,7 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
       qty: 1,
       price: Number(row.price) || 0,
       costPrice: 0,
-      unit: row.unit || "pcs",
+      unit: row.unit || "",
       batchId: "",
       taxPercent: row.taxPercent ?? null,
     });
@@ -805,7 +758,7 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
               setValue(`products.${index}.productName`, opt.comboTitle);
               setValue(`products.${index}.price`, opt.salePrice ?? 0);
               setValue(`products.${index}.costPrice`, opt.costPrice ?? 0);
-              if (opt.unit) setValue(`products.${index}.unit`, opt.unit);
+              setValue(`products.${index}.unit`, opt.unit || "");
             }
           }}
           clearable={false}
@@ -815,9 +768,9 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
         <input type="hidden" {...register(`products.${index}.variantId`)} />
         <input type="hidden" {...register(`products.${index}.productName`)} />
         <input type="hidden" {...register(`products.${index}.costPrice`, { valueAsNumber: true })} />
-        {selMeta?.availableQty != null && (
+        {variantAvailable != null && (
           <p className={`mt-1 text-xs ${overStock ? "text-rose-600 dark:text-rose-400 font-medium" : "text-slate-400 dark:text-white/40"}`}>
-            {t("sales:available_qty", { defaultValue: "Available" })}: {selMeta.availableQty}
+            {t("sales:available_qty", { defaultValue: "Available" })}: {variantAvailable}
           </p>
         )}
       </td>
@@ -849,42 +802,65 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
         )}
       </td>
       <td className="p-2">
-        <input
+        <FormInput
+          name={`products.${index}.qty`}
           type="number"
-          step="any"
+          min={0}
+          decimal
+          decimalPlaces={3}
+          maxLength={10}
           disabled={fieldsLocked}
-          onInput={(e) => { if (e.target.value.length > 10) e.target.value = e.target.value.slice(0, 10); }}
-          {...register(`products.${index}.qty`, {
-            valueAsNumber: true,
-            min: { value: 0, message: "Minimum value is 0" },
-          })}
-          className={`w-full rounded border px-2 py-1.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed ${overStock ? "border-rose-400 focus:border-rose-500" : "border-slate-200"}`}
+          register={register}
+          errors={errors}
+          wrapperClass="w-20"
+          inputClass={`!h-9 !px-2 !py-1.5 !rounded disabled:opacity-60 disabled:cursor-not-allowed ${overStock ? "!border-rose-400 focus:!border-rose-500" : ""}`}
+          validate={(v) => {
+              const n = Number(v) || 0;
+              const products = getValues("products") || [];
+              const batchId = products[index]?.batchId;
+              if (batchId) {
+                const raw = batchOptionsRaw.find((b) => String(b.id) === String(batchId));
+                if (raw) {
+                  const siblings = products.reduce((s, l, i) => {
+                    if (i === index || String(l?.batchId || "") !== String(batchId)) return s;
+                    return s + (Number(l.qty) || 0);
+                  }, 0);
+                  const left = Math.max(0, (Number(raw.remainingQty) || 0) - siblings);
+                  if (n > left) return t("sales:qty_exceeds_batch", { available: left });
+                }
+              }
+              if (variantAvailable != null && n > variantAvailable) {
+                return t("sales:qty_exceeds_stock", { available: variantAvailable });
+              }
+              return true;
+            }}
         />
-        {lineErrors.qty && <p className="mt-1 text-[11px] text-rose-600">{lineErrors.qty.message}</p>}
       </td>
       <td className="p-2">
-        <input
+        <FormInput
+          name={`products.${index}.price`}
           type="number"
-          step="any"
+          min={0}
+          decimal
+          decimalPlaces={3}
+          maxLength={10}
           disabled={fieldsLocked}
-          onInput={(e) => { if (e.target.value.length > 10) e.target.value = e.target.value.slice(0, 10); }}
-          {...register(`products.${index}.price`, {
-            valueAsNumber: true,
-            min: { value: 0, message: "Minimum value is 0" },
-          })}
-          className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+          register={register}
+          errors={errors}
+          inputClass="!h-9 !px-2 !py-1.5 !rounded disabled:opacity-60 disabled:cursor-not-allowed"
         />
-        {lineErrors.price && <p className="mt-1 text-[11px] text-rose-600">{lineErrors.price.message}</p>}
       </td>
       <td className="p-2 pt-3 text-slate-500 dark:text-white/60 tabular-nums">
         {Number(row.costPrice || 0).toLocaleString()}
       </td>
       <td className="p-2">
-        <input
-          disabled={fieldsLocked}
-          {...register(`products.${index}.unit`)}
-          className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
-          placeholder="pcs"
+        <FormInput
+          name={`products.${index}.unit`}
+          disabled
+          readonly
+          register={register}
+          errors={errors}
+          inputClass="!h-9 !px-2 !py-1.5 !rounded !bg-slate-50 dark:!bg-white/5 !text-slate-500 dark:!text-white/60 cursor-not-allowed"
         />
       </td>
       <td className="p-2 pt-3 font-semibold text-slate-800 dark:text-white">
@@ -892,19 +868,19 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
       </td>
       {taxMode === "different" && (
         <td className="p-2">
-          <input
+          <FormInput
+            name={`products.${index}.taxPercent`}
             type="number"
-            step="any"
+            min={0}
+            max={100}
+            decimal
+            decimalPlaces={2}
             placeholder="0"
             disabled={fieldsLocked}
-            {...register(`products.${index}.taxPercent`, {
-              valueAsNumber: true,
-              min: { value: 0, message: "Minimum value is 0" },
-              max: { value: 100, message: "Maximum value is 100" },
-            })}
-            className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            register={register}
+            errors={errors}
+            inputClass="!h-9 !px-2 !py-1.5 !rounded disabled:opacity-60 disabled:cursor-not-allowed"
           />
-          {lineErrors.taxPercent && <p className="mt-1 text-[11px] text-rose-600">{lineErrors.taxPercent.message}</p>}
         </td>
       )}
       <td className="p-2 pt-3 text-slate-500 dark:text-white/60 tabular-nums">

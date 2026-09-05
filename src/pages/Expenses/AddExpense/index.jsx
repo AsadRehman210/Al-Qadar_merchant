@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -7,11 +7,12 @@ import { toast } from "react-toastify";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import UploadSingleFile from "components/UploadSingleFile";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
-import { EXPENSE_TYPE_IDS } from "../expenseFakeData";
+import { EXPENSE_TYPE_IDS } from "global/constant";
 import { applyExpense } from "store/slices/expenseSlice";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
@@ -32,7 +33,7 @@ const EXPENSE_TYPE_OPTIONS = EXPENSE_TYPE_IDS.map((id) => ({
 }));
 
 // Expense claims have no backend update/delete endpoint (only apply + the
-// approval-workflow PATCH actions) — this form is create-only. approvalStatus
+// approval-workflow PATCH actions) � this form is create-only. approvalStatus
 // / paymentStatus / approvedBy are always server-computed by that workflow,
 // never client-set, so they're not present as fields here.
 const AddExpense = ({ selfService = false }) => {
@@ -82,6 +83,10 @@ const AddExpense = ({ selfService = false }) => {
   });
 
   const onSubmit = async (data) => {
+    if (!tenantCurrency) {
+      toast.error(t("expenses:currency_required", "Currency is required"));
+      return;
+    }
     setSubmitting(true);
     const payload = {
       employeeId: selectedEmployee.id,
@@ -170,6 +175,8 @@ const AddExpense = ({ selfService = false }) => {
               name="projectName"
               register={register}
               errors={errors}
+              pattern={/[a-zA-Z0-9\s.'-]/}
+              minLength={2}
               maxLength={100}
               placeholder="Project Alpha"
             />
@@ -193,12 +200,13 @@ const AddExpense = ({ selfService = false }) => {
               register={register}
               errors={errors}
               required
+              max={new Date().toISOString().split("T")[0]}
             />
             <FormInput
               label={t("expenses:amount")}
               name="amount"
               type="number"
-              min={0}
+              min={0.01}
               decimal
               decimalPlaces={3}
               maxLength={10}
@@ -214,6 +222,7 @@ const AddExpense = ({ selfService = false }) => {
               valueKey="id"
               hideClear
               disabled
+              required
             />
             <SelectDropdown
               label={t("expenses:payment_method")}
@@ -226,18 +235,16 @@ const AddExpense = ({ selfService = false }) => {
               trigger={trigger}
               valueKey="id"
             />
-            <div className="lg:col-span-3">
-              <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                {t("expenses:description")}
-              </label>
-              <textarea
-                rows={3}
-                {...register("description", { maxLength: { value: 500, message: "Maximum length is 500 characters" } })}
-                placeholder={t("expenses:notes")}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-              />
-              {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
-            </div>
+            <FormTextarea
+              label={t("expenses:description")}
+              name="description"
+              register={register}
+              errors={errors}
+              rows={3}
+              maxLength={{ value: 500, message: "Maximum length is 500 characters" }}
+              placeholder={t("expenses:notes")}
+              wrapperClass="lg:col-span-3"
+            />
             <div className="lg:col-span-3">
               <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
                 {t("expenses:upload_receipt")}

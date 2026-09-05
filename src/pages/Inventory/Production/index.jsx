@@ -7,7 +7,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { tableRows } from "global/constant";
+import { tableRows, productionStatusFilterOptions } from "global/constant";
 import {
   fetchProductionOrders,
   showProductionOrders,
@@ -34,16 +34,7 @@ const Production = () => {
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
   const setPage = (v) => setFilters({ page: v });
 
-  const statusOptions = useMemo(
-    () => [
-      { id: "all", title: t("production:filter_all") },
-      { id: "Draft", title: t("production:st_draft") },
-      { id: "InProgress", title: t("production:st_in_progress") },
-      { id: "Completed", title: t("production:st_completed") },
-      { id: "Cancelled", title: t("production:st_cancelled") },
-    ],
-    [t],
-  );
+  const statusOptions = productionStatusFilterOptions;
 
   const selectedStatus = useMemo(
     () => statusOptions.find((o) => o.id === statusId) || statusOptions[0],

@@ -5,8 +5,7 @@ import ReactPaginate from "react-paginate";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
-import { tableRows } from "global/constant";
-import { LEAVE_STATUS_BADGE } from "./leaveHelpers";
+import { tableRows, leaveStatusBadge } from "global/constant";
 
 // No PUT/DELETE endpoint exists for leave requests on the backend — only
 // apply/approve/reject/cancel — so Edit/Delete row actions were removed
@@ -76,7 +75,7 @@ const LeaveTable = ({ data = [], loading, page = 1, setPage, selRows, setSelRows
                   <td className="px-4 py-4">
                     <span
                       className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                        LEAVE_STATUS_BADGE[row.status] || "bg-slate-100 text-slate-700"
+                        leaveStatusBadge[row.status] || "bg-slate-100 text-slate-700"
                       }`}
                     >
                       {row.status}

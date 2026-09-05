@@ -70,6 +70,11 @@ export default function FormInput({
   // existing password already is (which may predate the policy). Login
   // passes this true so it only enforces "not empty", not the pattern.
   skipPasswordStrength = false,
+  // When `register` is omitted, FormInput is controlled via `value` +
+  // `onValueChange` (same visual as the RHF path). Used on pages that keep
+  // local useState instead of react-hook-form.
+  value: controlledValue,
+  wrapperClass,
 }) {
   const { t, i18n } = useTranslation();
   const isRTL = i18n.language === "ar";
@@ -235,6 +240,7 @@ export default function FormInput({
     }
 
     if (type === "number") {
+      const keepMinus = allowNegative && value.trimStart().startsWith("-");
       if (decimal) {
         value = value.replace(/[^0-9.]/g, "");
         const dotIndex = value.indexOf(".");
@@ -246,7 +252,8 @@ export default function FormInput({
       } else {
         value = value.replace(/[^0-9]/g, "");
       }
-      if (value < 0) {
+      if (keepMinus) value = value ? `-${value}` : "-";
+      if (value < 0 && !allowNegative) {
         value = "";
       }
       e.target.value = value;
@@ -309,7 +316,7 @@ export default function FormInput({
   };
 
   const getErrorMessage = () => {
-    const nameParts = name?.split(/[[\].]+/).filter(Boolean);
+    const nameParts = name?.split(/[[\].]+/)?.filter(Boolean) || [];
     let error = errors;
     for (const part of nameParts) {
       error = error?.[part];
@@ -323,9 +330,9 @@ export default function FormInput({
     return error?.message;
   };
 
-  const { onBlur: rhfOnBlur, ...registerRest } = register(name, {
-    required,
-    validate: (value) => {
+  const isControlled = typeof register !== "function";
+
+  const runValidate = (value) => {
       if (name === "password" && getValues && getValues(name) !== "********" && !skipPasswordStrength) {
         if (!value) return true;
         const passwordRegex =
@@ -340,8 +347,12 @@ export default function FormInput({
         return validate.test(value) || t("enter_valid_number_or_sign");
       }
       // Skip range/length checks on an empty, non-required value — `required`
-      // above already covers "must be filled in".
-      if (value === "" || value === undefined || value === null) return true;
+      // above already covers "must be filled in". Custom `validate` functions
+      // still run so cross-field "required if sibling filled" rules work.
+      if (value === "" || value === undefined || value === null) {
+        if (typeof validate === "function") return validate(value);
+        return true;
+      }
       if (minLength !== undefined && String(value).length < minLength) {
         return t("min_length_error", { minLength });
       }
@@ -351,15 +362,20 @@ export default function FormInput({
         if (min !== undefined && numeric < min) return t("min_value_error", { min });
         if (max !== undefined && numeric > max) return t("max_value_error", { max });
       }
+      if (typeof validate === "function") return validate(value);
       return true;
-    },
-  });
+  };
+
+  const registered = isControlled
+    ? { onBlur: () => {} }
+    : register(name, { required, validate: runValidate });
+  const { onBlur: rhfOnBlur, ...registerRest } = registered;
 
   const isSignedIntValidate =
     validate instanceof RegExp && validate.toString() === "/^[-+]?\\d+$/";
 
   return (
-    <div className="grow">
+    <div className={wrapperClass || "grow"}>
       {label ? (
         <label
           className={`text-sm text-linkText font-medium leading-6 mb-1 flex items-center ${
@@ -423,10 +439,10 @@ export default function FormInput({
           } p-[11px_16px] w-full text-para font-medium disabled:cursor-not-allowed ${
             errors && errors[name] ? "border-red" : ""
           }`}
-          {...registerRest}
+          {...(isControlled ? {} : registerRest)}
           onBlur={(e) => {
             handleInput(e);
-            rhfOnBlur(e);
+            if (!isControlled) rhfOnBlur(e);
           }}
           id={name}
           autoComplete={name === "password" ? "new-password" : "on"}
@@ -440,8 +456,14 @@ export default function FormInput({
           min={min ?? null}
           step={step || (decimal ? `0.${"0".repeat(Math.max(decimalPlaces - 1, 0))}1` : null)}
           maxLength={maxLength || null}
-          defaultValue={defaultValue || ""}
-          value={name === "iban" ? IBAN.printFormat(iban, " ") : undefined}
+          defaultValue={isControlled ? undefined : defaultValue || ""}
+          value={
+            name === "iban"
+              ? IBAN.printFormat(iban, " ")
+              : isControlled
+                ? controlledValue ?? ""
+                : undefined
+          }
         />
         {type === "password" && (
           <div

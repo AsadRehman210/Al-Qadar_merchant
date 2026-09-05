@@ -68,6 +68,7 @@ const AddVariant = () => {
       attrSize: "",
       attrColor: "",
       unit: "",
+      lowStockQty: "0",
     },
   });
 
@@ -88,6 +89,7 @@ const AddVariant = () => {
         attrSize: attrs.Size ?? "",
         attrColor: attrs.Color ?? "",
         unit: existing.unit || "pcs",
+        lowStockQty: existing.lowStockQty != null ? String(existing.lowStockQty) : "0",
       });
       if (existing.productId) {
         const inFirstPage = productOpts.find((p) => p.id === existing.productId);
@@ -125,6 +127,7 @@ const AddVariant = () => {
       sku: data.sku,
       attributes,
       unit: data.unit?.trim() || "pcs",
+      lowStockQty: Math.max(0, Number(data.lowStockQty) || 0),
     };
     try {
       if (id) {
@@ -246,8 +249,22 @@ const AddVariant = () => {
               errors={errors}
               required
               placeholder={t("product:unit_placeholder")}
-              pattern={/[a-zA-Z]/}
+              pattern={/[a-zA-Z0-9\s./-]/}
+              minLength={1}
               maxLength={20}
+            />
+            <FormInput
+              label={t("product:low_stock_qty")}
+              name="lowStockQty"
+              type="number"
+              register={register}
+              errors={errors}
+              min={0}
+              decimal
+              decimalPlaces={2}
+              maxLength={10}
+              placeholder={t("product:low_stock_qty_placeholder")}
+              helperText={t("product:low_stock_qty_hint")}
             />
           </div>
 

@@ -105,20 +105,14 @@ const AddIncome = () => {
           className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-8 border-l-4 !border-l-[var(--color-teal-500)]"
         >
           <div className="grid md:grid-cols-2 gap-6">
-            <FormInput label={t("finance:posted_date")} name="date" type="date" register={register} required />
-            <FormInput label={t("finance:source_label")} name="source" maxLength={200} register={register} required />
+            <FormInput label={t("finance:posted_date")} name="date" type="date" register={register} required max={new Date().toISOString().slice(0, 10)} />
+            <FormInput label={t("finance:source_label")} name="source" pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={200} register={register} required />
             <div className="md:col-span-2">
               <FormInput label={t("description")} name="description" maxLength={500} register={register} />
             </div>
-            <FormInput label={t("finance:amount")} name="amount" type="number" step="0.01" min={0} decimal decimalPlaces={3} maxLength={10} register={register} required />
-            <div>
-              <label className="text-sm font-medium mb-1 block">{t("finance:bank_title")}</label>
-              <SelectDropdown data={bankOpts} selected={selBank} setSelected={setSelBank} hideClear classes="!h-[46px] !rounded-lg" />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">{t("finance:revenue")}</label>
-              <SelectDropdown data={revenueOpts} selected={selRevenue} setSelected={setSelRevenue} hideClear classes="!h-[46px] !rounded-lg" />
-            </div>
+            <FormInput label={t("finance:amount")} name="amount" type="number" step="0.01" min={0.01} decimal decimalPlaces={3} maxLength={10} register={register} required />
+            <SelectDropdown label={t("finance:bank_title")} data={bankOpts} selected={selBank} setSelected={setSelBank} hideClear classes="!h-[46px] !rounded-lg" />
+            <SelectDropdown label={t("finance:revenue")} data={revenueOpts} selected={selRevenue} setSelected={setSelRevenue} hideClear classes="!h-[46px] !rounded-lg" />
           </div>
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-200 dark:border-white/20">
             <Button type="button" title={t("cancel")} onClick={() => navigate("/finance/income")} />

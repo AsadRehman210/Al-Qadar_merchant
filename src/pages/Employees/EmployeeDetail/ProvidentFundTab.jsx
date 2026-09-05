@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatAmount } from "global/helper";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -17,8 +18,6 @@ import {
   showPfWithdrawalsByEmployee,
 } from "store/slices/providentFundSlice";
 
-const fmt = (n) =>
-  (n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const WD_BADGE = {
   Pending: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
@@ -90,9 +89,9 @@ const ProvidentFundTab = ({ data }) => {
 
         <div className="relative grid grid-cols-2 md:grid-cols-3 gap-4 mt-5">
           {[
-            { label: t("pf:total_employee_contrib"), value: `SAR ${fmt(totalEmployeeContrib)}`, color: "text-slate-800 dark:text-white" },
-            { label: t("pf:total_employer_contrib"), value: `SAR ${fmt(totalEmployerContrib)}`, color: "text-slate-800 dark:text-white" },
-            { label: t("pf:current_balance"), value: `SAR ${fmt(currentBalance)}`, color: "text-emerald-600 dark:text-emerald-300 text-xl font-bold" },
+            { label: t("pf:total_employee_contrib"), value: `SAR ${formatAmount(totalEmployeeContrib)}`, color: "text-slate-800 dark:text-white" },
+            { label: t("pf:total_employer_contrib"), value: `SAR ${formatAmount(totalEmployerContrib)}`, color: "text-slate-800 dark:text-white" },
+            { label: t("pf:current_balance"), value: `SAR ${formatAmount(currentBalance)}`, color: "text-emerald-600 dark:text-emerald-300 text-xl font-bold" },
           ].map((c) => (
             <div key={c.label} className="p-4 rounded-xl bg-white/50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
               <p className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase tracking-wide mb-1">{c.label}</p>
@@ -131,11 +130,11 @@ const ProvidentFundTab = ({ data }) => {
                   <tr key={m.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/5 transition-colors">
                     <td className="px-4 py-3 pl-5 text-slate-400 text-xs">{idx + 1}</td>
                     <td className="px-4 py-3 font-semibold text-slate-800 dark:text-white">{m.month}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-white/70">SAR {fmt(m.basic)}</td>
-                    <td className="px-4 py-3 text-blue-600 dark:text-blue-400">SAR {fmt(m.employeeContribution)}</td>
-                    <td className="px-4 py-3 text-purple-600 dark:text-purple-400">SAR {fmt(m.employerContribution)}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-800 dark:text-white">SAR {fmt(m.totalContribution)}</td>
-                    <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">SAR {fmt(m.balanceAfter)}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-white/70">SAR {formatAmount(m.basic)}</td>
+                    <td className="px-4 py-3 text-blue-600 dark:text-blue-400">SAR {formatAmount(m.employeeContribution)}</td>
+                    <td className="px-4 py-3 text-purple-600 dark:text-purple-400">SAR {formatAmount(m.employerContribution)}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-800 dark:text-white">SAR {formatAmount(m.totalContribution)}</td>
+                    <td className="px-4 py-3 font-bold text-emerald-600 dark:text-emerald-400">SAR {formatAmount(m.balanceAfter)}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${m.status === "Manual" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"}`}>
                         {m.status}
@@ -145,10 +144,10 @@ const ProvidentFundTab = ({ data }) => {
                 ))}
                 <tr className="bg-teal-50 dark:bg-teal-500/10 font-bold border-t-2 border-teal-200">
                   <td colSpan={3} className="px-4 py-3 pl-5 text-slate-700 dark:text-white">{t("pf:total")}</td>
-                  <td className="px-4 py-3 text-blue-600 dark:text-blue-400">SAR {fmt(totalEmployeeContrib)}</td>
-                  <td className="px-4 py-3 text-purple-600 dark:text-purple-400">SAR {fmt(totalEmployerContrib)}</td>
-                  <td className="px-4 py-3">SAR {fmt(totalContrib)}</td>
-                  <td className="px-4 py-3 text-emerald-600">SAR {fmt(currentBalance)}</td>
+                  <td className="px-4 py-3 text-blue-600 dark:text-blue-400">SAR {formatAmount(totalEmployeeContrib)}</td>
+                  <td className="px-4 py-3 text-purple-600 dark:text-purple-400">SAR {formatAmount(totalEmployerContrib)}</td>
+                  <td className="px-4 py-3">SAR {formatAmount(totalContrib)}</td>
+                  <td className="px-4 py-3 text-emerald-600">SAR {formatAmount(currentBalance)}</td>
                   <td />
                 </tr>
               </tbody>
@@ -175,7 +174,7 @@ const ProvidentFundTab = ({ data }) => {
                     {withdrawals.map((wd) => (
                       <tr key={wd.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/5 transition-colors">
                         <td className="px-4 py-3 pl-5 text-slate-600 dark:text-white/70">{wd.createdAt ? new Date(wd.createdAt).toLocaleDateString() : "-"}</td>
-                        <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">SAR {fmt(wd.amount)}</td>
+                        <td className="px-4 py-3 font-bold text-slate-900 dark:text-white">SAR {formatAmount(wd.amount)}</td>
                         <td className="px-4 py-3 text-slate-600 dark:text-white/70">{wd.type}</td>
                         <td className="px-4 py-3 text-slate-700 dark:text-white/80 max-w-[200px] truncate">{wd.reason}</td>
                         <td className="px-4 py-3">

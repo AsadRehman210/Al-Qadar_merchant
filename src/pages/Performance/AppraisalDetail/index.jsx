@@ -5,6 +5,7 @@ import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/react";
 import { FiArrowLeft, FiArrowRight, FiEdit2, FiBarChart2, FiStar, FiMessageSquare, FiCheck, FiAlertCircle } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
+import FormTextarea from "components/FormTextarea";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { getAppraisalById, submitAppraisal, startReview, finalizeAppraisal } from "../performanceFakeData";
@@ -240,10 +241,14 @@ const AppraisalDetail = () => {
                           <span className={`text-sm font-medium ml-2 ${ratingColor(hrRating)}`}>{t(ratingLabelKey(hrRating))}</span>
                         </div>
                       </div>
-                      <div>
-                        <label className="text-xs font-medium text-slate-600 dark:text-white/60 mb-1.5 block">{t("performance:hr_comment_label")}</label>
-                        <textarea value={hrComment} onChange={(e) => setHrComment(e.target.value)} rows={4} className="w-full p-3 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-900 dark:text-white" placeholder={t("performance:hr_comment_placeholder")} />
-                      </div>
+                      <FormTextarea
+                        label={t("performance:hr_comment_label")}
+                        labelClass="!text-xs font-medium text-slate-600 dark:text-white/60"
+                        value={hrComment}
+                        onValueChange={setHrComment}
+                        rows={4}
+                        placeholder={t("performance:hr_comment_placeholder")}
+                      />
                       {(appraisal.status === "Submitted" || appraisal.status === "Under Review") && (
                         <Button type="button" title={t("performance:finalize_appraisal")} icon={FiCheck} onClick={handleFinalize} className="!w-auto !rounded-md !h-10 !px-5 !border-0 !text-white !bg-[var(--color-teal-500)] hover:!bg-[var(--color-teal-600)]" />
                       )}

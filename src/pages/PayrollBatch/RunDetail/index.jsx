@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { formatAmount } from "global/helper";
 import { useNavigate, useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight, FiPrinter, FiEdit2, FiCheck, FiX } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import Button from "components/Button";
-import { RUN_STATUS, RUN_STATUS_BADGE } from "../payrollBatchFakeData";
+import FormInput from "components/FormInput";
+import { RUN_STATUS, RUN_STATUS_BADGE } from "global/constant";
 import {
   fetchPayrollRunById,
   showCurrentRun,
@@ -21,7 +23,6 @@ import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { SkeletonDetail } from "components/Skeleton";
 
-const fmt = (n) => (n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const ActionBar = ({ run, onAction }) => {
   const { t } = useTranslation();
@@ -65,11 +66,12 @@ const ActionBar = ({ run, onAction }) => {
       </div>
       {showReject && (
         <div className="mt-3">
-          <input
+          <FormInput
             value={rejectReason}
-            onChange={(e) => setRejectReason(e.target.value)}
+            onValueChange={setRejectReason}
             placeholder={t("payroll:reject_reason")}
-            className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm mb-2"
+            inputClass="!h-10 !rounded-lg"
+            wrapperClass="w-full mb-2"
           />
           <div className="flex gap-2">
             <Button type="button" title={t("payroll:confirm_reject")}
@@ -185,7 +187,7 @@ const RunDetail = () => {
                 {run.status}
               </span>
             </div>
-            <p className="text-mutedForeground mt-0.5">{monthLabel} · {lines.length} {t("payroll:employees")} · SAR {fmt(run.totalNet)} {t("payroll:net")}</p>
+            <p className="text-mutedForeground mt-0.5">{monthLabel} · {lines.length} {t("payroll:employees")} · SAR {formatAmount(run.totalNet)} {t("payroll:net")}</p>
           </div>
         </div>
 
@@ -198,10 +200,10 @@ const RunDetail = () => {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             { label: t("payroll:total_employees"), value: lines.length, cls: "text-slate-700 dark:text-white" },
-            { label: t("payroll:total_gross"), value: `SAR ${fmt(run.totalGross)}`, cls: "text-slate-700 dark:text-white" },
-            { label: t("payroll:total_deductions"), value: `SAR ${fmt(run.totalDeductions)}`, cls: "text-rose-600" },
-            { label: t("payroll:total_net"), value: `SAR ${fmt(run.totalNet)}`, cls: "text-emerald-600 text-lg font-bold" },
-            { label: t("payroll:employer_cost"), value: `SAR ${fmt(run.totalEmployerCost)}`, cls: "text-purple-600" },
+            { label: t("payroll:total_gross"), value: `SAR ${formatAmount(run.totalGross)}`, cls: "text-slate-700 dark:text-white" },
+            { label: t("payroll:total_deductions"), value: `SAR ${formatAmount(run.totalDeductions)}`, cls: "text-rose-600" },
+            { label: t("payroll:total_net"), value: `SAR ${formatAmount(run.totalNet)}`, cls: "text-emerald-600 text-lg font-bold" },
+            { label: t("payroll:employer_cost"), value: `SAR ${formatAmount(run.totalEmployerCost)}`, cls: "text-purple-600" },
           ].map((c) => (
             <div key={c.label} className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-4">
               <p className="text-xs text-slate-500 dark:text-white/60 mb-1">{c.label}</p>
@@ -251,11 +253,12 @@ const RunDetail = () => {
           {activeTab === "employees" && (
             <>
               <div className="flex flex-wrap gap-3 mb-4">
-                <input
+                <FormInput
                   value={empSearch}
-                  onChange={(e) => setEmpSearch(e.target.value)}
+                  onValueChange={setEmpSearch}
                   placeholder={t("payroll:search_emp")}
-                  className="h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm flex-1 min-w-[160px] focus:border-teal-500 focus:outline-0"
+                  inputClass="!h-9 !rounded-lg"
+                  wrapperClass="flex-1 min-w-[160px]"
                 />
                 <div className="flex gap-2 flex-wrap">
                   {depts.map((d) => (
@@ -287,15 +290,15 @@ const RunDetail = () => {
                             <p className="font-semibold text-slate-800 dark:text-white">{e.employeeName}</p>
                             <p className="text-xs text-slate-400">{e.employeeIdNo} · {e.department}</p>
                           </td>
-                          <td className="px-3 py-3 text-xs">{fmt(e.basic)}</td>
-                          <td className="px-3 py-3 text-xs">{fmt(e.hra)}</td>
-                          <td className="px-3 py-3 text-xs text-teal-600">{fmt((e.medical || 0) + (e.transport || 0) + (e.food || 0) + (e.mobile || 0))}</td>
+                          <td className="px-3 py-3 text-xs">{formatAmount(e.basic)}</td>
+                          <td className="px-3 py-3 text-xs">{formatAmount(e.hra)}</td>
+                          <td className="px-3 py-3 text-xs text-teal-600">{formatAmount((e.medical || 0) + (e.transport || 0) + (e.food || 0) + (e.mobile || 0))}</td>
                           {/* OT Hours — editable */}
                           <td className="px-3 py-3 text-xs">
                             {canEdit && isEditingThisOt ? (
                               <div className="flex items-center gap-1">
-                                <input type="number" min="0" value={editingOtVal} onChange={(ev) => setEditingOtVal(ev.target.value)}
-                                  className="w-14 h-7 rounded border border-amber-300 bg-amber-50 dark:bg-amber-500/10 px-1.5 text-xs text-center focus:outline-0" autoFocus />
+                                <FormInput type="number" min={0} decimal decimalPlaces={2} value={editingOtVal} onValueChange={setEditingOtVal}
+                                  inputClass="!w-14 !h-7 !rounded !px-1.5 !py-0 !text-xs !text-center" wrapperClass="w-14" />
                                 <button type="button" onClick={() => submitOt(e.employeeId)} className="text-emerald-600"><FiCheck className="h-3.5 w-3.5" /></button>
                                 <button type="button" onClick={() => setEditingOtId(null)} className="text-slate-400"><FiX className="h-3.5 w-3.5" /></button>
                               </div>
@@ -311,20 +314,20 @@ const RunDetail = () => {
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-3 text-xs text-slate-500">SAR {fmt(e.overtimeRate)}</td>
-                          <td className="px-3 py-3 text-xs font-semibold text-amber-600">SAR {fmt(e.overtime)}</td>
+                          <td className="px-3 py-3 text-xs text-slate-500">SAR {formatAmount(e.overtimeRate)}</td>
+                          <td className="px-3 py-3 text-xs font-semibold text-amber-600">SAR {formatAmount(e.overtime)}</td>
                           {/* Bonus — editable */}
                           <td className="px-3 py-3 text-xs">
                             {canEdit && isEditingThisBonus ? (
                               <div className="flex items-center gap-1">
-                                <input type="number" min="0" value={editingBonusVal} onChange={(ev) => setEditingBonusVal(ev.target.value)}
-                                  className="w-20 h-7 rounded border border-purple-300 bg-purple-50 dark:bg-purple-500/10 px-1.5 text-xs text-center focus:outline-0" autoFocus />
+                                <FormInput type="number" min={0} decimal decimalPlaces={2} value={editingBonusVal} onValueChange={setEditingBonusVal}
+                                  inputClass="!w-20 !h-7 !rounded !px-1.5 !py-0 !text-xs !text-center" wrapperClass="w-20" />
                                 <button type="button" onClick={() => submitBonus(e.employeeId)} className="text-emerald-600"><FiCheck className="h-3.5 w-3.5" /></button>
                                 <button type="button" onClick={() => setEditingBonusId(null)} className="text-slate-400"><FiX className="h-3.5 w-3.5" /></button>
                               </div>
                             ) : (
                               <span className="flex items-center gap-1 group">
-                                <span className="font-semibold text-purple-600 dark:text-purple-400">SAR {fmt(e.bonus)}</span>
+                                <span className="font-semibold text-purple-600 dark:text-purple-400">SAR {formatAmount(e.bonus)}</span>
                                 {canEdit && (
                                   <button type="button" onClick={() => { setEditingBonusId(e.employeeId); setEditingBonusVal(String(e.bonus ?? 0)); }}
                                     className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-purple-500 transition-opacity">
@@ -334,11 +337,11 @@ const RunDetail = () => {
                               </span>
                             )}
                           </td>
-                          <td className="px-3 py-3 text-xs font-semibold">{fmt(e.grossEarnings)}</td>
-                          <td className="px-3 py-3 text-xs text-rose-500">{fmt(e.pfEmployee)}</td>
-                          <td className="px-3 py-3 text-xs text-rose-500">{fmt(e.loanDeduction)}</td>
-                          <td className="px-3 py-3 text-xs text-rose-500">{fmt(e.incomeTax)}</td>
-                          <td className="px-3 py-3 font-bold text-emerald-600 text-sm">{fmt(e.netPay)}</td>
+                          <td className="px-3 py-3 text-xs font-semibold">{formatAmount(e.grossEarnings)}</td>
+                          <td className="px-3 py-3 text-xs text-rose-500">{formatAmount(e.pfEmployee)}</td>
+                          <td className="px-3 py-3 text-xs text-rose-500">{formatAmount(e.loanDeduction)}</td>
+                          <td className="px-3 py-3 text-xs text-rose-500">{formatAmount(e.incomeTax)}</td>
+                          <td className="px-3 py-3 font-bold text-emerald-600 text-sm">{formatAmount(e.netPay)}</td>
                           <td className="px-3 py-3">
                             <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${e.paymentStatus === "Paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
                               {e.paymentStatus}
@@ -382,9 +385,9 @@ const RunDetail = () => {
                       <tr key={d.dept} className="border-b border-slate-100 dark:border-white/5">
                         <td className="px-5 py-3 font-semibold text-slate-800 dark:text-white">{d.dept}</td>
                         <td className="px-5 py-3 text-center">{d.count}</td>
-                        <td className="px-5 py-3">SAR {fmt(d.gross)}</td>
-                        <td className="px-5 py-3 text-rose-600">SAR {fmt(d.ded)}</td>
-                        <td className="px-5 py-3 font-bold text-emerald-600">SAR {fmt(d.net)}</td>
+                        <td className="px-5 py-3">SAR {formatAmount(d.gross)}</td>
+                        <td className="px-5 py-3 text-rose-600">SAR {formatAmount(d.ded)}</td>
+                        <td className="px-5 py-3 font-bold text-emerald-600">SAR {formatAmount(d.net)}</td>
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-2">
                             <div className="flex-1 h-2 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
@@ -420,7 +423,7 @@ const RunDetail = () => {
                 ].map((c) => (
                   <div key={c.label} className="bg-slate-50 dark:bg-white/5 rounded-xl p-3">
                     <p className="text-xs text-slate-500 dark:text-white/60">{c.label}</p>
-                    <p className={`font-bold text-sm mt-0.5 ${c.cls}`}>SAR {fmt(c.value)}</p>
+                    <p className={`font-bold text-sm mt-0.5 ${c.cls}`}>SAR {formatAmount(c.value)}</p>
                   </div>
                 ))}
               </div>
@@ -450,7 +453,7 @@ const RunDetail = () => {
                           <p className="font-semibold text-slate-800 dark:text-white">{e.employeeName}</p>
                           <p className="text-xs text-slate-400">{e.employeeIdNo}</p>
                         </td>
-                        <td className="px-4 py-3 font-bold text-emerald-600">SAR {fmt(e.netPay)}</td>
+                        <td className="px-4 py-3 font-bold text-emerald-600">SAR {formatAmount(e.netPay)}</td>
                         <td className="px-4 py-3 text-xs text-slate-500">{e.paymentRef || "—"}</td>
                         <td className="px-4 py-3">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${e.paymentStatus === "Paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
@@ -461,7 +464,7 @@ const RunDetail = () => {
                     ))}
                     <tr className="bg-slate-50 dark:bg-white/5 font-bold">
                       <td colSpan={2} className="px-4 py-3 pl-5 text-slate-700 dark:text-white">{t("payroll:total")}</td>
-                      <td className="px-4 py-3 text-emerald-600">SAR {fmt(run.totalNet)}</td>
+                      <td className="px-4 py-3 text-emerald-600">SAR {formatAmount(run.totalNet)}</td>
                       <td colSpan={2} />
                     </tr>
                   </tbody>

@@ -7,7 +7,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { tableRows } from "global/constant";
+import { tableRows, assetActiveInactiveFilterOptions } from "global/constant";
 import {
   fetchAssetCategories,
   showAssetCategories,
@@ -43,14 +43,7 @@ const AssetCategories = () => {
 
   const totalPages = Math.max(1, Math.ceil((total || 0) / selRows.id));
 
-  const statusOptions = useMemo(
-    () => [
-      { id: "all", title: t("asset:filter_all") },
-      { id: "Active", title: t("asset:active") },
-      { id: "Inactive", title: t("asset:inactive") },
-    ],
-    [t],
-  );
+  const statusOptions = assetActiveInactiveFilterOptions;
 
   const selectedStatus = useMemo(
     () => statusOptions.find((o) => o.id === statusId) || statusOptions[0],

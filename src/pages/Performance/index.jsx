@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FiPlus, FiSearch, FiEye, FiEdit2, FiStar, FiBarChart2, FiClock, FiUserCheck } from "react-icons/fi";
 import Button from "components/Button";
+import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
@@ -92,12 +93,13 @@ const Performance = () => {
 
         <div className="flex flex-wrap gap-3">
           <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-            <input
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 z-[1]" size={14} />
+            <FormInput
               value={search}
-              onChange={(e) => setFilters({ search: e.target.value })}
+              onValueChange={(v) => setFilters({ search: v })}
               placeholder={t("performance:search_placeholder")}
-              className="h-10 pl-9 pr-4 w-64 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-900 dark:text-white"
+              wrapperClass="w-64"
+              inputClass="!h-10 !rounded-xl !pl-9"
             />
           </div>
           <SelectDropdown data={APPRAISAL_STATUS_OPTS} selected={selStatus} setSelected={(v) => setFilters({ statusId: v?.id || null })} placeholder={t("performance:all_statuses")} classes="!h-10 !rounded-md !min-w-[150px]" />

@@ -6,6 +6,7 @@ import { toast } from "react-toastify";
 import { HiOutlineCube } from "react-icons/hi2";
 import { FiArrowRight, FiPackage, FiClock } from "react-icons/fi";
 import SelectDropdown from "components/SelectDropdown";
+import FormInput from "components/FormInput";
 import Button from "components/Button";
 import {
   fetchAssets,
@@ -125,36 +126,31 @@ const AssetsTab = ({ data }) => {
         <div className="p-5 rounded-2xl border-2 border-teal-200 dark:border-teal-500/30 bg-white dark:bg-white/5 space-y-3">
           <h4 className="font-semibold text-slate-800 dark:text-white">{t("employees:assign_asset")}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-linkText block mb-1">
-                {t("employees:select_asset")} *
-              </label>
-              <SelectDropdown
-                data={unassignedOptions}
-                selected={assetPick}
-                setSelected={setAssetPick}
-                emptyMessage={t("employees:no_unassigned_assets")}
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-linkText block mb-1">
-                {t("employees:assignment_date")}
-              </label>
-              <input
-                type="date"
-                value={assignDate}
-                onChange={(e) => setAssignDate(e.target.value)}
-                className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-linkText block mb-1">{t("employees:notes")}</label>
-              <input
-                value={assignNotes}
-                onChange={(e) => setAssignNotes(e.target.value)}
-                className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-teal-500"
-              />
-            </div>
+            <SelectDropdown
+              label={t("employees:select_asset")}
+              required
+              data={unassignedOptions}
+              selected={assetPick}
+              setSelected={setAssetPick}
+              emptyMessage={t("employees:no_unassigned_assets")}
+              labelClass="!text-xs"
+            />
+            <FormInput
+              label={t("employees:assignment_date")}
+              type="date"
+              value={assignDate}
+              onValueChange={setAssignDate}
+              inputClass="!h-10"
+              labelClass="!text-xs"
+            />
+            <FormInput
+              label={t("employees:notes")}
+              value={assignNotes}
+              onValueChange={setAssignNotes}
+              inputClass="!h-9"
+              labelClass="!text-xs"
+              wrapperClass="sm:col-span-2"
+            />
           </div>
           <div className="flex gap-2">
             <Button
@@ -206,27 +202,21 @@ const AssetsTab = ({ data }) => {
 
                 {returningId === asset.id ? (
                   <div className="mt-3 p-3 rounded-xl bg-amber-50/60 dark:bg-amber-500/5 border border-amber-200 dark:border-amber-500/20 space-y-2">
-                    <div>
-                      <label className="text-xs font-medium text-linkText block mb-1">
-                        {t("employees:return_date")}
-                      </label>
-                      <input
-                        type="date"
-                        value={returnDate}
-                        onChange={(e) => setReturnDate(e.target.value)}
-                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-amber-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-linkText block mb-1">
-                        {t("employees:return_reason")}
-                      </label>
-                      <input
-                        value={returnReason}
-                        onChange={(e) => setReturnReason(e.target.value)}
-                        className="w-full h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0 focus:border-amber-500"
-                      />
-                    </div>
+                    <FormInput
+                      label={t("employees:return_date")}
+                      type="date"
+                      value={returnDate}
+                      onValueChange={setReturnDate}
+                      inputClass="!h-9"
+                      labelClass="!text-xs"
+                    />
+                    <FormInput
+                      label={t("employees:return_reason")}
+                      value={returnReason}
+                      onValueChange={setReturnReason}
+                      inputClass="!h-9"
+                      labelClass="!text-xs"
+                    />
                     <div className="flex gap-2 pt-1">
                       <button
                         type="button"

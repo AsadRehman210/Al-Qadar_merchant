@@ -19,14 +19,15 @@ import {
   fetchSpecialPayments,
   showSpecialPayments,
 } from "store/slices/payrollBatchSlice";
+import { specialPaymentModeOptions } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
 
-const AMOUNT_MODES = [
-  { id: "fixed",     label: "Fixed Amount (SAR)",       hint: "Every employee gets the same fixed SAR amount" },
-  { id: "pct_basic", label: "% of Basic Salary",        hint: "Calculated as percentage of each employee's basic salary" },
-  { id: "pct_gross", label: "% of Gross Salary",        hint: "Calculated as percentage of each employee's total gross earnings" },
-];
+const MODE_HINTS = {
+  fixed: "Every employee gets the same fixed SAR amount",
+  pct_basic: "Calculated as percentage of each employee's basic salary",
+  pct_gross: "Calculated as percentage of each employee's total gross earnings",
+};
 
 const EMOJI_PRESETS = ["🌙", "🐑", "✨", "🏆", "🎯", "🤝", "💰", "🎁", "⭐", "🎉", "💎", "🙌"];
 
@@ -67,14 +68,19 @@ const TypeForm = ({ initial, onSave, onCancel, t }) => {
       {/* Name + icon row */}
       <div className="flex items-start gap-3">
         <div className="shrink-0">
-          <label className="text-xs font-medium text-linkText mb-1 block">{t("payroll:sp_type_icon")}</label>
-          <input {...register("icon")}
-            className="w-14 h-11 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-center text-2xl focus:outline-0 focus:border-teal-500"
-            maxLength={2} />
+          <FormInput
+            label={t("payroll:sp_type_icon")}
+            name="icon"
+            register={register}
+            maxLength={2}
+            inputClass="!w-14 !h-11 !rounded-xl !text-center !text-2xl !p-0"
+            labelClass="!text-xs"
+            wrapperClass="shrink-0"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <FormInput label={t("payroll:sp_type_name")} name="name" register={register} errors={errors} required
-            minLength={2} maxLength={100}
+            pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={100}
             placeholder="e.g. Eid ul-Fitr Bonus" />
         </div>
       </div>
@@ -101,13 +107,13 @@ const TypeForm = ({ initial, onSave, onCancel, t }) => {
       <div>
         <label className="text-sm font-medium text-linkText mb-2 block">{t("payroll:sp_amount_mode")} *</label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {AMOUNT_MODES.map((m) => (
+          {specialPaymentModeOptions.map((m) => (
             <label key={m.id}
               className={`flex items-start gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${watchedMode === m.id ? "border-teal-400 bg-teal-50 dark:bg-teal-500/10" : "border-slate-200 dark:border-white/10 hover:border-teal-200"}`}>
               <input type="radio" value={m.id} {...register("amountMode", { required: true })} className="mt-0.5 accent-teal-500" />
               <div>
-                <p className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">{m.label}</p>
-                <p className="text-xs text-slate-500 dark:text-white/60 mt-0.5">{m.hint}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">{m.title}</p>
+                <p className="text-xs text-slate-500 dark:text-white/60 mt-0.5">{MODE_HINTS[m.id]}</p>
               </div>
             </label>
           ))}
@@ -272,7 +278,7 @@ const PaymentTypes = () => {
                       {modeLabel(type.amountMode, type.amountValue)}
                     </span>
                     <p className="text-xs text-slate-400 mt-1">
-                      {AMOUNT_MODES.find((m) => m.id === type.amountMode)?.label}
+                      {specialPaymentModeOptions.find((m) => m.id === type.amountMode)?.title}
                     </p>
                   </div>
 

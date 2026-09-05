@@ -110,6 +110,12 @@ const SupplyInvoicesTab = ({ supplier }) => {
                 {t("customers:amount")}
               </th>
               <th className="px-4 py-3 text-start font-semibold text-slate-900 dark:text-white">
+                {t("suppliers:returned")}
+              </th>
+              <th className="px-4 py-3 text-start font-semibold text-slate-900 dark:text-white">
+                {t("suppliers:net_amount")}
+              </th>
+              <th className="px-4 py-3 text-start font-semibold text-slate-900 dark:text-white">
                 {t("customers:invoice_status")}
               </th>
             </tr>
@@ -118,6 +124,8 @@ const SupplyInvoicesTab = ({ supplier }) => {
             {invoices.length > 0 ? (
               invoices.map((inv) => {
                 const status = inv.paymentStatus === "Cleared" ? "Paid" : inv.paymentStatus || "Pending";
+                const returned = Number(inv.debitedAmount) || 0;
+                const net = (Number(inv.total) || 0) - returned;
                 return (
                   <tr
                     key={inv.id}
@@ -132,6 +140,12 @@ const SupplyInvoicesTab = ({ supplier }) => {
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-white/90">
                       {formatAmount(inv.total)} {supplier.currency || "SAR"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-white/90">
+                      {returned ? `${formatAmount(returned)} ${supplier.currency || "SAR"}` : "—"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-white/90">
+                      {formatAmount(net)} {supplier.currency || "SAR"}
                     </td>
                     <td className="px-4 py-3">
                       <span
@@ -150,7 +164,7 @@ const SupplyInvoicesTab = ({ supplier }) => {
             ) : (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={6}
                   className="px-4 py-8 text-center text-slate-500 dark:text-white/60"
                 >
                   {t("no_record_found")}

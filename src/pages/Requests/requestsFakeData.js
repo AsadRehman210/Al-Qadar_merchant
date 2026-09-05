@@ -1,4 +1,17 @@
-export { APPROVAL_STATUS, APPLIED_VIA } from "global/approvalEngine";
+export { APPROVAL_STATUS } from "global/approvalEngine";
+import {
+  requestDocumentTypeOptions,
+  probationOutcomeOptions,
+  promotionChangeTypeOptions,
+  shortLeaveTypeOptions,
+  requestShiftTypeOptions,
+  requestAssetTypeOptions,
+  profileFieldOptions,
+  grievanceCategoryOptions,
+  disciplinaryTypeOptions,
+  helpdeskCategoryOptions,
+  helpdeskPriorityOptions,
+} from "global/constant";
 
 // ─────────────────────────────────────────────
 // Request type catalogue
@@ -130,25 +143,6 @@ export const REQUEST_TYPES = [
 
 export const requestTypeById = (id) => REQUEST_TYPES.find((t) => t.id === id) || null;
 
-export const DOCUMENT_TYPES = [
-  "Salary Certificate",
-  "Experience Letter",
-  "No Objection Certificate (NOC)",
-  "Employment Verification",
-  "Bank Account Letter",
-];
-
-export const PROBATION_OUTCOMES = ["Confirm", "Extend", "Terminate"];
-export const PROMOTION_CHANGE_TYPES = ["Promotion", "Increment", "Transfer"];
-export const SHORT_LEAVE_TYPES = ["Early Out", "Late Arrival", "Gate Pass"];
-export const SHIFT_TYPES = ["Day", "Night", "Morning", "Evening", "Rotational"];
-export const ASSET_TYPES = ["Laptop", "Desktop", "Monitor", "Phone", "SIM Card", "Access Card", "Furniture", "Other"];
-export const PROFILE_FIELDS = ["Phone Number", "Address", "Bank Account", "Emergency Contact", "Marital Status", "Email"];
-export const GRIEVANCE_CATEGORIES = ["Workplace", "Harassment", "Payroll", "Management", "Facilities", "Other"];
-export const DISCIPLINARY_TYPES = ["Verbal Warning", "Written Warning", "Final Warning", "Suspension"];
-export const HELPDESK_CATEGORIES = ["IT Support", "Facilities", "Payroll", "Access / Security", "Other"];
-export const HELPDESK_PRIORITIES = ["Low", "Medium", "High", "Urgent"];
-
 // Field renderer config — each form field key maps to a type (and options for
 // selects). The ApplyRequest form renders type.fields generically from here.
 export const FIELD_DEFS = {
@@ -156,35 +150,35 @@ export const FIELD_DEFS = {
   checkIn: { labelKey: "requests:field_check_in", type: "time" },
   checkOut: { labelKey: "requests:field_check_out", type: "time" },
   hours: { labelKey: "requests:field_hours", type: "number" },
-  docType: { labelKey: "requests:field_doc_type", type: "select", options: DOCUMENT_TYPES },
+  docType: { labelKey: "requests:field_doc_type", type: "select", options: requestDocumentTypeOptions },
   purpose: { labelKey: "requests:field_purpose", type: "text" },
   lastWorkingDate: { labelKey: "requests:field_last_working_date", type: "date" },
   noticePeriodDays: { labelKey: "requests:field_notice_period", type: "number" },
-  outcome: { labelKey: "requests:field_outcome", type: "select", options: PROBATION_OUTCOMES },
+  outcome: { labelKey: "requests:field_outcome", type: "select", options: probationOutcomeOptions },
   effectiveDate: { labelKey: "requests:field_effective_date", type: "date" },
-  changeType: { labelKey: "requests:field_change_type", type: "select", options: PROMOTION_CHANGE_TYPES },
+  changeType: { labelKey: "requests:field_change_type", type: "select", options: promotionChangeTypeOptions },
   proposedDesignation: { labelKey: "requests:field_proposed_designation", type: "text" },
   proposedDepartment: { labelKey: "requests:field_proposed_department", type: "text" },
-  shortLeaveType: { labelKey: "requests:field_short_leave_type", type: "select", options: SHORT_LEAVE_TYPES },
+  shortLeaveType: { labelKey: "requests:field_short_leave_type", type: "select", options: shortLeaveTypeOptions },
   fromTime: { labelKey: "requests:field_from_time", type: "time" },
   toTime: { labelKey: "requests:field_to_time", type: "time" },
-  currentShift: { labelKey: "requests:field_current_shift", type: "select", options: SHIFT_TYPES },
-  requestedShift: { labelKey: "requests:field_requested_shift", type: "select", options: SHIFT_TYPES },
+  currentShift: { labelKey: "requests:field_current_shift", type: "select", options: requestShiftTypeOptions },
+  requestedShift: { labelKey: "requests:field_requested_shift", type: "select", options: requestShiftTypeOptions },
   destination: { labelKey: "requests:field_destination", type: "text" },
   travelFrom: { labelKey: "requests:field_travel_from", type: "date" },
   travelTo: { labelKey: "requests:field_travel_to", type: "date" },
   advanceAmount: { labelKey: "requests:field_advance_amount", type: "number" },
-  assetType: { labelKey: "requests:field_asset_type", type: "select", options: ASSET_TYPES },
+  assetType: { labelKey: "requests:field_asset_type", type: "select", options: requestAssetTypeOptions },
   quantity: { labelKey: "requests:field_quantity", type: "number" },
-  profileField: { labelKey: "requests:field_profile_field", type: "select", options: PROFILE_FIELDS },
+  profileField: { labelKey: "requests:field_profile_field", type: "select", options: profileFieldOptions },
   newValue: { labelKey: "requests:field_new_value", type: "text" },
   courseName: { labelKey: "requests:field_course_name", type: "text" },
   provider: { labelKey: "requests:field_provider", type: "text" },
   cost: { labelKey: "requests:field_cost", type: "number" },
-  grievanceCategory: { labelKey: "requests:field_grievance_category", type: "select", options: GRIEVANCE_CATEGORIES },
-  disciplinaryType: { labelKey: "requests:field_disciplinary_type", type: "select", options: DISCIPLINARY_TYPES },
-  helpdeskCategory: { labelKey: "requests:field_helpdesk_category", type: "select", options: HELPDESK_CATEGORIES },
-  priority: { labelKey: "requests:field_priority", type: "select", options: HELPDESK_PRIORITIES },
+  grievanceCategory: { labelKey: "requests:field_grievance_category", type: "select", options: grievanceCategoryOptions },
+  disciplinaryType: { labelKey: "requests:field_disciplinary_type", type: "select", options: disciplinaryTypeOptions },
+  helpdeskCategory: { labelKey: "requests:field_helpdesk_category", type: "select", options: helpdeskCategoryOptions },
+  priority: { labelKey: "requests:field_priority", type: "select", options: helpdeskPriorityOptions },
   reason: { labelKey: "requests:reason", type: "textarea" },
 };
 

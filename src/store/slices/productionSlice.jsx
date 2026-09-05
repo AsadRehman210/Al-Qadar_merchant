@@ -59,6 +59,15 @@ export const completeProduction = createAsyncThunk(
   },
 );
 
+export const reverseProduction = createAsyncThunk(
+  "production/reverse",
+  async (id, { rejectWithValue }) => {
+    const response = await erpPost(`${erpUrls.production}/${id}/reverse`);
+    if (!response?.success) return rejectWithValue(response?.message);
+    return response.result;
+  },
+);
+
 export const deleteProductionOrder = createAsyncThunk(
   "production/delete",
   async (id, { rejectWithValue }) => {
@@ -116,7 +125,10 @@ const productionSlice = createSlice({
         state.list = state.list.filter((o) => o.id !== action.payload);
       })
       .addMatcher(
-        (action) => [updateProductionOrder.fulfilled.type, completeProduction.fulfilled.type].includes(action.type),
+        (action) =>
+          [updateProductionOrder.fulfilled.type, completeProduction.fulfilled.type, reverseProduction.fulfilled.type].includes(
+            action.type,
+          ),
         (state, action) => upsertList(state, action.payload),
       );
   },

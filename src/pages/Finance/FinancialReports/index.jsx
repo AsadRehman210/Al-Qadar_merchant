@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount, formatSignedAmount } from "global/helper";
+import { monthShortLabels } from "global/constant";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
   fetchTrialBalance,
@@ -27,15 +29,14 @@ import {
 import FinancePage from "../FinancePage";
 import { SkeletonDetail } from "components/Skeleton";
 import TableState from "components/TableState";
+import FormInput from "components/FormInput";
+import SelectDropdown from "components/SelectDropdown";
 
 const { view_customer } = rafeeqi_role_ids;
 
 const TAB = "min-w-[120px] whitespace-nowrap cursor-pointer py-3 px-4 rounded-lg h-11 flex justify-center items-center font-medium text-sm text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:text-white data-[selected]:font-semibold hover:bg-teal-500/10 dark:hover:bg-teal-500/20";
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
-const fmtC = (n) => { const v = parseFloat(n) || 0; return `${v >= 0 ? "" : "-"}${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}`; };
 
-const MONTH_LABELS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 const FinancialReports = () => {
   const { t } = useTranslation();
@@ -64,6 +65,11 @@ const FinancialReports = () => {
   const [budgetSaving, setBudgetSaving] = useState(false);
 
   const budgetableAccounts = (chartOfAccounts || []).filter((a) => a.type === "Revenue" || a.type === "Expense");
+  const budgetAcctOpts = [
+    { id: "", title: t("finance:all_accounts") },
+    ...budgetableAccounts.map((a) => ({ id: a.id, title: `${a.code} — ${a.name}` })),
+  ];
+  const budgetYearOpts = [currentYear, currentYear - 1, currentYear - 2].map((y) => ({ id: String(y), title: String(y) }));
 
   useEffect(() => {
     dispatch(fetchTrialBalance({ fromDate, toDate }));
@@ -79,7 +85,16 @@ const FinancialReports = () => {
 
   const handleBudgetSubmit = async (e) => {
     e.preventDefault();
+    const todayMonth = new Date().toISOString().slice(0, 7);
     if (!budgetForm.accountId || !budgetForm.period || budgetForm.budgetAmount === "") return;
+    if (budgetForm.period > todayMonth) {
+      toast.error(t("finance:date_not_future", { defaultValue: "Period cannot be in the future" }));
+      return;
+    }
+    if (!(parseFloat(budgetForm.budgetAmount) > 0)) {
+      toast.error(t("finance:amount_required", { defaultValue: "Amount must be greater than 0" }));
+      return;
+    }
     setBudgetSaving(true);
     try {
       await dispatch(upsertBudget({
@@ -104,16 +119,26 @@ const FinancialReports = () => {
         <>
           {/* Date range filter */}
           <div className="flex flex-wrap gap-4 items-end mb-6 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
-            <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:from_date")}</label>
-              <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)}
-                className="h-10 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:to_date")}</label>
-              <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)}
-                className="h-10 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-            </div>
+            <FormInput
+              label={t("finance:from_date")}
+              labelClass="!text-xs font-medium text-slate-500"
+              name="reportFrom"
+              type="date"
+              value={fromDate}
+              onValueChange={setFromDate}
+              wrapperClass="min-w-[160px]"
+              inputClass="!h-10 !rounded-lg"
+            />
+            <FormInput
+              label={t("finance:to_date")}
+              labelClass="!text-xs font-medium text-slate-500"
+              name="reportTo"
+              type="date"
+              value={toDate}
+              onValueChange={setToDate}
+              wrapperClass="min-w-[160px]"
+              inputClass="!h-10 !rounded-lg"
+            />
             <button onClick={() => { setFromDate(firstOfYear); setToDate(today); }}
               className="h-10 px-4 rounded-lg bg-slate-200 dark:bg-white/20 text-sm font-medium hover:bg-slate-300 transition-colors">
               {t("finance:reset_filter")}
@@ -147,8 +172,8 @@ const FinancialReports = () => {
                           <tr key={row.accountId} className="border-t border-slate-100 dark:border-white/10">
                             <td className="px-4 py-2 font-mono text-xs">{row.code}</td>
                             <td className="px-4 py-2">{row.name}</td>
-                            <td className="px-4 py-2 text-end tabular-nums">{fmt(row.totalDebit)}</td>
-                            <td className="px-4 py-2 text-end tabular-nums">{fmt(row.totalCredit)}</td>
+                            <td className="px-4 py-2 text-end tabular-nums">{formatAmount(row.totalDebit)}</td>
+                            <td className="px-4 py-2 text-end tabular-nums">{formatAmount(row.totalCredit)}</td>
                           </tr>
                         ))}
                       </TableState>
@@ -156,8 +181,8 @@ const FinancialReports = () => {
                     <tfoot>
                       <tr className="bg-slate-50 dark:bg-white/5 font-bold border-t-2 border-slate-200 dark:border-white/20">
                         <td colSpan={2} className="px-4 py-2">{t("finance:totals")}</td>
-                        <td className="px-4 py-2 text-end tabular-nums">{fmt(trialBalance.totalDebit)}</td>
-                        <td className="px-4 py-2 text-end tabular-nums">{fmt(trialBalance.totalCredit)}</td>
+                        <td className="px-4 py-2 text-end tabular-nums">{formatAmount(trialBalance.totalDebit)}</td>
+                        <td className="px-4 py-2 text-end tabular-nums">{formatAmount(trialBalance.totalCredit)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -172,15 +197,15 @@ const FinancialReports = () => {
                   <dl className="grid sm:grid-cols-2 gap-4 max-w-lg">
                     <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
                       <dt className="text-sm text-mutedForeground">{t("finance:revenue")}</dt>
-                      <dd className="text-2xl font-bold tabular-nums mt-1">{fmt(pl.totalRevenue)} SAR</dd>
+                      <dd className="text-2xl font-bold tabular-nums mt-1">{formatAmount(pl.totalRevenue)} SAR</dd>
                     </div>
                     <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
                       <dt className="text-sm text-mutedForeground">{t("finance:expenses")}</dt>
-                      <dd className="text-2xl font-bold tabular-nums mt-1">{fmt(pl.totalExpenses)} SAR</dd>
+                      <dd className="text-2xl font-bold tabular-nums mt-1">{formatAmount(pl.totalExpenses)} SAR</dd>
                     </div>
                     <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-500/10 p-4 sm:col-span-2">
                       <dt className="text-sm text-mutedForeground">{t("finance:net_income")}</dt>
-                      <dd className={`text-2xl font-bold tabular-nums mt-1 ${pl.netProfit >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-red-600"}`}>{fmtC(pl.netProfit)} SAR</dd>
+                      <dd className={`text-2xl font-bold tabular-nums mt-1 ${pl.netProfit >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-red-600"}`}>{formatSignedAmount(pl.netProfit)} SAR</dd>
                     </div>
                   </dl>
                 )}
@@ -199,7 +224,7 @@ const FinancialReports = () => {
                     ].map(({ label, val }) => (
                       <div key={label} className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
                         <dt className="text-sm text-mutedForeground">{label}</dt>
-                        <dd className="text-xl font-bold tabular-nums mt-1">{fmtC(val)} SAR</dd>
+                        <dd className="text-xl font-bold tabular-nums mt-1">{formatSignedAmount(val)} SAR</dd>
                       </div>
                     ))}
                   </dl>
@@ -219,11 +244,11 @@ const FinancialReports = () => {
                     <dl className="grid sm:grid-cols-2 gap-4">
                       <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
                         <dt className="text-sm text-mutedForeground">{t("finance:opening_balance")}</dt>
-                        <dd className="text-xl font-bold tabular-nums mt-1">{fmtC(cashFlow.openingBalance)} SAR</dd>
+                        <dd className="text-xl font-bold tabular-nums mt-1">{formatSignedAmount(cashFlow.openingBalance)} SAR</dd>
                       </div>
                       <div className="rounded-xl border border-slate-200 dark:border-white/10 p-4">
                         <dt className="text-sm text-mutedForeground">{t("finance:closing_balance")}</dt>
-                        <dd className="text-xl font-bold tabular-nums mt-1">{fmtC(cashFlow.closingBalance)} SAR</dd>
+                        <dd className="text-xl font-bold tabular-nums mt-1">{formatSignedAmount(cashFlow.closingBalance)} SAR</dd>
                       </div>
                     </dl>
 
@@ -231,7 +256,7 @@ const FinancialReports = () => {
                       <div className="bg-teal-50 dark:bg-teal-500/10 px-5 py-3 flex justify-between items-center">
                         <h3 className="font-semibold text-slate-800 dark:text-white">{t("finance:cf_operating")}</h3>
                         <span className={`font-bold tabular-nums text-sm ${cashFlow.netChange >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-                          {fmtC(cashFlow.netChange)} SAR
+                          {formatSignedAmount(cashFlow.netChange)} SAR
                         </span>
                       </div>
                       <div className="divide-y divide-slate-100 dark:divide-white/5">
@@ -240,7 +265,7 @@ const FinancialReports = () => {
                         ) : cashFlow.categories.map((cat) => (
                           <div key={cat.label} className="flex justify-between items-center px-5 py-2 text-sm">
                             <span className="text-slate-600 dark:text-white/70">{cat.label}</span>
-                            <span className={`tabular-nums font-medium ${cat.net >= 0 ? "text-emerald-700" : "text-red-600"}`}>{fmtC(cat.net)} SAR</span>
+                            <span className={`tabular-nums font-medium ${cat.net >= 0 ? "text-emerald-700" : "text-red-600"}`}>{formatSignedAmount(cat.net)} SAR</span>
                           </div>
                         ))}
                       </div>
@@ -249,7 +274,7 @@ const FinancialReports = () => {
                     <div className="rounded-xl border border-slate-200 dark:border-white/10 px-5 py-3 flex justify-between items-center bg-slate-50 dark:bg-white/5">
                       <span className="font-semibold">{t("finance:cf_net_change")}</span>
                       <span className={`font-bold tabular-nums ${cashFlow.netChange >= 0 ? "text-emerald-700" : "text-red-600"}`}>
-                        {fmtC(cashFlow.netChange)} SAR
+                        {formatSignedAmount(cashFlow.netChange)} SAR
                       </span>
                     </div>
                   </div>
@@ -262,45 +287,62 @@ const FinancialReports = () => {
                   (see budget-service.getBudgetVsActual on the backend). */}
               <TabPanel>
                 <form onSubmit={handleBudgetSubmit} className="flex flex-wrap gap-3 items-end mb-6 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:account_name")}</label>
-                    <select
-                      value={budgetForm.accountId}
-                      onChange={(e) => setBudgetForm((f) => ({ ...f, accountId: e.target.value }))}
-                      className="h-10 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 min-w-[220px]"
-                    >
-                      <option value="">{t("finance:all_accounts")}</option>
-                      {budgetableAccounts.map((a) => (
-                        <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
-                      ))}
-                    </select>
+                  <div className="min-w-[220px]">
+                    <SelectDropdown
+                      label={t("finance:account_name")}
+                      labelClass="!text-xs font-medium text-slate-500"
+                      data={budgetAcctOpts}
+                      selected={budgetAcctOpts.find((o) => o.id === budgetForm.accountId) || budgetAcctOpts[0]}
+                      setSelected={(opt) => setBudgetForm((f) => ({ ...f, accountId: opt?.id || "" }))}
+                      hideClear
+                      classes="!h-10 !rounded-lg"
+                    />
                   </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:budget_month")}</label>
-                    <input type="month" value={budgetForm.period}
-                      onChange={(e) => setBudgetForm((f) => ({ ...f, period: e.target.value }))}
-                      className="h-10 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500" />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-slate-500 mb-1 block">{t("finance:budget_annual")}</label>
-                    <input type="number" step="0.01" min="0" value={budgetForm.budgetAmount}
-                      onChange={(e) => setBudgetForm((f) => ({ ...f, budgetAmount: e.target.value }))}
-                      className="h-10 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 w-32" />
-                  </div>
+                  <FormInput
+                    label={t("finance:budget_month")}
+                    labelClass="!text-xs font-medium text-slate-500"
+                    name="budgetPeriod"
+                    type="month"
+                    required
+                    max={new Date().toISOString().slice(0, 7)}
+                    value={budgetForm.period}
+                    onValueChange={(v) => setBudgetForm((f) => ({ ...f, period: v }))}
+                    wrapperClass="min-w-[160px]"
+                    inputClass="!h-10 !rounded-lg"
+                  />
+                  <FormInput
+                    label={t("finance:budget_annual")}
+                    labelClass="!text-xs font-medium text-slate-500"
+                    name="budgetAmount"
+                    type="number"
+                    min={0.01}
+                    decimal
+                    decimalPlaces={3}
+                    maxLength={10}
+                    required
+                    value={budgetForm.budgetAmount}
+                    onValueChange={(v) => setBudgetForm((f) => ({ ...f, budgetAmount: v }))}
+                    wrapperClass="w-32"
+                    inputClass="!h-10 !rounded-lg"
+                  />
                   <button type="submit" disabled={budgetSaving || !budgetForm.accountId}
                     className="h-10 px-4 rounded-lg bg-[var(--color-teal-500)] text-white text-sm font-medium disabled:opacity-50 hover:opacity-90 transition-opacity">
                     {t("save")}
                   </button>
                 </form>
 
-                <div className="mb-4 flex items-center gap-3">
-                  <label className="text-xs font-medium text-slate-500">{t("finance:budget_year")}</label>
-                  <select value={budgetYear} onChange={(e) => setBudgetYear(e.target.value)}
-                    className="h-9 px-3 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    {[currentYear, currentYear - 1, currentYear - 2].map((y) => (
-                      <option key={y} value={String(y)}>{y}</option>
-                    ))}
-                  </select>
+                <div className="mb-4 flex items-end gap-3">
+                  <div className="w-36">
+                    <SelectDropdown
+                      label={t("finance:budget_year")}
+                      labelClass="!text-xs font-medium text-slate-500"
+                      data={budgetYearOpts}
+                      selected={budgetYearOpts.find((o) => o.id === budgetYear) || budgetYearOpts[0]}
+                      setSelected={(opt) => setBudgetYear(opt?.id || budgetYear)}
+                      hideClear
+                      classes="!h-9 !rounded-lg"
+                    />
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
@@ -309,7 +351,7 @@ const FinancialReports = () => {
                       <tr className="bg-[var(--color-teal-500)] text-white">
                         <th className="px-3 py-2 text-start font-semibold rounded-tl-xl">{t("finance:account_name")}</th>
                         <th className="px-3 py-2 text-end font-semibold">{t("finance:budget_annual")}</th>
-                        {MONTH_LABELS.map((m) => (
+                        {monthShortLabels.map((m) => (
                           <th key={m} className="px-2 py-2 text-end font-semibold">{m}</th>
                         ))}
                       </tr>
@@ -319,20 +361,20 @@ const FinancialReports = () => {
                         {(budgetVsActual.rows || []).map((row) => (
                         <tr key={row.accountId} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50/40">
                           <td className="px-3 py-2 font-medium">{row.accountCode} — {row.accountName}</td>
-                          <td className="px-3 py-2 text-end tabular-nums">{fmt(row.budgetAnnual)}</td>
+                          <td className="px-3 py-2 text-end tabular-nums">{formatAmount(row.budgetAnnual)}</td>
                           {row.months.map((m) => {
                             const diff = row.accountType === "Revenue" ? m.actual - m.budget : m.budget - m.actual;
                             return (
                               <td key={m.month} className="px-2 py-2 text-end tabular-nums">
                                 {m.budget > 0 ? (
                                   <div>
-                                    <div className="text-slate-600 dark:text-white/70">{fmt(m.actual)}</div>
+                                    <div className="text-slate-600 dark:text-white/70">{formatAmount(m.actual)}</div>
                                     <div className={`text-[10px] ${diff >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-                                      {diff >= 0 ? "▲" : "▼"} {fmt(Math.abs(diff))}
+                                      {diff >= 0 ? "▲" : "▼"} {formatAmount(Math.abs(diff))}
                                     </div>
                                   </div>
                                 ) : m.actual !== 0 ? (
-                                  <div className="text-slate-600 dark:text-white/70">{fmt(m.actual)}</div>
+                                  <div className="text-slate-600 dark:text-white/70">{formatAmount(m.actual)}</div>
                                 ) : <span className="text-slate-300">—</span>}
                               </td>
                             );

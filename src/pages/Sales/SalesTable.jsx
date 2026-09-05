@@ -13,7 +13,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
 import Table from "components/Table";
-import { tableRows } from "global/constant";
+import { tableRows, salePaymentStatusBadge, saleDeliveryStatusBadge } from "global/constant";
 import { deleteSaleInvoice } from "store/slices/saleInvoiceSlice";
 
 const SalesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, totalPages, onDeleted }) => {
@@ -27,25 +27,6 @@ const SalesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
   const handlePageClick = (event) => setPage?.(event.selected + 1);
 
   const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
-
-  const getStatusClass = (status) => {
-    const map = {
-      Pending: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
-      Partial: "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300",
-      Paid: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-    };
-    return map[status] || "bg-slate-100 text-slate-700 dark:bg-slate-500/20";
-  };
-
-  const getDeliveryStatusClass = (status) => {
-    const map = {
-      Pending: "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70",
-      InTransit: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
-      Delivered: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-      Cancelled: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300",
-    };
-    return map[status] || "bg-slate-100 text-slate-700 dark:bg-slate-500/20";
-  };
 
   const onDelete = (row) => popupRef.current?.openModal?.(row);
   const onConfirmDelete = async (row) => {
@@ -129,12 +110,12 @@ const SalesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
                       )}
                     </td>
                     <td className="px-4 py-4 align-middle">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusClass(row.paymentStatus)}`}>
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${salePaymentStatusBadge[row.paymentStatus] || salePaymentStatusBadge.Pending}`}>
                         {row.paymentStatus}
                       </span>
                     </td>
                     <td className="px-4 py-4 align-middle">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getDeliveryStatusClass(row.deliveryStatus)}`}>
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${saleDeliveryStatusBadge[row.deliveryStatus] || saleDeliveryStatusBadge.Pending}`}>
                         {row.deliveryStatus || "Pending"}
                       </span>
                     </td>

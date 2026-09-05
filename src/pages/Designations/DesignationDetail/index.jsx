@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { AiOutlineEdit } from "react-icons/ai";
 import Button from "components/Button";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
   fetchDesignationById,
@@ -18,7 +18,6 @@ import { SkeletonDetail } from "components/Skeleton";
 
 const { add_employee, view_employee } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
 
 const LEVEL_COLORS = {
   "C-Level":    "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
@@ -143,7 +142,7 @@ const DesignationDetail = () => {
               <div className="mt-6 pt-4 border-t border-slate-100 dark:border-white/10">
                 <p className="text-xs text-slate-400 mb-1">{t("designation:salary_range")}</p>
                 <p className="text-lg font-bold tabular-nums text-slate-800 dark:text-white">
-                  {fmt(des.minSalary)} – {fmt(des.maxSalary)}
+                  {formatAmount(des.minSalary)} – {formatAmount(des.maxSalary)}
                   <span className="text-sm font-normal text-slate-400 ml-1">{des.currency}</span>
                 </p>
               </div>
@@ -151,7 +150,7 @@ const DesignationDetail = () => {
               <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10">
                 <p className="text-xs text-slate-400 mb-1">{t("designation:overtime_rate")}</p>
                 <p className="text-lg font-bold tabular-nums text-slate-800 dark:text-white">
-                  {fmt(des.overtimeRate)}
+                  {formatAmount(des.overtimeRate)}
                   <span className="text-sm font-normal text-slate-400 ml-1">{des.currency}/hr</span>
                 </p>
               </div>

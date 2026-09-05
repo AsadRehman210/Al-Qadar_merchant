@@ -8,7 +8,8 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, mapCoaToOptions } from "global/helper";
+import { bankTxTypeOptions } from "global/constant";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
   fetchBankAccounts,
@@ -19,12 +20,6 @@ import {
 } from "store/slices/financeSlice";
 
 const { add_customer } = rafeeqi_role_ids;
-
-const TX_TYPES = (t) => [
-  { id: "deposit", title: t("finance:tx_deposit") },
-  { id: "withdrawal", title: t("finance:tx_withdrawal") },
-  { id: "bank_charge", title: t("finance:tx_bank_charge") },
-];
 
 // A bank entry is a manual journal entry between the bank/cash account and a
 // contra account the user picks — it always posts through the same
@@ -45,14 +40,10 @@ const AddBankEntry = () => {
 
   const account = useMemo(() => accounts.find((a) => a.id === accountId), [accounts, accountId]);
 
-  const typeOpts = useMemo(() => TX_TYPES(t), [t]);
-  const [selType, setSelType] = useState(typeOpts[0]);
+  const [selType, setSelType] = useState(bankTxTypeOptions[0]);
 
   const contraOpts = useMemo(
-    () =>
-      coaAccounts
-        .filter((a) => a.id !== account?.chartAccountId)
-        .map((a) => ({ id: a.id, title: `${a.code} — ${a.name}` })),
+    () => mapCoaToOptions(coaAccounts.filter((a) => a.id !== account?.chartAccountId)),
     [coaAccounts, account],
   );
   const [selContra, setSelContra] = useState(null);
@@ -66,10 +57,6 @@ const AddBankEntry = () => {
       reference: "",
     },
   });
-
-  useEffect(() => {
-    setSelType((prev) => typeOpts.find((x) => x.id === prev.id) || typeOpts[0]);
-  }, [i18n.language, typeOpts]);
 
   useEffect(() => {
     if (!checkRoleAuth(add_customer)) {
@@ -143,33 +130,29 @@ const AddBankEntry = () => {
             {account.name} · {account.currency}
           </p>
           <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="text-sm font-medium mb-1 block">{t("finance:tx_type")}</label>
-              <SelectDropdown
-                data={typeOpts}
-                selected={selType}
-                setSelected={setSelType}
-                hideClear
-                classes="!h-[46px] !rounded-lg"
-              />
-            </div>
-            <FormInput label={t("finance:posted_date")} name="date" type="date" register={register} required />
-            <FormInput label={t("finance:amount")} name="amount" type="number" step="any" min={0} decimal decimalPlaces={3} maxLength={10} register={register} required />
-            <div>
-              <label className="text-sm font-medium mb-1 block">{t("finance:contra_account")}</label>
-              <SelectDropdown
-                data={contraOpts}
-                selected={selContra}
-                setSelected={setSelContra}
-                hideClear
-                placeholder={t("finance:select_contra_account")}
-                classes="!h-[46px] !rounded-lg"
-              />
-            </div>
+            <SelectDropdown
+              label={t("finance:tx_type")}
+              data={bankTxTypeOptions}
+              selected={selType}
+              setSelected={setSelType}
+              hideClear
+              classes="!h-[46px] !rounded-lg"
+            />
+            <FormInput label={t("finance:posted_date")} name="date" type="date" register={register} required max={new Date().toISOString().slice(0, 10)} />
+            <FormInput label={t("finance:amount")} name="amount" type="number" step="any" min={0.01} decimal decimalPlaces={3} maxLength={10} register={register} required />
+            <SelectDropdown
+              label={t("finance:contra_account")}
+              data={contraOpts}
+              selected={selContra}
+              setSelected={setSelContra}
+              hideClear
+              placeholder={t("finance:select_contra_account")}
+              classes="!h-[46px] !rounded-lg"
+            />
             <div className="md:col-span-2">
               <FormInput label={t("description")} name="description" maxLength={500} register={register} required />
             </div>
-            <FormInput label={t("finance:reference")} name="reference" pattern={/[A-Za-z0-9\-/]/} maxLength={100} register={register} />
+            <FormInput label={t("finance:reference")} name="reference" pattern={/[A-Za-z0-9\-/]/} minLength={2} maxLength={100} register={register} />
           </div>
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-200 dark:border-white/20">
             <Button type="button" title={t("cancel")} onClick={() => navigate(`/finance/bank-cash/account/${accountId}`)} />

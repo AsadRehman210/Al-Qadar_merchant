@@ -1,9 +1,5 @@
-export const STAGE_PIPELINE = ["Applied", "Screening", "Interview", "Offer", "Hired", "Rejected"];
+export { jobStatusOptions as JOB_STATUS_OPTS } from "global/constant";
 
-export const STAGE_PIPELINE_OPTS = STAGE_PIPELINE.map((s) => ({ id: s, title: s }));
+import { recruitmentStageOptions } from "global/constant";
 
-export const JOB_STATUS_OPTS = [
-  { id: "Open", title: "Open" },
-  { id: "On Hold", title: "On Hold" },
-  { id: "Closed", title: "Closed" },
-];
+export const STAGE_PIPELINE = recruitmentStageOptions.map((s) => s.id);

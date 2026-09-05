@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
-import { LEAVE_STATUS } from "./leaveFakeData";
+import { leaveStatusFilterOptions } from "global/constant";
 import { fetchLeaveTypes, showLeaveTypes } from "store/slices/leaveTypeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 
@@ -18,10 +18,7 @@ const LeaveFilter = ({ filters, setFilters }) => {
     dispatch(fetchDepartments());
   }, [dispatch]);
 
-  const statusOpts = [
-    { id: "all", title: "leave:all_status" },
-    ...Object.values(LEAVE_STATUS).map((v) => ({ id: v, title: v })),
-  ];
+  const statusOpts = leaveStatusFilterOptions;
   const typeOpts = [
     { id: "all", title: "leave:all_types" },
     ...leaveTypes.filter((x) => x.status === "Active").map((x) => ({

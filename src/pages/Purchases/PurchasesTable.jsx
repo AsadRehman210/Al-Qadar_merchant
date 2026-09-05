@@ -12,7 +12,7 @@ import Table from "components/Table";
 import SelectDropdown from "components/SelectDropdown";
 import ReactPaginate from "react-paginate";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import { paymentStatusBadge, tableRows } from "global/constant";
+import { paymentStatusBadge, purchaseStatusBadge, tableRows } from "global/constant";
 
 const PurchasesTable = ({
   data,
@@ -34,16 +34,6 @@ const PurchasesTable = ({
   const handlePageClick = (event) => setPage?.(event.selected + 1);
 
   const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
-
-  const getStatusClass = (status) => {
-    const map = {
-      Draft: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
-      Ordered: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
-      Transit: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300",
-      Received: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-    };
-    return map[status] || "bg-slate-100 text-slate-700 dark:bg-slate-500/20";
-  };
 
   const onDelete = (row) => { setRowToDelete(row); popupRef.current?.openModal?.(row); };
   const onConfirmDelete = async () => {
@@ -146,7 +136,7 @@ const PurchasesTable = ({
                   </td>
                   <td className="px-4 py-4 align-middle">
                     <span
-                      className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusClass(row.status)}`}
+                      className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${purchaseStatusBadge[row.status] || purchaseStatusBadge.Draft}`}
                     >
                       {row.status}
                     </span>

@@ -6,7 +6,12 @@ import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
 import { AiOutlineEdit } from "react-icons/ai";
 import SearchInput from "components/SearchInput";
-import { checkRoleAuth } from "global/helper";
+import { buildCoaTree, checkRoleAuth } from "global/helper";
+import {
+  coaAccountTypeBadge,
+  coaAccountTypeFilterOptions,
+  coaAccountSubTypeOptions,
+} from "global/constant";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { fetchChartOfAccounts, showChartOfAccounts, showChartOfAccountsLoading } from "store/slices/financeSlice";
 import FinancePage from "../FinancePage";
@@ -16,45 +21,9 @@ import { useListFilters } from "hooks/useListFilters";
 
 const { view_customer, add_customer } = rafeeqi_role_ids;
 
-const TYPE_COLORS = {
-  Asset:     "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
-  Liability: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300",
-  Equity:    "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
-  Revenue:   "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300",
-  Expense:   "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300",
-};
-
-const SUB_TYPE_LABELS = {
-  current_asset:        "Current Asset",
-  fixed_asset:          "Fixed Asset",
-  current_liability:    "Current Liability",
-  long_term_liability:  "Long-Term Liability",
-  retained_earnings:    "Retained Earnings",
-  other_equity:         "Other Equity",
-  operating_revenue:    "Operating Revenue",
-  other_revenue:        "Other Revenue",
-  cogs:                 "Cost of Goods Sold",
-  operating_expense:    "Operating Expense",
-  tax_expense:          "Tax Expense",
-  vat_payable:          "VAT Payable",
-  vat_receivable:       "VAT Receivable",
-};
-
-// Flattens accounts into parent-first order with a `depth` for indentation —
-// same shape the old fake-data helper produced, now computed over real rows.
-const buildTree = (accounts) => {
-  const roots = accounts.filter((a) => !a.parentId);
-  const childrenOf = (parentId) => accounts.filter((a) => a.parentId === parentId);
-  const flatten = (nodes, depth = 0) => {
-    const result = [];
-    for (const node of nodes) {
-      result.push({ ...node, depth });
-      result.push(...flatten(childrenOf(node.id), depth + 1));
-    }
-    return result;
-  };
-  return flatten(roots);
-};
+const SUB_TYPE_LABELS = Object.fromEntries(
+  coaAccountSubTypeOptions.map((o) => [o.id, o.title]),
+);
 
 const ChartOfAccounts = () => {
   const { t } = useTranslation();
@@ -68,8 +37,6 @@ const ChartOfAccounts = () => {
     dispatch(fetchChartOfAccounts());
   }, [dispatch]);
 
-  const typeOpts = ["All", "Asset", "Liability", "Equity", "Revenue", "Expense"];
-
   const rows = useMemo(() => {
     const q = filters.search.trim().toLowerCase();
     if (q || filters.filterType !== "All") {
@@ -79,7 +46,7 @@ const ChartOfAccounts = () => {
         return matchType && matchQ;
       }).map((a) => ({ ...a, depth: 0 }));
     }
-    return buildTree(accounts);
+    return buildCoaTree(accounts);
   }, [filters.search, filters.filterType, accounts]);
 
   return (
@@ -107,13 +74,13 @@ const ChartOfAccounts = () => {
               <SearchInput placeholder={t("finance:search_placeholder")} onSearch={(v) => setFilters({ search: v })} initialValue={filters.search} />
             </div>
             <div className="flex flex-wrap gap-2">
-              {typeOpts.map((tp) => (
+              {coaAccountTypeFilterOptions.map((opt) => (
                 <button
-                  key={tp}
-                  onClick={() => setFilters({ filterType: tp })}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${filters.filterType === tp ? "bg-teal-600 text-white" : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 hover:bg-teal-50"}`}
+                  key={opt.id}
+                  onClick={() => setFilters({ filterType: opt.id })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${filters.filterType === opt.id ? "bg-teal-600 text-white" : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 hover:bg-teal-50"}`}
                 >
-                  {tp}
+                  {opt.title}
                 </button>
               ))}
             </div>
@@ -149,7 +116,7 @@ const ChartOfAccounts = () => {
                         </td>
                         <td className="px-4 py-4 align-middle font-medium">{row.name}</td>
                         <td className="px-4 py-4 align-middle">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${TYPE_COLORS[row.type] || ""}`}>{row.type}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${coaAccountTypeBadge[row.type] || ""}`}>{row.type}</span>
                         </td>
                         <td className="px-4 py-4 align-middle text-xs text-slate-500 dark:text-white/60">{SUB_TYPE_LABELS[row.subType] || row.subType || "—"}</td>
                         <td className="px-4 py-4 align-middle text-xs text-slate-500 dark:text-white/60">{parentAcc ? `${parentAcc.code} — ${parentAcc.name}` : "—"}</td>

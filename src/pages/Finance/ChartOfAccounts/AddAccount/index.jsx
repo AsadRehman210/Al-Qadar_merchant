@@ -8,7 +8,12 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, mapCoaToOptions } from "global/helper";
+import {
+  coaAccountTypeOptions,
+  coaAccountSubTypeOptions,
+  coaAccountStatusOptions,
+} from "global/constant";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
   fetchChartOfAccounts,
@@ -18,35 +23,6 @@ import {
 } from "store/slices/financeSlice";
 
 const { add_customer, edit_customer } = rafeeqi_role_ids;
-
-const TYPE_OPTS = [
-  { id: "Asset",     title: "finance:type_asset" },
-  { id: "Liability", title: "finance:type_liability" },
-  { id: "Equity",    title: "finance:type_equity" },
-  { id: "Revenue",   title: "finance:type_revenue" },
-  { id: "Expense",   title: "finance:type_expense" },
-];
-
-const SUB_TYPE_OPTS = [
-  { id: "current_asset",       title: "Current Asset",        forTypes: ["Asset"] },
-  { id: "fixed_asset",         title: "Fixed Asset",          forTypes: ["Asset"] },
-  { id: "vat_receivable",      title: "VAT Receivable",       forTypes: ["Asset"] },
-  { id: "current_liability",   title: "Current Liability",    forTypes: ["Liability"] },
-  { id: "long_term_liability", title: "Long-Term Liability",  forTypes: ["Liability"] },
-  { id: "vat_payable",         title: "VAT Payable",          forTypes: ["Liability"] },
-  { id: "retained_earnings",   title: "Retained Earnings",    forTypes: ["Equity"] },
-  { id: "other_equity",        title: "Other Equity",         forTypes: ["Equity"] },
-  { id: "operating_revenue",   title: "Operating Revenue",    forTypes: ["Revenue"] },
-  { id: "other_revenue",       title: "Other Revenue",        forTypes: ["Revenue"] },
-  { id: "cogs",                title: "Cost of Goods Sold",   forTypes: ["Expense"] },
-  { id: "operating_expense",   title: "Operating Expense",    forTypes: ["Expense"] },
-  { id: "tax_expense",         title: "Tax Expense",          forTypes: ["Expense"] },
-];
-
-const STATUS_OPTS = [
-  { id: "Active",   title: "product:status_active" },
-  { id: "Inactive", title: "product:status_inactive" },
-];
 
 const AddAccount = () => {
   const { t, i18n } = useTranslation();
@@ -61,23 +37,21 @@ const AddAccount = () => {
 
   const existing = useMemo(() => accounts.find((a) => a.id === id), [id, accounts]);
 
-  const [selType, setSelType]     = useState(TYPE_OPTS[0]);
+  const [selType, setSelType]     = useState(coaAccountTypeOptions[0]);
   const [selSubType, setSelSubType] = useState(null);
   const [selParent, setSelParent] = useState(null);
-  const [selStatus, setSelStatus] = useState(STATUS_OPTS[0]);
+  const [selStatus, setSelStatus] = useState(coaAccountStatusOptions[0]);
   const [submitting, setSubmitting] = useState(false);
 
   const filteredSubTypes = useMemo(
-    () => SUB_TYPE_OPTS.filter((s) => s.forTypes.includes(selType?.id)),
+    () => coaAccountSubTypeOptions.filter((s) => s.forTypes.includes(selType?.id)),
     [selType],
   );
 
   const parentOpts = useMemo(
     () => [
       { id: "", title: "— None (root account) —" },
-      ...accounts
-        .filter((a) => !a.parentId && a.id !== id)
-        .map((a) => ({ id: a.id, title: `${a.code} — ${a.name}` })),
+      ...mapCoaToOptions(accounts.filter((a) => !a.parentId && a.id !== id)),
     ],
     [id, accounts],
   );
@@ -87,10 +61,10 @@ const AddAccount = () => {
   useEffect(() => {
     if (existing) {
       reset({ code: existing.code, name: existing.name });
-      setSelType(TYPE_OPTS.find((x) => x.id === existing.type) || TYPE_OPTS[0]);
-      setSelSubType(SUB_TYPE_OPTS.find((x) => x.id === existing.subType) || null);
+      setSelType(coaAccountTypeOptions.find((x) => x.id === existing.type) || coaAccountTypeOptions[0]);
+      setSelSubType(coaAccountSubTypeOptions.find((x) => x.id === existing.subType) || null);
       setSelParent(parentOpts.find((x) => x.id === existing.parentId) || parentOpts[0]);
-      setSelStatus(STATUS_OPTS.find((x) => x.id === existing.status) || STATUS_OPTS[0]);
+      setSelStatus(coaAccountStatusOptions.find((x) => x.id === existing.status) || coaAccountStatusOptions[0]);
     }
   }, [existing, reset, parentOpts]);
 
@@ -105,6 +79,10 @@ const AddAccount = () => {
   }, [id, navigate, t]);
 
   const onSubmit = async (data) => {
+    if (!id && filteredSubTypes.length && !selSubType?.id) {
+      toast.error(t("finance:sub_type_required", { defaultValue: "Sub-type is required" }));
+      return;
+    }
     setSubmitting(true);
     try {
       if (id) {
@@ -166,55 +144,49 @@ const AddAccount = () => {
             <FormInput label={t("finance:account_name")} name="name" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={150} register={register} required />
 
             {/* Account Type */}
-            <div>
-              <label className="text-sm font-medium text-linkText mb-1 block">{t("finance:account_type")}</label>
-              <SelectDropdown
-                data={TYPE_OPTS}
-                selected={selType}
-                setSelected={(opt) => { setSelType(opt); setSelSubType(null); }}
-                hideClear
-                disabled={!!id}
-                classes="!h-[46px] !rounded-lg"
-              />
-            </div>
+            <SelectDropdown
+              label={t("finance:account_type")}
+              data={coaAccountTypeOptions}
+              selected={selType}
+              setSelected={(opt) => { setSelType(opt); setSelSubType(null); }}
+              hideClear
+              disabled={!!id}
+              classes="!h-[46px] !rounded-lg"
+            />
 
             {/* Sub-type */}
-            <div>
-              <label className="text-sm font-medium text-linkText mb-1 block">{t("finance:coa_sub_type")}</label>
-              <SelectDropdown
-                data={filteredSubTypes}
-                selected={selSubType}
-                setSelected={setSelSubType}
-                classes="!h-[46px] !rounded-lg"
-                placeholder={t("finance:select_sub_type")}
-                disabled={!!id}
-              />
-            </div>
+            <SelectDropdown
+              label={t("finance:coa_sub_type")}
+              data={filteredSubTypes}
+              selected={selSubType}
+              setSelected={setSelSubType}
+              classes="!h-[46px] !rounded-lg"
+              placeholder={t("finance:select_sub_type")}
+              disabled={!!id}
+              hideClear={filteredSubTypes.length > 0}
+              required={filteredSubTypes.length > 0}
+            />
 
             {/* Parent Account */}
-            <div>
-              <label className="text-sm font-medium text-linkText mb-1 block">{t("finance:coa_parent")}</label>
-              <SelectDropdown
-                data={parentOpts}
-                selected={selParent || parentOpts[0]}
-                setSelected={setSelParent}
-                hideClear
-                disabled={!!id}
-                classes="!h-[46px] !rounded-lg"
-              />
-            </div>
+            <SelectDropdown
+              label={t("finance:coa_parent")}
+              data={parentOpts}
+              selected={selParent || parentOpts[0]}
+              setSelected={setSelParent}
+              hideClear
+              disabled={!!id}
+              classes="!h-[46px] !rounded-lg"
+            />
 
             {/* Status */}
-            <div>
-              <label className="text-sm font-medium text-linkText mb-1 block">{t("product:status")}</label>
-              <SelectDropdown
-                data={STATUS_OPTS}
-                selected={selStatus}
-                setSelected={setSelStatus}
-                hideClear
-                classes="!h-[46px] !rounded-lg"
-              />
-            </div>
+            <SelectDropdown
+              label={t("product:status")}
+              data={coaAccountStatusOptions}
+              selected={selStatus}
+              setSelected={setSelStatus}
+              hideClear
+              classes="!h-[46px] !rounded-lg"
+            />
           </div>
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-200 dark:border-white/20">
             <Button type="button" title={t("cancel")} onClick={() => navigate("/finance/coa")} />

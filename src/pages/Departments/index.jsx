@@ -20,8 +20,6 @@ import {
 
 const { add_employee, view_employee } = rafeeqi_role_ids;
 
-const STATUS_OPTS = statusFilterOptions;
-
 const Departments = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -30,10 +28,10 @@ const Departments = () => {
     page: 1,
     limitId: tableRows[0].id,
     search: "",
-    statusId: STATUS_OPTS[0].id,
+    statusId: statusFilterOptions[0].id,
   });
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
-  const selStatus = STATUS_OPTS.find((o) => o.id === filters.statusId) || STATUS_OPTS[0];
+  const selStatus = statusFilterOptions.find((o) => o.id === filters.statusId) || statusFilterOptions[0];
 
   const departments = useSelector(showDepartments);
   const totalRecords = useSelector(showDepartmentsTotal);
@@ -97,9 +95,9 @@ const Departments = () => {
                 </div>
                 <div className="w-full sm:w-48">
                   <SelectDropdown
-                    data={STATUS_OPTS}
+                    data={statusFilterOptions}
                     selected={selStatus}
-                    setSelected={(v) => setFilters({ statusId: (v || STATUS_OPTS[0]).id, page: 1 })}
+                    setSelected={(v) => setFilters({ statusId: (v || statusFilterOptions[0]).id, page: 1 })}
                     hideClear
                     classes="!h-10 !rounded-lg"
                   />

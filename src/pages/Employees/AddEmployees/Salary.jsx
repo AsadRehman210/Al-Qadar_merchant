@@ -21,21 +21,18 @@ import {
   HiOutlineMinusCircle,
   HiOutlinePlusCircle,
 } from "react-icons/hi2";
-
-const PAYMENT_STATUS_OPTIONS = [
-  { id: "pending", title: "Pending" },
-  { id: "processing", title: "Processing" },
-  { id: "paid", title: "Paid" },
-];
-
-import { salaryAllowanceKeys as ALLOWANCE_KEYS, salaryDeductionKeys as DEDUCTION_KEYS } from "global/constant";
+import {
+  salaryAllowanceKeys as ALLOWANCE_KEYS,
+  salaryDeductionKeys as DEDUCTION_KEYS,
+  salaryPaymentStatusOptions,
+} from "global/constant";
 
 const Salary = ({ setSelectedIndex, id }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { register, watch, getValues, setValue, trigger, formState: { errors } } = useFormContext();
-  const [selPaymentStatus, setSelPaymentStatus] = useState(PAYMENT_STATUS_OPTIONS[0]);
+  const [selPaymentStatus, setSelPaymentStatus] = useState(salaryPaymentStatusOptions[0]);
   const [selPaymentDate, setSelPaymentDate] = useState("");
   const [selEffectiveFrom, setSelEffectiveFrom] = useState("");
   const [selEffectiveTo, setSelEffectiveTo] = useState("");
@@ -84,8 +81,8 @@ const Salary = ({ setSelectedIndex, id }) => {
     setValue("salary_notes", currentSalary.salary_notes || "");
 
     const status =
-      PAYMENT_STATUS_OPTIONS.find((o) => o.id === currentSalary.payment_status) ||
-      PAYMENT_STATUS_OPTIONS[0];
+      salaryPaymentStatusOptions.find((o) => o.id === currentSalary.payment_status) ||
+      salaryPaymentStatusOptions[0];
     setSelPaymentStatus(status);
     setValue("payment_status", status.id);
 
@@ -152,6 +149,13 @@ const Salary = ({ setSelectedIndex, id }) => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    const salaryValid = await trigger(["basic_salary", "bank_name", "branch_name", "account_no"]);
+    if (!salaryValid) return;
+    if (selEffectiveFrom && selEffectiveTo
+      && moment(selEffectiveTo, "DD-MM-YYYY").isBefore(moment(selEffectiveFrom, "DD-MM-YYYY"))) {
+      toast.error(t("employees:effective_to_after_from", "Effective to must be on or after effective from"));
+      return;
+    }
     setSubmitting(true);
     try {
       const formData = getValues();
@@ -318,7 +322,8 @@ const Salary = ({ setSelectedIndex, id }) => {
               register={register}
               errors={errors}
               defaultValue={0}
-              min={0}
+              required
+              min={0.01}
               decimal
               decimalPlaces={3}
               maxLength={10}
@@ -591,6 +596,7 @@ const Salary = ({ setSelectedIndex, id }) => {
               register={register}
               errors={errors}
               defaultValue="Al Rajhi Bank"
+              pattern={/[a-zA-Z\s.'-]/}
               minLength={2}
               maxLength={100}
             />
@@ -600,6 +606,7 @@ const Salary = ({ setSelectedIndex, id }) => {
               register={register}
               errors={errors}
               defaultValue="Main Branch – Riyadh"
+              pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
               maxLength={100}
             />
@@ -619,7 +626,8 @@ const Salary = ({ setSelectedIndex, id }) => {
               register={register}
               errors={errors}
               defaultValue="****1234"
-              minLength={4}
+              pattern={/[0-9]/}
+              minLength={8}
               maxLength={34}
             />
             <FormInput
@@ -642,7 +650,7 @@ const Salary = ({ setSelectedIndex, id }) => {
             />
             <SelectDropdown
               label={t("employees:payment_status")}
-              data={PAYMENT_STATUS_OPTIONS}
+              data={salaryPaymentStatusOptions}
               selected={selPaymentStatus}
               setSelected={setSelPaymentStatus}
               name="payment_status"
@@ -694,6 +702,8 @@ const Salary = ({ setSelectedIndex, id }) => {
                 selected={selEffectiveTo}
                 setSelected={setSelEffectiveTo}
                 isDefaultSelection={false}
+                min={selEffectiveFrom || undefined}
+                minErrorMessage={t("employees:effective_to_after_from", "Effective to must be on or after effective from")}
               />
             </div>
           </div>

@@ -13,15 +13,11 @@ import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { tableRows } from "global/constant";
-import {
-  EMPLOYEE_STATUS_BADGE,
-  EMPLOYEE_STATUS_OPTIONS,
-} from "./employeesFakeData";
+import { tableRows, employeeStatusOptions, employeeStatusBadge } from "global/constant";
 import { deleteEmployee } from "store/slices/employeeSlice";
 
 const statusLabel = (id) =>
-  EMPLOYEE_STATUS_OPTIONS.find((s) => s.id === id)?.title || id;
+  employeeStatusOptions.find((s) => s.id === id)?.title || id;
 
 const { view_employee, edit_employee, delete_employee } = rafeeqi_role_ids;
 
@@ -116,7 +112,7 @@ const EmployeesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows,
                     <td className="px-4 py-4 align-middle">
                       <span
                         className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
-                          EMPLOYEE_STATUS_BADGE[emp.status] ||
+                          employeeStatusBadge[emp.status] ||
                           "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70"
                         }`}
                       >

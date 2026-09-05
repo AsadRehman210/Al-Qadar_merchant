@@ -1,30 +1,17 @@
 import { useTranslation } from "react-i18next";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
+import { loanStatusFilterOptions, loanTypeFilterOptions } from "global/constant";
 
 const LoansFilter = ({ filters, setFilters }) => {
   const { t } = useTranslation();
 
-  const statusTypes = [
-    { title: "loans:all_status", id: "all" },
-    { title: "requests:step_manager", id: "Pending Manager" },
-    { title: "requests:step_hr", id: "Pending HR" },
-    { title: "loans:pending", id: "Pending" },
-    { title: "loans:approved", id: "Approved" },
-    { title: "loans:ongoing", id: "Ongoing" },
-    { title: "loans:completed", id: "Completed" },
-  ];
-
-  const loanTypes = [
-    { title: "loans:all_types", id: "all" },
-    { title: "loans:advance_salary", id: "Advance Salary" },
-    { title: "loans:emi_loan", id: "EMI Loan" },
-  ];
-
   const selectedStatus =
-    statusTypes.find((s) => s.id === (filters.filterStatus || "all")) || statusTypes[0];
+    loanStatusFilterOptions.find((s) => s.id === (filters.filterStatus || "all")) ||
+    loanStatusFilterOptions[0];
   const selectedType =
-    loanTypes.find((lt) => lt.id === (filters.filterLoanType || "all")) || loanTypes[0];
+    loanTypeFilterOptions.find((lt) => lt.id === (filters.filterLoanType || "all")) ||
+    loanTypeFilterOptions[0];
 
   const handleStatusChange = (status) => {
     setFilters({ page: 1, filterStatus: status.id === "all" ? null : status.id });
@@ -49,7 +36,7 @@ const LoansFilter = ({ filters, setFilters }) => {
       </div>
       <div className="w-full sm:w-48">
         <SelectDropdown
-          data={loanTypes}
+          data={loanTypeFilterOptions}
           selected={selectedType}
           setSelected={handleTypeChange}
           classes="!h-10 !rounded-lg"
@@ -57,7 +44,7 @@ const LoansFilter = ({ filters, setFilters }) => {
       </div>
       <div className="w-full sm:w-48">
         <SelectDropdown
-          data={statusTypes}
+          data={loanStatusFilterOptions}
           selected={selectedStatus}
           setSelected={handleStatusChange}
           classes="!h-10 !rounded-lg"

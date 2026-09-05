@@ -7,6 +7,7 @@ import {
 import { FiCreditCard, FiCalendar } from "react-icons/fi";
 
 import { salaryAllowanceKeys as ALLOWANCE_KEYS, salaryDeductionKeys as DEDUCTION_KEYS } from "global/constant";
+import { formatAmount } from "global/helper";
 
 // `salary` is the employee's real, current /api/salary/employee/:id record —
 // allowances/deductions are nested objects there (see salary-model.ts), not
@@ -66,8 +67,6 @@ const SalaryTab = ({ salary }) => {
     </div>
   );
 
-  const formatAmount = (val) =>
-    typeof val === "number" ? val.toLocaleString() : (parseFloat(val) || 0).toLocaleString();
 
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString() : "-");
 

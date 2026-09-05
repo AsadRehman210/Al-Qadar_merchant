@@ -18,20 +18,16 @@ import {
   showCurrentPurchaseInvoiceLoading,
 } from "store/slices/purchaseInvoiceSlice";
 import { SkeletonDetail } from "components/Skeleton";
-import { paymentStatusBadge } from "global/constant";
-import { lineTotal } from "../purchaseInvoiceHelpers";
+import { checkRoleAuth, formatAmount, lineTotal } from "global/helper";
+import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { paymentStatusBadge, purchaseStatusBadge, purchaseStatusOptions } from "global/constant";
+
+const { status_purchase_invoice } = rafeeqi_role_ids;
 import PurchaseInvoicePreviewModal from "../PurchaseInvoicePreviewModal";
 import InvoiceDetailsTab from "./InvoiceDetailsTab";
 import PaymentHistoryTab from "./PaymentHistoryTab";
 import ReturnsTab from "./ReturnsTab";
 import NotesTab from "./NotesTab";
-
-const STATUS_OPTS = [
-  { title: "Draft", id: "Draft" },
-  { title: "Ordered", id: "Ordered" },
-  { title: "Transit", id: "Transit" },
-  { title: "Received", id: "Received" },
-];
 
 const TAB_CLASS =
   "min-w-[140px] whitespace-nowrap cursor-pointer py-3 px-5 rounded-lg h-11 flex justify-center items-center font-medium text-sm text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:text-white data-[selected]:font-semibold hover:text-teal-700 hover:bg-teal-500/10 dark:hover:text-white dark:hover:bg-teal-500/20";
@@ -43,7 +39,7 @@ const PurchaseDetail = () => {
   const { id } = useParams();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [showStatusEdit, setShowStatusEdit] = useState(false);
-  const [selNewStatus, setSelNewStatus] = useState(STATUS_OPTS[0]);
+  const [selNewStatus, setSelNewStatus] = useState(purchaseStatusOptions[0]);
 
   const invoice = useSelector(showCurrentPurchaseInvoice);
   const invoiceLoading = useSelector(showCurrentPurchaseInvoiceLoading);
@@ -52,8 +48,6 @@ const PurchaseDetail = () => {
   useEffect(() => {
     if (id) dispatch(fetchPurchaseInvoiceById(id));
   }, [id, dispatch]);
-
-  const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
   if (invoiceLoading && !invoice) {
     return (
@@ -106,6 +100,13 @@ const PurchaseDetail = () => {
               <h1 className="text-3xl font-bold tracking-tight">
                 {invoice.invoiceNumber}
               </h1>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                  purchaseStatusBadge[invoice.status] || purchaseStatusBadge.Draft
+                }`}
+              >
+                {invoice.status || "—"}
+              </span>
               <span
                 className={`px-3 py-1 rounded-full text-xs font-semibold ${
                   paymentStatusBadge[invoice.paymentStatus] || paymentStatusBadge.Pending
@@ -166,16 +167,18 @@ const PurchaseDetail = () => {
                 <span className="text-[10px] font-normal text-white/80">PDF</span>
               </span>
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSelNewStatus(STATUS_OPTS.find((o) => o.id === invoice.status) || STATUS_OPTS[0]);
-                setShowStatusEdit(!showStatusEdit);
-              }}
-              className="px-4 py-2 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-50"
-            >
-              {t("purchase:update_status")}
-            </button>
+            {checkRoleAuth(status_purchase_invoice) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelNewStatus(purchaseStatusOptions.find((o) => o.id === invoice.status) || purchaseStatusOptions[0]);
+                  setShowStatusEdit(!showStatusEdit);
+                }}
+                className="px-4 py-2 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-50"
+              >
+                {t("purchase:update_status")}
+              </button>
+            )}
             <Button
               title={t("edit")}
               icon={FaRegEdit}
@@ -187,14 +190,15 @@ const PurchaseDetail = () => {
           </div>
         </div>
 
-        {showStatusEdit && (
+        {checkRoleAuth(status_purchase_invoice) && showStatusEdit && (
           <div className="mb-5 p-4 rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-500/10 flex flex-wrap items-end gap-3">
             <div className="min-w-[160px]">
-              <label className="text-xs font-medium text-linkText block mb-1">{t("purchase:status")}</label>
               <SelectDropdown
-                data={STATUS_OPTS}
+                label={t("purchase:status")}
+                labelClass="!text-xs"
+                data={purchaseStatusOptions}
                 selected={selNewStatus}
-                setSelected={(o) => setSelNewStatus(o || STATUS_OPTS[0])}
+                setSelected={(o) => setSelNewStatus(o || purchaseStatusOptions[0])}
                 hideClear
                 classes="!h-9 !rounded-md"
               />

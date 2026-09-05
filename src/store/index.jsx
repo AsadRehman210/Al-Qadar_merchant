@@ -39,6 +39,7 @@ import categorySlice from "./slices/categorySlice";
 import productSlice from "./slices/productSlice";
 import variantSlice from "./slices/variantSlice";
 import productionSlice from "./slices/productionSlice";
+import quarantineLotSlice from "./slices/quarantineLotSlice";
 import stockSlice from "./slices/stockSlice";
 import stockBatchSlice from "./slices/stockBatchSlice";
 import warehouseSlice from "./slices/warehouseSlice";
@@ -52,6 +53,8 @@ import creditNoteSlice from "./slices/creditNoteSlice";
 import purchaseInvoiceSlice from "./slices/purchaseInvoiceSlice";
 import debitNoteSlice from "./slices/debitNoteSlice";
 import geoSlice from "./slices/geoSlice";
+import roleSlice from "./slices/roleSlice";
+import erpUserSlice from "./slices/userSlice";
 
 // Create the encryptor using the correct import
 const encryptor = encryptTransform({
@@ -105,6 +108,7 @@ const rootReducer = combineReducers({
   product: productSlice,
   variant: variantSlice,
   production: productionSlice,
+  quarantineLot: quarantineLotSlice,
   stock: stockSlice,
   stockBatch: stockBatchSlice,
   warehouse: warehouseSlice,
@@ -118,6 +122,8 @@ const rootReducer = combineReducers({
   purchaseInvoice: purchaseInvoiceSlice,
   debitNote: debitNoteSlice,
   geo: geoSlice,
+  role: roleSlice,
+  erpUser: erpUserSlice,
 });
 
 // Wrap rootReducer with persistReducer

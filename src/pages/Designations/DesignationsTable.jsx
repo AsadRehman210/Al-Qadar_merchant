@@ -6,7 +6,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
 import { tableRows } from "global/constant";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import Table from "components/Table";
 
@@ -24,7 +24,6 @@ const LEVEL_COLORS = {
 const DesignationsTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, totalPages }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
   const list = data || [];
 
   const handlePageClick = (event) => setPage?.(event.selected + 1);
@@ -63,7 +62,7 @@ const DesignationsTable = ({ data, loading, page = 1, setPage, selRows, setSelRo
                   </td>
                   <td className="px-4 py-4 align-middle text-xs text-slate-500">{row.grade}</td>
                   <td className="px-4 py-4 align-middle text-end tabular-nums text-xs text-slate-600 dark:text-white/70">
-                    {fmt(row.minSalary)} – {fmt(row.maxSalary)} {row.currency}
+                    {formatAmount(row.minSalary)} – {formatAmount(row.maxSalary)} {row.currency}
                   </td>
                   <td className="px-4 py-4 align-middle text-center">
                     <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300 text-xs font-bold">

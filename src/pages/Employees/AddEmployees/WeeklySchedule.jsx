@@ -4,6 +4,7 @@ import { useFormContext } from "react-hook-form";
 import { FiClock } from "react-icons/fi";
 
 import { weekdayLabelKeys as DAY_LABEL_KEY } from "global/constant";
+import FormInput from "components/FormInput";
 
 /**
  * Day-by-day working hours for one employee — replaces the old single
@@ -65,17 +66,17 @@ const WeeklySchedule = ({ value, onChange }) => {
             </button>
             {d.isWorking ? (
               <>
-                <input
+                <FormInput
                   type="time"
                   value={d.start}
-                  onChange={(e) => updateDay(idx, { start: e.target.value })}
-                  className="h-9 rounded-lg border border-[#E0E5F2] dark:border-white/20 bg-white dark:bg-white/10 px-2 text-sm text-slate-900 dark:text-white"
+                  onValueChange={(v) => updateDay(idx, { start: v })}
+                  inputClass="!h-9 !rounded-lg !px-2"
                 />
-                <input
+                <FormInput
                   type="time"
                   value={d.end}
-                  onChange={(e) => updateDay(idx, { end: e.target.value })}
-                  className="h-9 rounded-lg border border-[#E0E5F2] dark:border-white/20 bg-white dark:bg-white/10 px-2 text-sm text-slate-900 dark:text-white"
+                  onValueChange={(v) => updateDay(idx, { end: v })}
+                  inputClass="!h-9 !rounded-lg !px-2"
                 />
               </>
             ) : (

@@ -8,7 +8,8 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, formatAmount, mapCoaToOptions } from "global/helper";
+import { financePaymentDirectionOptions } from "global/constant";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
   fetchBankAccounts,
@@ -24,7 +25,6 @@ import {
 
 const { add_customer } = rafeeqi_role_ids;
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
 
 // A Payment is the one shared write path for cash-in/cash-out — recording
 // one against an invoice/bill is what actually advances its paidToDate and
@@ -60,7 +60,7 @@ const AddPayment = () => {
   const bankOpts = useMemo(() => bankAccounts.map((a) => ({ id: a.id, title: `${a.name} (${a.currency})` })), [bankAccounts]);
   const [selBank, setSelBank] = useState(null);
 
-  const contraOpts = useMemo(() => coaAccounts.map((a) => ({ id: a.id, title: `${a.code} — ${a.name}` })), [coaAccounts]);
+  const contraOpts = useMemo(() => mapCoaToOptions(coaAccounts), [coaAccounts]);
   const [selContra, setSelContra] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -89,6 +89,15 @@ const AddPayment = () => {
     }
     if (!invoiceId && !billId && !selContra?.id) {
       toast.error(t("finance:invalid_data"));
+      return;
+    }
+    const amt = parseFloat(data.amount);
+    if (!(amt > 0)) {
+      toast.error(t("finance:amount_required", { defaultValue: "Amount must be greater than 0" }));
+      return;
+    }
+    if (balanceDue != null && amt > Number(balanceDue)) {
+      toast.error(t("finance:amount_exceeds_balance", { defaultValue: "Amount cannot exceed the balance due" }));
       return;
     }
     setSubmitting(true);
@@ -143,7 +152,7 @@ const AddPayment = () => {
               </p>
               {balanceDue != null && (
                 <p className="text-lg font-bold tabular-nums mt-1">
-                  {t("finance:balance_due")}: {fmt(balanceDue)}
+                  {t("finance:balance_due")}: {formatAmount(balanceDue)}
                 </p>
               )}
             </div>
@@ -151,44 +160,36 @@ const AddPayment = () => {
 
           {!invoiceId && !billId && (
             <div className="mb-6 flex gap-2">
-              {[
-                { id: "receipt", label: t("finance:receipt") },
-                { id: "disbursement", label: t("finance:disbursement") },
-              ].map((opt) => (
+              {financePaymentDirectionOptions.map((opt) => (
                 <button
                   key={opt.id}
                   type="button"
                   onClick={() => setStandaloneDirection(opt.id)}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${standaloneDirection === opt.id ? "bg-teal-600 text-white" : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70"}`}
                 >
-                  {opt.label}
+                  {t(opt.title)}
                 </button>
               ))}
             </div>
           )}
 
           <div className="grid md:grid-cols-2 gap-6">
-            <FormInput label={t("finance:posted_date")} name="date" type="date" register={register} required />
-            <FormInput label={t("finance:amount")} name="amount" type="number" step="0.01" min={0} decimal decimalPlaces={3} maxLength={10} register={register} required />
-            <div>
-              <label className="text-sm font-medium mb-1 block">{t("finance:bank_title")}</label>
-              <SelectDropdown data={bankOpts} selected={selBank} setSelected={setSelBank} hideClear classes="!h-[46px] !rounded-lg" />
-            </div>
+            <FormInput label={t("finance:posted_date")} name="date" type="date" register={register} required max={new Date().toISOString().slice(0, 10)} />
+            <FormInput label={t("finance:amount")} name="amount" type="number" step="0.01" min={0.01} decimal decimalPlaces={3} maxLength={10} register={register} required />
+            <SelectDropdown label={t("finance:bank_title")} data={bankOpts} selected={selBank} setSelected={setSelBank} hideClear classes="!h-[46px] !rounded-lg" />
             {!invoiceId && !billId && (
-              <div>
-                <label className="text-sm font-medium mb-1 block">{t("finance:contra_account")}</label>
-                <SelectDropdown
-                  data={contraOpts}
-                  selected={selContra}
-                  setSelected={setSelContra}
-                  hideClear
-                  placeholder={t("finance:select_contra_account")}
-                  classes="!h-[46px] !rounded-lg"
-                />
-              </div>
+              <SelectDropdown
+                label={t("finance:contra_account")}
+                data={contraOpts}
+                selected={selContra}
+                setSelected={setSelContra}
+                hideClear
+                placeholder={t("finance:select_contra_account")}
+                classes="!h-[46px] !rounded-lg"
+              />
             )}
-            <FormInput label={t("finance:method")} name="method" register={register} />
-            <FormInput label={t("finance:reference")} name="reference" pattern={/[A-Za-z0-9\-/]/} maxLength={100} register={register} />
+            <FormInput label={t("finance:method")} name="method" pattern={/[a-zA-Z0-9\s.'-]/} maxLength={50} register={register} />
+            <FormInput label={t("finance:reference")} name="reference" pattern={/[A-Za-z0-9\-/]/} minLength={2} maxLength={100} register={register} />
           </div>
 
           <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-slate-200 dark:border-white/20">

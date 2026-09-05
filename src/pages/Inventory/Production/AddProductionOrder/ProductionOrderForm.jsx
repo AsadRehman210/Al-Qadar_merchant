@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
 import Button from "components/Button";
 import { HiOutlinePlusCircle, HiOutlineTrash } from "react-icons/hi2";
@@ -12,8 +13,7 @@ import { defaultRawLine, defaultOtherCostLine, computeProductionCost } from "../
 
 const fmtNum = (n) =>
   Number(n || 0).toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 6,
   });
 
 const variantOptionLabel = (v) => `${v.sku} — ${v.variantName || v.productName || ""}`.trim();
@@ -22,7 +22,7 @@ const variantOptionLabel = (v) => `${v.sku} — ${v.variantName || v.productName
 // Used twice on this page (raw materials, finished output) with different
 // productType — a single global Redux dropdown slot can't hold two
 // independent filtered lists at once, so state lives here instead.
-const useVariantPicker = (productType) => {
+const useVariantPicker = (productType, warehouseId) => {
   const dispatch = useDispatch();
   const [options, setOptions] = useState([]);
   const [page, setPage] = useState(1);
@@ -35,7 +35,7 @@ const useVariantPicker = (productType) => {
     async (nextPage, nextSearch) => {
       setLoading(true);
       const result = await dispatch(
-        fetchVariantsDropdown({ page: nextPage, search: nextSearch, productType }),
+        fetchVariantsDropdown({ page: nextPage, search: nextSearch, productType, warehouseId }),
       ).unwrap();
       const mapped = (result.result || []).map((v) => ({ ...v, title: variantOptionLabel(v) }));
       mapped.forEach((v) => { detailsRef.current[v.id] = v; });
@@ -44,13 +44,13 @@ const useVariantPicker = (productType) => {
       setHasMore(nextPage < (result.total_pages || 0));
       setLoading(false);
     },
-    [dispatch, productType],
+    [dispatch, productType, warehouseId],
   );
 
   useEffect(() => {
     load(1, "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [productType]);
+  }, [productType, warehouseId]);
 
   const onApiSearch = useCallback((value) => { setSearch(value); load(1, value); }, [load]);
   const onLoadMore = useCallback(() => { if (hasMore && !loading) load(page + 1, search); }, [hasMore, loading, load, page, search]);
@@ -66,6 +66,8 @@ const ProductionOrderForm = () => {
     control,
     watch,
     setValue,
+    trigger,
+    getValues,
     formState: { errors },
   } = useFormContext();
 
@@ -83,8 +85,10 @@ const ProductionOrderForm = () => {
     name: "otherCostLines",
   });
 
+  const warehouseId = watch("warehouseId");
+  const outputWarehouseId = watch("outputWarehouseId");
   const outputPicker = useVariantPicker("Finished Product");
-  const rawPicker = useVariantPicker("Raw Material");
+  const rawPicker = useVariantPicker("Raw Material", warehouseId || undefined);
 
   const [warehouseOptions, setWarehouseOptions] = useState([]);
   const [warehousePage, setWarehousePage] = useState(1);
@@ -110,7 +114,9 @@ const ProductionOrderForm = () => {
   }, []);
 
   const variantId = watch("outputVariantId");
-  const warehouseId = watch("warehouseId");
+  const quarantineLotId = watch("quarantineLotId");
+  const quarantineLotNumber = watch("quarantineLotNumber");
+  const isRenew = Boolean(quarantineLotId);
 
   const selVariant = useMemo(
     () => outputPicker.detailsRef.current[variantId] || outputPicker.options.find((o) => o.id === variantId) || {},
@@ -122,9 +128,34 @@ const ProductionOrderForm = () => {
     [warehouseOptions, warehouseId],
   );
 
+  const selOutputWarehouse = useMemo(
+    () => warehouseOptions.find((o) => o.id === outputWarehouseId) || null,
+    [warehouseOptions, outputWarehouseId],
+  );
+
   const watchedRawLines = useWatch({ control, name: "rawLines" });
   const watchedOtherCostLines = useWatch({ control, name: "otherCostLines" });
   const watchedOutputQuantity = useWatch({ control, name: "outputQuantity" });
+
+  useEffect(() => {
+    (watchedRawLines || []).forEach((line) => {
+      if (!line?.variantId) return;
+      const prev = rawPicker.detailsRef.current[line.variantId] || {};
+      rawPicker.detailsRef.current[line.variantId] = {
+        ...prev,
+        id: line.variantId,
+        sku: prev.sku || line.sku || "",
+        variantName: prev.variantName || line.variantName || "",
+        costPrice: prev.costPrice ?? line.costPrice,
+        title:
+          prev.title ||
+          variantOptionLabel({
+            sku: prev.sku || line.sku || "",
+            variantName: prev.variantName || line.variantName || "",
+          }),
+      };
+    });
+  }, [watchedRawLines]);
 
   const variantCostById = useMemo(() => {
     const map = new Map();
@@ -139,6 +170,16 @@ const ProductionOrderForm = () => {
 
   return (
     <div className="space-y-8">
+      {isRenew && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+            {t("production:renew_banner", { lot: quarantineLotNumber || "—" })}
+          </p>
+          <p className="text-xs text-amber-700/80 dark:text-amber-200/70 mt-1">
+            {t("production:renew_banner_desc")}
+          </p>
+        </div>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormInput
           label={t("production:scheduled_date")}
@@ -146,12 +187,20 @@ const ProductionOrderForm = () => {
           type="date"
           register={register}
           errors={errors}
+          required
         />
-        <div className="md:col-span-2">
-          <label className="text-sm font-medium text-linkText mb-1 block">
-            {t("production:finished_output")}
-          </label>
+        {isRenew ? (
+            <div>
+              <label className="text-sm font-medium text-linkText mb-1 block">
+                {t("production:finished_output")}
+              </label>
+              <div className="h-11 px-3 flex items-center rounded-xl border border-slate-200 dark:border-white/20 bg-slate-50 dark:bg-white/5 text-sm">
+                {watch("outputVariantName") || selVariant.title || "—"}
+              </div>
+            </div>
+          ) : (
           <SearchablePaginatedDropdown
+            label={t("production:finished_output")}
             data={outputPicker.options}
             selected={selVariant}
             setSelected={(opt) => setValue("outputVariantId", opt?.id ?? "", { shouldValidate: true })}
@@ -164,8 +213,14 @@ const ProductionOrderForm = () => {
             placeholder={t("product:select_product")}
             hideClear
             classes="!h-[46px] !rounded-lg"
+            name="outputVariantId"
+            register={register}
+            setValue={setValue}
+            trigger={trigger}
+            errors={errors}
+            required
           />
-        </div>
+          )}
         <FormInput
           label={t("production:output_quantity")}
           name="outputQuantity"
@@ -173,17 +228,40 @@ const ProductionOrderForm = () => {
           register={register}
           errors={errors}
           placeholder="0"
-          min={0}
+          min={0.01}
           decimal
           decimalPlaces={2}
+          required
+        />
+        <FormInput
+          label={t("production:output_expiry_date")}
+          name="outputExpiryDate"
+          type="date"
+          register={register}
+          errors={errors}
+          min={watch("scheduledDate") || undefined}
+          validate={(v) => {
+            const sched = getValues("scheduledDate");
+            if (!v || !sched) return true;
+            return v >= sched || t("production:expiry_after_scheduled", { defaultValue: "Must be on or after scheduled date" });
+          }}
         />
         <div>
-          <label className="text-sm font-medium text-linkText mb-1 block">
-            {t("production:warehouse")}
-          </label>
+          {isRenew ? (
+            <>
+              <label className="text-sm font-medium text-linkText mb-1 block">
+                {t("production:raw_warehouse")}
+              </label>
+              <div className="h-11 px-3 flex items-center rounded-xl border border-slate-200 dark:border-white/20 bg-slate-50 dark:bg-white/5 text-sm">
+                {watch("warehouseName") || selWarehouse?.title || "—"}
+              </div>
+            </>
+          ) : (
           <SearchablePaginatedDropdown
+            key="raw-warehouse"
+            label={t("production:raw_warehouse")}
             data={warehouseOptions}
-            selected={selWarehouse}
+            selected={selWarehouse || (warehouseId ? { id: warehouseId, title: watch("warehouseName") || "" } : null)}
             setSelected={(opt) => setValue("warehouseId", opt?.id ?? "")}
             enableApiSearch
             onApiSearch={(v) => loadWarehouses(1, v)}
@@ -193,7 +271,39 @@ const ProductionOrderForm = () => {
             loading={warehouseLoading && warehousePage === 1}
             hideClear
             classes="!h-[46px] !rounded-lg"
+            name="warehouseId"
+            register={register}
+            setValue={setValue}
+            trigger={trigger}
+            errors={errors}
+            required
           />
+          )}
+          <p className="text-xs text-slate-400 mt-1">{t("production:raw_warehouse_hint")}</p>
+        </div>
+        <div>
+          <SearchablePaginatedDropdown
+            key="output-warehouse"
+            label={t("production:output_warehouse")}
+            data={warehouseOptions}
+            selected={selOutputWarehouse || (outputWarehouseId ? { id: outputWarehouseId, title: watch("outputWarehouseName") || "" } : null)}
+            setSelected={(opt) => setValue("outputWarehouseId", opt?.id ?? "")}
+            enableApiSearch
+            onApiSearch={(v) => loadWarehouses(1, v)}
+            hasMore={warehouseHasMore}
+            onLoadMore={() => { if (warehouseHasMore && !warehouseLoading) loadWarehouses(warehousePage + 1, ""); }}
+            paginationLoading={warehouseLoading}
+            loading={warehouseLoading && warehousePage === 1}
+            hideClear
+            classes="!h-[46px] !rounded-lg"
+            name="outputWarehouseId"
+            register={register}
+            setValue={setValue}
+            trigger={trigger}
+            errors={errors}
+            required
+          />
+          <p className="text-xs text-slate-400 mt-1">{t("production:output_warehouse_hint")}</p>
         </div>
       </div>
 
@@ -226,6 +336,8 @@ const ProductionOrderForm = () => {
               showLabels={index === 0}
               canRemove={fields.length > 1}
               onRemove={() => remove(index)}
+              warehouseSelected={!!warehouseId}
+              allLines={watchedRawLines}
               t={t}
             />
           ))}
@@ -255,6 +367,7 @@ const ProductionOrderForm = () => {
               index={index}
               register={register}
               errors={errors}
+              getValues={getValues}
               showLabels={index === 0}
               canRemove={otherCostFields.length > 1}
               onRemove={() => removeOtherCost(index)}
@@ -290,59 +403,89 @@ const ProductionOrderForm = () => {
         <p className="text-xs text-slate-400 mt-3">{t("production:cost_calculation_preview_note")}</p>
       </div>
 
-      <div>
-        <label className="text-sm font-medium text-linkText mb-1 block">
-          {t("production:notes")}
-        </label>
-        <textarea
-          {...register("notes", { maxLength: { value: 500, message: t("production:max_length_500", { defaultValue: "Maximum length is 500 characters" }) } })}
-          rows={4}
-          className="w-full rounded-lg border border-[#E0E5F2] bg-white px-3 py-2 text-sm text-black transition duration-300 hover:border-[#ffba32] focus:border-[#ffba32] focus:outline-0 dark:bg-white/10 dark:border-white/20 dark:text-white"
-        />
-        {errors.notes && <p className="text-red text-xs mt-1 font-medium">{errors.notes.message}</p>}
-      </div>
+      <FormTextarea
+        label={t("production:notes")}
+        name="notes"
+        register={register}
+        errors={errors}
+        rows={4}
+        maxLength={500}
+        className="!rounded-lg"
+      />
     </div>
   );
 };
 
-function RawLineRow({ index, picker, watch, setValue, register, errors, showLabels, canRemove, onRemove, t }) {
+function RawLineRow({ index, picker, watch, setValue, register, errors, showLabels, canRemove, onRemove, warehouseSelected, allLines, t }) {
   const variantId = watch(`rawLines.${index}.variantId`);
   const selVariant = useMemo(
     () => picker.detailsRef.current[variantId] || picker.options.find((o) => o.id === variantId) || null,
     [picker.options, variantId],
   );
+  const siblingQty = (allLines || []).reduce((s, l, i) => {
+    if (i === index || !l?.variantId || l.variantId !== variantId) return s;
+    return s + (Number(l.quantity) || 0);
+  }, 0);
+  const leftover =
+    selVariant?.availableQty != null ? Math.max(0, Number(selVariant.availableQty) - siblingQty) : null;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 rounded-xl border border-slate-200 dark:border-white/15 bg-slate-50/80 dark:bg-white/5">
-      <div className="sm:col-span-7">
-        {showLabels && (
-          <label className="text-sm font-medium text-linkText mb-1 block">{t("production:raw_material")}</label>
-        )}
+      <div className="sm:col-span-4">
         <SearchablePaginatedDropdown
+          label={showLabels ? t("production:raw_material") : undefined}
           data={picker.options}
           selected={selVariant}
-          setSelected={(opt) => setValue(`rawLines.${index}.variantId`, opt?.id ?? "", { shouldValidate: true })}
+          setSelected={(opt) => {
+            setValue(`rawLines.${index}.variantId`, opt?.id ?? "", { shouldValidate: true });
+            setValue(`rawLines.${index}.costPrice`, opt?.costPrice ?? "");
+          }}
           enableApiSearch
           onApiSearch={picker.onApiSearch}
           hasMore={picker.hasMore}
           onLoadMore={picker.onLoadMore}
           paginationLoading={picker.paginationLoading}
           loading={picker.loading}
-          placeholder={t("production:select_raw_material")}
+          placeholder={warehouseSelected ? t("production:select_raw_material") : t("production:select_raw_warehouse_first")}
           emptyMessage={t("production:no_raw_materials")}
           hideClear
+          disabled={!warehouseSelected}
           classes="!h-[46px] !rounded-lg"
+          name={`rawLines.${index}.variantId`}
+          register={register}
+          setValue={setValue}
+          trigger={trigger}
+          errors={errors}
+          required
+        />
+        {leftover != null && (
+          <p className={`mt-1 text-xs ${Number(watch(`rawLines.${index}.quantity`)) > leftover ? "text-rose-600 font-medium" : "text-slate-400"}`}>
+            {t("production:available_qty")}: {leftover}
+          </p>
+        )}
+      </div>
+      <div className="sm:col-span-3">
+        <FormInput
+          label={showLabels ? t("production:per_unit_cost") : undefined}
+          name={`rawLines.${index}.costPrice`}
+          register={register}
+          errors={errors}
+          disabled
+          decimal
+          decimalPlaces={6}
+          inputClass="!h-[46px] !rounded-lg disabled:opacity-70 disabled:cursor-not-allowed"
         />
       </div>
       <div className="sm:col-span-4">
         <FormInput
-          label={showLabels ? t("production:planned_qty") : ""}
+          label={showLabels ? t("production:actual_qty") : ""}
           name={`rawLines.${index}.quantity`}
           type="number"
           register={register}
           errors={errors}
           placeholder="0"
-          min={0}
+          min={0.01}
+          max={leftover != null ? leftover : undefined}
           decimal
           decimalPlaces={2}
         />
@@ -363,23 +506,27 @@ function RawLineRow({ index, picker, watch, setValue, register, errors, showLabe
   );
 }
 
-function OtherCostRow({ index, register, errors, showLabels, canRemove, onRemove, t }) {
+function OtherCostRow({ index, register, errors, getValues, showLabels, canRemove, onRemove, t }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 rounded-xl border border-slate-200 dark:border-white/15 bg-slate-50/80 dark:bg-white/5">
-      <div className="sm:col-span-7">
-        {showLabels && (
-          <label className="text-sm font-medium text-linkText mb-1 block">{t("production:other_cost_label")}</label>
-        )}
+      <div className="sm:col-span-6">
         <FormInput
+          label={showLabels ? t("production:other_cost_label") : undefined}
           name={`otherCostLines.${index}.label`}
           register={register}
           errors={errors}
           placeholder={t("production:other_cost_label_placeholder")}
           pattern={/[a-zA-Z0-9\s.'-]/}
           maxLength={150}
+          validate={(v) => {
+            const hasA = String(getValues(`otherCostLines.${index}.amount`) ?? "").trim() !== "";
+            const hasL = String(v ?? "").trim() !== "";
+            if (hasA && !hasL) return t("production:other_cost_pair", { defaultValue: "Label and amount must both be filled" });
+            return true;
+          }}
         />
       </div>
-      <div className="sm:col-span-4">
+      <div className="sm:col-span-5">
         <FormInput
           label={showLabels ? t("production:other_cost_amount") : ""}
           name={`otherCostLines.${index}.amount`}
@@ -389,8 +536,14 @@ function OtherCostRow({ index, register, errors, showLabels, canRemove, onRemove
           placeholder="0"
           min={0}
           decimal
-          decimalPlaces={3}
-          maxLength={10}
+          decimalPlaces={6}
+          maxLength={16}
+          validate={(v) => {
+            const hasL = String(getValues(`otherCostLines.${index}.label`) ?? "").trim() !== "";
+            const hasA = String(v ?? "").trim() !== "";
+            if (hasL && !hasA) return t("production:other_cost_pair", { defaultValue: "Label and amount must both be filled" });
+            return true;
+          }}
         />
       </div>
       <div className="sm:col-span-1 flex items-end justify-end pb-1">

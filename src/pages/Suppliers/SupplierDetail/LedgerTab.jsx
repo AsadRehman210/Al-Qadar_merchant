@@ -14,11 +14,23 @@ import {
 const LIMIT = 10;
 
 /** A single chronological statement of every purchase invoice (debit —
- *  increases what's owed to the supplier) and every payment (credit —
- *  reduces it), oldest first, with a running balance — served by its own
- *  dedicated, paginated ledger endpoint (the running balance is computed
- *  once, server-side, off the complete history), not derived here off the
- *  Supply Invoices tab's own data. */
+ *  increases what's owed to the supplier), payment / applied debit note
+ *  (credit — reduces it), and supplier refund (debit — after overpayment),
+ *  oldest first, with a running balance — served by its own dedicated,
+ *  paginated ledger endpoint. */
+
+const ledgerTypeMeta = (type, t) => {
+  if (type === "Invoice") {
+    return { label: t("suppliers:ledger_invoice"), className: "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300" };
+  }
+  if (type === "DebitNote") {
+    return { label: t("suppliers:ledger_debit_note"), className: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300" };
+  }
+  if (type === "Refund") {
+    return { label: t("suppliers:ledger_refund"), className: "bg-sky-100 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300" };
+  }
+  return { label: t("suppliers:ledger_payment"), className: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300" };
+};
 const LedgerTab = ({ supplier }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -81,20 +93,16 @@ const LedgerTab = ({ supplier }) => {
               </tr>
             )}
             {entries.length > 0 ? (
-              entries.map((e) => (
+              entries.map((e) => {
+                const typeMeta = ledgerTypeMeta(e.type, t);
+                return (
                 <tr key={e.id} className="border-t border-slate-100 dark:border-white/5">
                   <td className="px-4 py-3 text-slate-600 dark:text-white/90">
                     {e.date ? String(e.date).slice(0, 10) : "-"}
                   </td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                        e.type === "Invoice"
-                          ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
-                          : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
-                      }`}
-                    >
-                      {e.type === "Invoice" ? t("suppliers:ledger_invoice") : t("suppliers:ledger_payment")}
+                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${typeMeta.className}`}>
+                      {typeMeta.label}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-white/90">{e.reference || "-"}</td>
@@ -108,7 +116,8 @@ const LedgerTab = ({ supplier }) => {
                     {formatAmount(e.runningBalance)} {supplier.currency || "SAR"}
                   </td>
                 </tr>
-              ))
+                );
+              })
             ) : (
               page === 1 && (
                 <tr>

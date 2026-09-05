@@ -1,4 +1,4 @@
-Ôªøimport { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
@@ -11,14 +11,18 @@ import {
   FiXCircle,
 } from "react-icons/fi";
 import Button from "components/Button";
+import FormTextarea from "components/FormTextarea";
+import SelectDropdown from "components/SelectDropdown";
 import { SkeletonDetail } from "components/Skeleton";
 import {
   CLEARANCE_SECTIONS,
   CLEARANCE_LABELS,
   EXIT_STATUS,
   EXIT_STATUS_BADGE,
-  EXIT_INTERVIEW_REASONS,
-} from "../offboardingFakeData";
+  exitInterviewReasonOptions,
+  wouldRehireOptions,
+} from "global/constant";
+import { formatAmount } from "global/helper";
 import { fetchAssets, showAssets, returnAsset } from "store/slices/assetSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
@@ -38,7 +42,6 @@ import {
 
 const STEPS = [EXIT_STATUS.NOTICE_PERIOD, EXIT_STATUS.CLEARANCE, EXIT_STATUS.SETTLEMENT, EXIT_STATUS.COMPLETED];
 
-const fmt = (n) => (parseFloat(n) || 0).toLocaleString();
 
 const ClearanceCard = ({ title, section, item, onCleared, extra }) => {
   const { t } = useTranslation();
@@ -64,17 +67,16 @@ const ClearanceCard = ({ title, section, item, onCleared, extra }) => {
 
       {cleared ? (
         <p className="text-xs text-slate-500 dark:text-white/50">
-          {t("offboarding:cleared_by")} {item.clearedBy} ¬∑ {item.clearedOn ? dayjs(item.clearedOn).format("YYYY-MM-DD") : ""}
-          {item.notes ? ` ‚Äî ${item.notes}` : ""}
+          {t("offboarding:cleared_by")} {item.clearedBy} ù {item.clearedOn ? dayjs(item.clearedOn).format("YYYY-MM-DD") : ""}
+          {item.notes ? ` ù ${item.notes}` : ""}
         </p>
       ) : (
         <div className="space-y-2">
-          <textarea
-            rows={2}
+          <FormTextarea
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onValueChange={setNotes}
+            rows={2}
             placeholder={t("offboarding:notes_placeholder")}
-            className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
           />
           <Button
             type="button"
@@ -89,13 +91,11 @@ const ClearanceCard = ({ title, section, item, onCleared, extra }) => {
   );
 };
 
-const WOULD_REHIRE_OPTS = ["Yes", "No", "Maybe"];
-
 const ExitInterviewCard = ({ exit, onSaved }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const [reasonCategory, setReasonCategory] = useState(EXIT_INTERVIEW_REASONS[0]);
-  const [wouldRehire, setWouldRehire] = useState(WOULD_REHIRE_OPTS[0]);
+  const [reasonCategory, setReasonCategory] = useState(exitInterviewReasonOptions[0]?.id);
+  const [wouldRehire, setWouldRehire] = useState(wouldRehireOptions[0]?.id);
   const [comments, setComments] = useState("");
 
   if (exit.exitInterview) {
@@ -122,47 +122,42 @@ const ExitInterviewCard = ({ exit, onSaved }) => {
     <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-5">
       <h3 className="font-semibold text-slate-900 dark:text-white mb-3">{t("offboarding:exit_interview")}</h3>
       <div className="space-y-3">
-        <div>
-          <label className="text-xs font-medium text-linkText mb-1 block">{t("offboarding:exit_reason_category")}</label>
-          <select
-            value={reasonCategory}
-            onChange={(e) => setReasonCategory(e.target.value)}
-            className="w-full h-10 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm text-slate-900 dark:text-white focus:border-teal-500 focus:outline-0"
-          >
-            {EXIT_INTERVIEW_REASONS.map((r) => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-        </div>
+        <SelectDropdown
+          label={t("offboarding:exit_reason_category")}
+          labelClass="!text-xs"
+          data={exitInterviewReasonOptions}
+          selected={exitInterviewReasonOptions.find((r) => r.id === reasonCategory) || exitInterviewReasonOptions[0]}
+          setSelected={(opt) => setReasonCategory(opt?.id ?? exitInterviewReasonOptions[0].id)}
+          hideClear
+          classes="!h-10 !rounded-lg"
+        />
         <div>
           <label className="text-xs font-medium text-linkText mb-1 block">{t("offboarding:would_rehire")}</label>
           <div className="flex gap-2">
-            {WOULD_REHIRE_OPTS.map((opt) => (
+            {wouldRehireOptions.map((opt) => (
               <button
-                key={opt}
+                key={opt.id}
                 type="button"
-                onClick={() => setWouldRehire(opt)}
+                onClick={() => setWouldRehire(opt.id)}
                 className={`flex-1 h-9 rounded-lg text-sm font-medium transition-all ${
-                  wouldRehire === opt
+                  wouldRehire === opt.id
                     ? "bg-teal-500 text-white"
                     : "bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/70 hover:bg-slate-200"
                 }`}
               >
-                {opt}
+                {opt.title}
               </button>
             ))}
           </div>
         </div>
-        <div>
-          <label className="text-xs font-medium text-linkText mb-1 block">{t("offboarding:exit_interview_notes")}</label>
-          <textarea
-            rows={3}
-            value={comments}
-            onChange={(e) => setComments(e.target.value)}
-            placeholder={t("offboarding:exit_interview_notes_placeholder")}
-            className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-2.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-          />
-        </div>
+        <FormTextarea
+          label={t("offboarding:exit_interview_notes")}
+          labelClass="!text-xs"
+          value={comments}
+          onValueChange={setComments}
+          rows={3}
+          placeholder={t("offboarding:exit_interview_notes_placeholder")}
+        />
         <Button
           type="button"
           title={t("offboarding:save_exit_interview")}
@@ -237,9 +232,9 @@ const ExitDetail = () => {
   }
 
   const emp = employeesById[exit.employeeId];
-  const employeeName = emp ? `${emp.first_name || ""} ${emp.last_name || ""}`.trim() : "‚Äî";
-  const department = emp ? departmentsById[emp.departmentId]?.name || "‚Äî" : "‚Äî";
-  const designation = emp ? designationsById[emp.designationId]?.title || "‚Äî" : "‚Äî";
+  const employeeName = emp ? `${emp.first_name || ""} ${emp.last_name || ""}`.trim() : "ù";
+  const department = emp ? departmentsById[emp.departmentId]?.name || "ù" : "ù";
+  const designation = emp ? designationsById[emp.designationId]?.title || "ù" : "ù";
 
   const clearance = exit.clearance || {};
   const allCleared = CLEARANCE_SECTIONS.every((s) => clearance[s]?.status === "Cleared");
@@ -305,7 +300,7 @@ const ExitDetail = () => {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">{employeeName}</h1>
               <p className="text-mutedForeground text-sm mt-1">
-                {emp?.employeeCode} ¬∑ {designation} ¬∑ {department}
+                {emp?.employeeCode} ù {designation} ù {department}
               </p>
             </div>
           </div>
@@ -345,13 +340,13 @@ const ExitDetail = () => {
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:exit_type")}</span>
                 <span className="font-medium text-slate-800 dark:text-white">{exit.exitType}</span>
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:resignation_date")}</span>
-                <span className="font-medium text-slate-800 dark:text-white">{exit.resignationDate ? dayjs(exit.resignationDate).format("YYYY-MM-DD") : "‚Äî"}</span>
+                <span className="font-medium text-slate-800 dark:text-white">{exit.resignationDate ? dayjs(exit.resignationDate).format("YYYY-MM-DD") : "ù"}</span>
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:last_working_day")}</span>
-                <span className="font-medium text-slate-800 dark:text-white">{exit.lastWorkingDay ? dayjs(exit.lastWorkingDay).format("YYYY-MM-DD") : "‚Äî"}</span>
+                <span className="font-medium text-slate-800 dark:text-white">{exit.lastWorkingDay ? dayjs(exit.lastWorkingDay).format("YYYY-MM-DD") : "ù"}</span>
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:notice_period_days")}</span>
                 <span className="font-medium text-slate-800 dark:text-white">{exit.noticePeriodDays}</span>
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:reason")}</span>
-                <span className="font-medium text-slate-800 dark:text-white col-span-1">{exit.reason || "‚Äî"}</span>
+                <span className="font-medium text-slate-800 dark:text-white col-span-1">{exit.reason || "ù"}</span>
               </div>
             </div>
 
@@ -397,23 +392,23 @@ const ExitDetail = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-slate-500 dark:text-white/50">{t("offboarding:pending_salary")} ({settlement.pendingSalaryDays}d)</span>
-                    <span className="font-semibold text-slate-800 dark:text-white">{fmt(settlement.pendingSalaryAmount)}</span>
+                    <span className="font-semibold text-slate-800 dark:text-white">{formatAmount(settlement.pendingSalaryAmount)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500 dark:text-white/50">{t("offboarding:leave_encashment")} ({settlement.encashableDays}d)</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-300">+{fmt(settlement.leaveEncashmentAmount)}</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-300">+{formatAmount(settlement.leaveEncashmentAmount)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500 dark:text-white/50">{t("offboarding:pf_balance")}</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-300">+{fmt(settlement.pfBalance)}</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-300">+{formatAmount(settlement.pfBalance)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-500 dark:text-white/50">{t("offboarding:loan_recovery")}</span>
-                    <span className="font-semibold text-rose-600 dark:text-rose-300">-{fmt(settlement.loanOutstanding)}</span>
+                    <span className="font-semibold text-rose-600 dark:text-rose-300">-{formatAmount(settlement.loanOutstanding)}</span>
                   </div>
                   <div className="pt-3 mt-2 border-t border-slate-100 dark:border-white/10 flex justify-between items-center">
                     <span className="text-sm font-semibold text-teal-700 dark:text-teal-300">{t("offboarding:net_settlement")}</span>
-                    <span className="text-xl font-bold text-teal-700 dark:text-teal-300">{fmt(settlement.netSettlement)}</span>
+                    <span className="text-xl font-bold text-teal-700 dark:text-teal-300">{formatAmount(settlement.netSettlement)}</span>
                   </div>
                 </div>
               ) : (

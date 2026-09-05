@@ -14,6 +14,10 @@ const initialState = {
 
   summary: { totalSkus: 0, totalUnits: 0, lowStockCount: 0, outOfStockCount: 0 },
   summaryLoading: false,
+
+  openingImported: false,
+  openingImportedAt: null,
+  openingStatusLoading: false,
 };
 
 // Rows: { variantId, variantName, sku, productId, productName, totalQty,
@@ -52,12 +56,22 @@ export const fetchAdjustmentHistory = createAsyncThunk(
   },
 );
 
-// { variantId, warehouseId, type: "add"|"subtract"|"set", qty, reason, minQty? }
-export const adjustStock = createAsyncThunk(
-  "stock/adjust",
-  async (data, { rejectWithValue }) => {
-    const response = await erpPost(`${erpUrls.stock}/adjust`, data);
+export const fetchOpeningStockStatus = createAsyncThunk(
+  "stock/fetchOpeningStatus",
+  async (params = {}, { rejectWithValue }) => {
+    const query = buildQuery({ ...params });
+    const suffix = query ? `?${query}` : "";
+    const response = await erpGet(`${erpUrls.openingStockImport}/status${suffix}`);
     if (!response?.success) return rejectWithValue(response?.message);
+    return response.result;
+  },
+);
+
+export const importOpeningStock = createAsyncThunk(
+  "stock/importOpeningStock",
+  async (data, { rejectWithValue }) => {
+    const response = await erpPost(erpUrls.openingStockImport, data);
+    if (!response?.success) return rejectWithValue(response?.message || response?.error_message);
     return response.result;
   },
 );
@@ -103,6 +117,21 @@ const stockSlice = createSlice({
       .addCase(fetchAdjustmentHistory.rejected, (state) => {
         state.historyLoading = false;
         state.history = [];
+      })
+      .addCase(fetchOpeningStockStatus.pending, (state) => {
+        state.openingStatusLoading = true;
+      })
+      .addCase(fetchOpeningStockStatus.fulfilled, (state, action) => {
+        state.openingStatusLoading = false;
+        state.openingImported = Boolean(action.payload?.imported);
+        state.openingImportedAt = action.payload?.importedAt || null;
+      })
+      .addCase(fetchOpeningStockStatus.rejected, (state) => {
+        state.openingStatusLoading = false;
+      })
+      .addCase(importOpeningStock.fulfilled, (state, action) => {
+        state.openingImported = Boolean(action.payload?.imported);
+        state.openingImportedAt = action.payload?.importedAt || null;
       });
   },
 });
@@ -115,4 +144,7 @@ export const showStockSummaryLoading = (state) => state.stock.summaryLoading;
 export const showAdjustmentHistory = (state) => state.stock.history;
 export const showAdjustmentHistoryTotal = (state) => state.stock.historyTotalRecords;
 export const showAdjustmentHistoryLoading = (state) => state.stock.historyLoading;
+export const showOpeningStockImported = (state) => state.stock.openingImported;
+export const showOpeningStockImportedAt = (state) => state.stock.openingImportedAt;
+export const showOpeningStockStatusLoading = (state) => state.stock.openingStatusLoading;
 export default stockSlice.reducer;

@@ -9,8 +9,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { tableRows } from "global/constant";
-import { PRODUCT_TYPE_OPTIONS } from "../inventoryOptions";
+import { tableRows, productTypeFilterOptions } from "global/constant";
 import {
   fetchProducts,
   showProducts,
@@ -22,8 +21,6 @@ import { useListFilters } from "hooks/useListFilters";
 
 const { add_customer, view_customer } = rafeeqi_role_ids;
 
-const TYPE_OPTS = [{ title: "product:all_types", id: "" }, ...PRODUCT_TYPE_OPTIONS];
-
 const Products = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -32,11 +29,11 @@ const Products = () => {
     page: 1,
     limitId: tableRows[0].id,
     search: "",
-    typeId: TYPE_OPTS[0].id,
+    typeId: productTypeFilterOptions[0].id,
   });
   const { page, search } = filters;
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
-  const selType = TYPE_OPTS.find((o) => o.id === filters.typeId) || TYPE_OPTS[0];
+  const selType = productTypeFilterOptions.find((o) => o.id === filters.typeId) || productTypeFilterOptions[0];
   const setPage = (v) => setFilters({ page: v });
 
   const products = useSelector(showProducts);
@@ -114,9 +111,9 @@ const Products = () => {
                 </div>
                 <div className="w-full sm:w-48">
                   <SelectDropdown
-                    data={TYPE_OPTS}
+                    data={productTypeFilterOptions}
                     selected={selType}
-                    setSelected={(v) => setFilters({ typeId: (v || TYPE_OPTS[0]).id, page: 1 })}
+                    setSelected={(v) => setFilters({ typeId: (v || productTypeFilterOptions[0]).id, page: 1 })}
                     hideClear
                     classes="!h-10 !rounded-lg"
                   />

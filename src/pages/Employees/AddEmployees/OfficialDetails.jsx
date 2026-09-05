@@ -13,16 +13,13 @@ import Calender from "images/icons/calender.png";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { fetchDesignations, showDesignations } from "store/slices/designationSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
-import { EMPLOYEE_STATUS_OPTIONS, DEFAULT_WEEKLY_SCHEDULE, isWeeklyScheduleValid } from "../employeesFakeData";
+import { defaultWeeklySchedule, isWeeklyScheduleValid } from "global/helper";
+import {
+  employeeStatusOptions,
+  employmentTypeOptions,
+  noManagerOption,
+} from "global/constant";
 import WeeklySchedule from "./WeeklySchedule";
-
-const EMPLOYMENT_TYPES = [
-  { title: "Permanent", id: "permanent" },
-  { title: "Contract", id: "contract" },
-  { title: "Trainee", id: "trainee" },
-];
-
-const NO_MANAGER = { id: "", title: "— None (top of chain) —" };
 
 const OfficialDetails = ({ setSelectedIndex, setValidValues, existing }) => {
   const { t } = useTranslation();
@@ -49,7 +46,7 @@ const OfficialDetails = ({ setSelectedIndex, setValidValues, existing }) => {
   );
   const managerOptions = useMemo(
     () => [
-      NO_MANAGER,
+      noManagerOption,
       ...employees
         .filter((e) => e.id !== existing?.id)
         .map((e) => ({ id: e.id, title: `${e.first_name || ""} ${e.last_name || ""}`.trim() || e.employeeCode })),
@@ -61,16 +58,16 @@ const OfficialDetails = ({ setSelectedIndex, setValidValues, existing }) => {
     () => deptOptions.find((d) => d.id === existing?.departmentId) || deptOptions[0],
   );
   const [selStatus, setSelStatus] = useState(
-    () => EMPLOYEE_STATUS_OPTIONS.find((s) => s.id === existing?.status) || EMPLOYEE_STATUS_OPTIONS[0],
+    () => employeeStatusOptions.find((s) => s.id === existing?.status) || employeeStatusOptions[0],
   );
   const [selEmpType, setSelEmpType] = useState(
-    () => EMPLOYMENT_TYPES.find((s) => s.id === existing?.employment_type) ?? null,
+    () => employmentTypeOptions.find((s) => s.id === existing?.employment_type) ?? null,
   );
   const [selManager, setSelManager] = useState(
-    () => managerOptions.find((m) => m.id === existing?.managerEmployeeId) || NO_MANAGER,
+    () => managerOptions.find((m) => m.id === existing?.managerEmployeeId) || noManagerOption,
   );
   const [weeklySchedule, setWeeklySchedule] = useState(
-    () => (existing?.weekly_schedule?.length ? existing.weekly_schedule : DEFAULT_WEEKLY_SCHEDULE),
+    () => (existing?.weekly_schedule?.length ? existing.weekly_schedule : defaultWeeklySchedule),
   );
   const [selJoin, setSelJoin] = useState(() =>
     existing?.joining_date ? moment(existing.joining_date).format("DD-MM-YYYY") : "",
@@ -221,6 +218,13 @@ const OfficialDetails = ({ setSelectedIndex, setValidValues, existing }) => {
       toast.error(t("employees:schedule_invalid_range"));
       return;
     }
+    if (lifecycleField && selJoin) {
+      const lifeVal = LIFECYCLE_DATE_STATE[lifecycleField][0];
+      if (lifeVal && !moment(lifeVal, "DD-MM-YYYY").isAfter(moment(selJoin, "DD-MM-YYYY"), "day")) {
+        toast.error(t("employees:lifecycle_after_joining", "This date must be after the joining date"));
+        return;
+      }
+    }
     if (valid) {
       setValidValues(2);
       setSelectedIndex(2);
@@ -316,7 +320,7 @@ const OfficialDetails = ({ setSelectedIndex, setValidValues, existing }) => {
         />
         <SelectDropdown
           label={t("status")}
-          data={EMPLOYEE_STATUS_OPTIONS}
+          data={employeeStatusOptions}
           selected={selStatus}
           setSelected={setSelStatus}
           name="status"
@@ -331,12 +335,13 @@ const OfficialDetails = ({ setSelectedIndex, setValidValues, existing }) => {
           name="work_location"
           register={register}
           errors={errors}
+          pattern={/[a-zA-Z0-9\s.'-]/}
           minLength={2}
           maxLength={100}
         />
         <SelectDropdown
           label={t("employees:employment_type")}
-          data={EMPLOYMENT_TYPES}
+          data={employmentTypeOptions}
           selected={selEmpType}
           setSelected={setSelEmpType}
           name="employment_type"
@@ -362,6 +367,8 @@ const OfficialDetails = ({ setSelectedIndex, setValidValues, existing }) => {
               setSelected={LIFECYCLE_DATE_STATE[lifecycleField][1]}
               isDefaultSelection={false}
               required
+              min={selJoin ? moment(selJoin, "DD-MM-YYYY").add(1, "day").format("DD-MM-YYYY") : undefined}
+              minErrorMessage={t("employees:lifecycle_after_joining", "This date must be after the joining date")}
             />
           </div>
         )}

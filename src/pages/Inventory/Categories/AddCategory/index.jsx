@@ -7,6 +7,7 @@ import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import {
@@ -111,18 +112,16 @@ const AddCategory = () => {
               maxLength={150}
               placeholder={t("product:category_name_placeholder")}
             />
-            <div>
-              <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                {t("product:description")}
-              </label>
-              <textarea
-                rows={4}
-                placeholder={t("product:category_description_placeholder")}
-                {...register("description", { maxLength: { value: 500, message: t("product:max_length_500", { defaultValue: "Maximum length is 500 characters" }) } })}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/40 focus:border-teal-500 focus:outline-0"
-              />
-              {errors.description && <p className="text-red text-xs mt-1 font-medium">{errors.description.message}</p>}
-            </div>
+            <FormTextarea
+              label={t("product:description")}
+              name="description"
+              register={register}
+              errors={errors}
+              rows={4}
+              maxLength={500}
+              placeholder={t("product:category_description_placeholder")}
+              className="!rounded-lg"
+            />
           </div>
 
           <div className="flex flex-wrap gap-3 justify-end mt-7 pt-6 border-t border-slate-200 dark:border-white/20">

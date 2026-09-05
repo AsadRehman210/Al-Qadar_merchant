@@ -5,7 +5,10 @@ import { toast } from "react-toastify";
 import { FiPlus } from "react-icons/fi";
 import Button from "components/Button";
 import Table from "components/Table";
-import { noteStatusBadge as DN_STATUS_BADGE } from "global/constant";
+import SelectDropdown from "components/SelectDropdown";
+import FormInput from "components/FormInput";
+import { noteStatusBadge as DN_STATUS_BADGE, purchasePaymentMethodOptions } from "global/constant";
+import { formatAmount } from "global/helper";
 
 const ReturnsTab = ({ invoice, panelClass, onRefresh, onAddRefund }) => {
   const { t } = useTranslation();
@@ -14,8 +17,6 @@ const ReturnsTab = ({ invoice, panelClass, onRefresh, onAddRefund }) => {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("Bank Transfer");
   const [reference, setReference] = useState("");
-
-  const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
   const refundDue = Number(invoice.refundDue) || 0;
 
   const handleSave = async () => {
@@ -43,12 +44,15 @@ const ReturnsTab = ({ invoice, panelClass, onRefresh, onAddRefund }) => {
           {t("purchase:returned_items")}
         </h3>
         <Table>
-          <table className="w-full text-sm min-w-[720px]">
+          <table className="w-full text-sm min-w-[960px]">
             <thead>
               <tr className="bg-slate-100 dark:bg-white/10 text-left">
                 <th className="p-3 font-semibold">{t("purchase:product")}</th>
                 <th className="p-3 font-semibold">{t("purchase:qty")}</th>
                 <th className="p-3 font-semibold">{t("purchase:price")}</th>
+                <th className="p-3 font-semibold">{t("purchase:tax_percent")}</th>
+                <th className="p-3 font-semibold">{t("purchase:tax_amount")}</th>
+                <th className="p-3 font-semibold">{t("purchase:subtotal")}</th>
                 <th className="p-3 font-semibold">{t("purchase:debit_note")}</th>
                 <th className="p-3 font-semibold">{t("purchase:status")}</th>
                 <th className="p-3 font-semibold">{t("purchase:reason")}</th>
@@ -61,6 +65,9 @@ const ReturnsTab = ({ invoice, panelClass, onRefresh, onAddRefund }) => {
                   <td className="p-3">{r.productName}</td>
                   <td className="p-3 tabular-nums">{r.qty}</td>
                   <td className="p-3 tabular-nums">{formatAmount(r.price)}</td>
+                  <td className="p-3 tabular-nums">{r.taxPercent != null ? `${r.taxPercent}%` : "—"}</td>
+                  <td className="p-3 tabular-nums">{formatAmount(r.taxAmount)}</td>
+                  <td className="p-3 tabular-nums font-medium">{formatAmount(r.lineTotal ?? (Number(r.qty) || 0) * (Number(r.price) || 0) + (Number(r.taxAmount) || 0))}</td>
                   <td className="p-3">
                     <Link to={`/debit-notes/detail/${r.dnId}`} className="font-mono text-teal-600 hover:underline">
                       {r.dnNumber}
@@ -115,46 +122,54 @@ const ReturnsTab = ({ invoice, panelClass, onRefresh, onAddRefund }) => {
         {showForm && (
           <div className="mb-5 p-4 rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/5 flex flex-wrap items-end gap-3">
             <div>
-              <label className="text-xs font-medium text-linkText block mb-1">{t("purchase:date")}</label>
-              <input
+              <FormInput
+                label={t("purchase:date")}
+                labelClass="!text-xs"
+                name="refundDate"
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="h-9 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
+                onValueChange={setDate}
+                inputClass="!h-9 !rounded-md"
               />
             </div>
-            <div>
-              <label className="text-xs font-medium text-linkText block mb-1">{t("amount")}</label>
-              <input
+            <div className="w-32">
+              <FormInput
+                label={t("amount")}
+                labelClass="!text-xs"
+                name="refundAmount"
                 type="number"
-                step="any"
+                min={0}
                 max={refundDue}
+                decimal
+                decimalPlaces={3}
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="h-9 w-32 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
+                onValueChange={setAmount}
+                inputClass="!h-9 !rounded-md"
               />
               <p className="mt-1 text-[11px] text-slate-400">
                 {t("purchase:max_refund_hint", { defaultValue: "Max" })}: {formatAmount(refundDue)} {invoice.currency || "SAR"}
               </p>
             </div>
-            <div>
-              <label className="text-xs font-medium text-linkText block mb-1">{t("purchase:payment_method")}</label>
-              <select
-                value={method}
-                onChange={(e) => setMethod(e.target.value)}
-                className="h-9 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
-              >
-                {["Cash", "Bank Transfer", "Other"].map((m) => (
-                  <option key={m}>{m}</option>
-                ))}
-              </select>
+            <div className="w-44">
+              <SelectDropdown
+                label={t("purchase:payment_method")}
+                labelClass="!text-xs"
+                data={purchasePaymentMethodOptions}
+                selected={purchasePaymentMethodOptions.find((o) => o.id === method) || purchasePaymentMethodOptions[1]}
+                setSelected={(o) => setMethod(o?.id || "Bank Transfer")}
+                valueKey="id"
+                hideClear
+                classes="!h-9 !rounded-md"
+              />
             </div>
             <div>
-              <label className="text-xs font-medium text-linkText block mb-1">{t("purchase:reference")}</label>
-              <input
+              <FormInput
+                label={t("purchase:reference")}
+                labelClass="!text-xs"
+                name="refundReference"
                 value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                className="h-9 rounded-md border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0"
+                onValueChange={setReference}
+                inputClass="!h-9 !rounded-md"
               />
             </div>
             <button type="button" onClick={handleSave} className="h-9 px-4 rounded-md bg-amber-500 text-white text-sm font-semibold">

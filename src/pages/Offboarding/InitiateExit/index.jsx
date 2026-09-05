@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -7,11 +7,12 @@ import moment from "moment";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import Datepicker from "components/Datepicker";
 import Calender from "images/icons/calender.png";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
-import { EXIT_TYPES } from "../offboardingFakeData";
+import { exitTypeOptions } from "global/constant";
 import { initiateExit, fetchActiveExitForEmployee } from "store/slices/offboardingSlice";
 import { toast } from "react-toastify";
 
@@ -37,7 +38,7 @@ const InitiateExit = () => {
   const preselectId = searchParams.get("employeeId");
 
   const [selEmployee, setSelEmployee] = useState(null);
-  const [selExitType, setSelExitType] = useState(EXIT_TYPES[0]);
+  const [selExitType, setSelExitType] = useState(exitTypeOptions[0]);
   const [selResignationDate, setSelResignationDate] = useState("");
   const [selLastWorkingDay, setSelLastWorkingDay] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -65,7 +66,7 @@ const InitiateExit = () => {
   // Auto-suggest the last working day from resignation date + notice period
   // (Datepicker's own effect syncs `selected` into the form once set below).
   // Datepicker stores/expects DD-MM-YYYY (see its own `changeDate`/`pickerValue`
-  // logic) — parsing/formatting with that same format here, not the default
+  // logic) � parsing/formatting with that same format here, not the default
   // ISO-ish parse, is what keeps this suggestion (and the calendar it feeds)
   // actually valid instead of silently producing "Invalid Date".
   useEffect(() => {
@@ -78,6 +79,11 @@ const InitiateExit = () => {
   const onSubmit = async (data) => {
     if (!selEmployee?.id) {
       toast.error(t("offboarding:select_employee_error"));
+      return;
+    }
+    if (selResignationDate && selLastWorkingDay
+      && moment(selLastWorkingDay, "DD-MM-YYYY").isBefore(moment(selResignationDate, "DD-MM-YYYY"))) {
+      toast.error(t("offboarding:last_working_after_resignation", "Last working day must be on or after resignation date"));
       return;
     }
     setSubmitting(true);
@@ -142,9 +148,9 @@ const InitiateExit = () => {
             />
             <SelectDropdown
               label={t("offboarding:exit_type")}
-              data={EXIT_TYPES}
+              data={exitTypeOptions}
               selected={selExitType}
-              setSelected={(v) => setSelExitType(v || EXIT_TYPES[0])}
+              setSelected={(v) => setSelExitType(v || exitTypeOptions[0])}
               name="exitType"
               register={register}
               setValue={setValue}
@@ -191,29 +197,25 @@ const InitiateExit = () => {
                 setSelected={setSelLastWorkingDay}
                 defaultValue={false}
                 required
+                min={selResignationDate || undefined}
+                minErrorMessage={t("offboarding:last_working_after_resignation", "Last working day must be on or after resignation date")}
               />
               <p className="text-xs text-slate-400 dark:text-white/40 mt-1">
                 {t("offboarding:last_working_day_hint")}
               </p>
             </div>
-            <div className="lg:col-span-2">
-              <label className="text-sm text-linkText font-medium leading-6 mb-1 flex items-center">
-                {t("offboarding:reason")} <span className="text-[#EC1212]">*</span>
-              </label>
-              <textarea
-                rows={3}
-                {...register("reason", {
-                  required: true,
-                  minLength: { value: 5, message: "Minimum length is 5 characters" },
-                  maxLength: { value: 500, message: "Maximum length is 500 characters" },
-                })}
-                placeholder={t("offboarding:reason_placeholder")}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-              />
-              {errors.reason?.message && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{errors.reason.message}</p>
-              )}
-            </div>
+            <FormTextarea
+              wrapperClass="lg:col-span-2"
+              label={t("offboarding:reason")}
+              required
+              name="reason"
+              register={register}
+              errors={errors}
+              rows={3}
+              minLength={5}
+              maxLength={{ value: 500, message: "Maximum length is 500 characters" }}
+              placeholder={t("offboarding:reason_placeholder")}
+            />
             <div className="lg:col-span-2">
               <FormInput
                 label={t("offboarding:notes")}

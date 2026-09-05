@@ -8,12 +8,13 @@ import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
 import Table from "components/Table";
+import TableState from "components/TableState";
 import { tableRows } from "global/constant";
 import { FaRegEdit } from "react-icons/fa";
 import { fetchVariantById, showCurrentVariant, showCurrentVariantLoading, clearCurrentVariant } from "store/slices/variantSlice";
 import { fetchProductById, showCurrentProduct } from "store/slices/productSlice";
 import { fetchStock, showStock } from "store/slices/stockSlice";
-import { fetchStockBatches, showStockBatches, showStockBatchesTotal } from "store/slices/stockBatchSlice";
+import { fetchStockBatches, showStockBatches, showStockBatchesTotal, showStockBatchesLoading } from "store/slices/stockBatchSlice";
 import { SkeletonDetail } from "components/Skeleton";
 
 const formatTs = (iso) => {
@@ -51,6 +52,7 @@ const VariantDetail = () => {
   const stock = useSelector(showStock);
   const batches = useSelector(showStockBatches);
   const batchesTotal = useSelector(showStockBatchesTotal);
+  const batchesLoading = useSelector(showStockBatchesLoading);
 
   const [batchPage, setBatchPage] = useState(1);
   const [selBatchRows, setSelBatchRows] = useState(tableRows[0]);
@@ -221,6 +223,14 @@ const VariantDetail = () => {
           </div>
           <div>
             <p className="text-xs font-medium text-slate-500 dark:text-white/60 mb-1">
+              {t("product:low_stock_qty")}
+            </p>
+            <p className="text-sm text-slate-900 dark:text-white/90">
+              {row.lowStockQty != null ? row.lowStockQty : 0}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-slate-500 dark:text-white/60 mb-1">
               {t("product:created_at")}
             </p>
             <p className="text-sm text-slate-900 dark:text-white/90">
@@ -248,29 +258,27 @@ const VariantDetail = () => {
               </span>
             )}
           </div>
-          {(batchesTotal || 0) === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-white/50">—</p>
-          ) : (
-            <Table className="overflow-hidden">
-              <div className="min-w-[560px]">
-                <table className="w-full border-collapse text-sm mb-0">
-                  <thead>
-                    <tr className="bg-[var(--color-teal-500)] border-none">
-                      <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pl-6 rounded-tl-md">
-                        {t("product:adj_date")}
-                      </th>
-                      <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
-                        {t("product:stock_quantity")}
-                      </th>
-                      <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
-                        {t("product:batch_expiry")}
-                      </th>
-                      <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">
-                        {t("product:batch_source")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+          <Table className="overflow-hidden">
+            <div className="min-w-[560px]">
+              <table className="w-full border-collapse text-sm mb-0">
+                <thead>
+                  <tr className="bg-[var(--color-teal-500)] border-none">
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pl-6 rounded-tl-md">
+                      {t("product:adj_date")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("product:stock_quantity")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("product:batch_expiry")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">
+                      {t("product:batch_source")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <TableState loading={batchesLoading} data={batches} colSpan={4}>
                     {batches.map((b) => (
                       <tr
                         key={b.id}
@@ -292,11 +300,11 @@ const VariantDetail = () => {
                         </td>
                       </tr>
                     ))}
-                  </tbody>
-                </table>
-              </div>
-            </Table>
-          )}
+                  </TableState>
+                </tbody>
+              </table>
+            </div>
+          </Table>
           {(batchesTotal || 0) > 0 && (
             <div className="flex items-center flex-wrap gap-4 mt-6 pt-5 border-t border-slate-200 dark:border-white/20 [&_.pagination_li.selected_a]:!bg-gradient-to-br [&_.pagination_li.selected_a]:!from-teal-500 [&_.pagination_li.selected_a]:!to-teal-600 [&_.pagination_li.selected_a]:!border-transparent [&_.pagination_li.selected_a]:!text-white [&_.pagination_li_a:hover]:!text-teal-600 [&_.pagination_li_a:hover]:!bg-teal-50 dark:[&_.pagination_li_a:hover]:!border-teal-500 dark:[&_.pagination_li_a:hover]:!text-teal-300 dark:[&_.pagination_li_a:hover]:!bg-teal-500/20">
               <div className="flex items-center gap-4">

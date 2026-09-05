@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
 import Button from "components/Button";
@@ -27,62 +28,16 @@ import {
   showWarehouseDropdownHasMore,
   showWarehouseDropdownLoading,
 } from "store/slices/warehouseSlice";
-import { defaultPurchaseLine, lineTotal, PURCHASE_LINE_TYPES } from "../purchaseInvoiceHelpers";
+import {
+  purchaseStatusOptions,
+  purchaseLineTypeOptions,
+  purchasePaymentStatusOptions,
+  purchaseTaxModeOptions,
+  purchaseTaxRecoverableOptions,
+  purchaseLineTypeToProductType,
+} from "global/constant";
+import { defaultPurchaseLine, lineTotal, effectiveLineTaxPercent } from "global/helper";
 import { HiOutlinePlusCircle, HiOutlineTrash } from "react-icons/hi2";
-
-const STATUS_OPTS = [
-  { title: "purchase:st_draft", id: "Draft" },
-  { title: "purchase:st_ordered", id: "Ordered" },
-  { title: "purchase:st_transit", id: "Transit" },
-  { title: "purchase:st_received", id: "Received" },
-];
-
-const LINE_TYPE_OPTS = [
-  { title: "purchase:raw_material", id: PURCHASE_LINE_TYPES.raw_material },
-  { title: "purchase:final_product", id: PURCHASE_LINE_TYPES.final_product },
-];
-
-const PAYMENT_STATUS_OPTS = [
-  { title: "Pending", id: "Pending" },
-  { title: "Partial", id: "Partial" },
-  { title: "Paid", id: "Cleared" },
-];
-
-const TAX_MODE_OPTS = [
-  { title: "purchase:tax_mode_same", id: "same" },
-  { title: "purchase:tax_mode_different", id: "different" },
-];
-
-// Invoice-wide, not per-line — whether this purchase's tax is a real,
-// recoverable input-VAT credit (default) or a blocked/non-recoverable cost.
-// Mirrors the backend's own taxRecoverable field exactly (see
-// withLineTaxAmounts/updateStatus in purchase-invoice-service.ts).
-// String ids, not booleans — this field is `required`, and react-hook-form's
-// built-in required check treats a boolean `false` value as "missing" (it's
-// designed for checkboxes), which would wrongly block submission whenever
-// "No" is selected. Converted to a real boolean once, at the
-// AddPurchaseInvoice onSubmit boundary, right before dispatch.
-const TAX_RECOVERABLE_OPTS = [
-  { title: "purchase:tax_recoverable_yes", id: "yes" },
-  { title: "purchase:tax_recoverable_no", id: "no" },
-];
-
-// A line's own tax rate if it's carrying an override, otherwise the shared
-// invoice-level rate — mirrors the backend's effectiveLineTaxPercent exactly,
-// so the live totals shown here never drift from what actually gets saved.
-const effectiveLineTaxPercent = (line, invoiceTaxPercent) =>
-  line?.taxPercent !== undefined && line?.taxPercent !== null && line?.taxPercent !== ""
-    ? Number(line.taxPercent) || 0
-    : Number(invoiceTaxPercent) || 0;
-
-// Purchase's own product-type vocabulary ("raw_material"/"final_product")
-// isn't the same string set as Product.productType ("Raw Material"/"Finished
-// Product") — this is the one place that needs to know both and bridge them,
-// since the variant picker filters by the latter.
-const LINE_TYPE_TO_PRODUCT_TYPE = {
-  [PURCHASE_LINE_TYPES.raw_material]: "Raw Material",
-  [PURCHASE_LINE_TYPES.final_product]: "Finished Product",
-};
 
 // Backend-driven search + infinite scroll, matching SearchablePaginatedDropdown's
 // contract. extraParams re-triggers the fetch whenever it changes (e.g. the
@@ -135,16 +90,16 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
 
   useEffect(() => {
     if (productType) {
-      setSelProductType(LINE_TYPE_OPTS.find((o) => o.id === productType) || null);
+      setSelProductType(purchaseLineTypeOptions.find((o) => o.id === productType) || null);
     } else {
       setSelProductType(null);
     }
   }, [productType]);
 
-  const [selTaxRecoverable, setSelTaxRecoverable] = useState(TAX_RECOVERABLE_OPTS[0]);
+  const [selTaxRecoverable, setSelTaxRecoverable] = useState(purchaseTaxRecoverableOptions[0]);
   const taxRecoverableValue = watch("taxRecoverable");
   useEffect(() => {
-    setSelTaxRecoverable(taxRecoverableValue === "no" ? TAX_RECOVERABLE_OPTS[1] : TAX_RECOVERABLE_OPTS[0]);
+    setSelTaxRecoverable(taxRecoverableValue === "no" ? purchaseTaxRecoverableOptions[1] : purchaseTaxRecoverableOptions[0]);
   }, [taxRecoverableValue]);
 
   const supplierSource = useDropdownSource(
@@ -169,7 +124,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
     fetchVariantsDropdown,
     { options: showVariantDropdownOptions, page: showVariantDropdownPage, hasMore: showVariantDropdownHasMore, loading: showVariantDropdownLoading },
     (v) => `${v.productName || ""} — ${v.variantName} (${v.sku})`,
-    { productType: LINE_TYPE_TO_PRODUCT_TYPE[productType] || undefined },
+    { productType: purchaseLineTypeToProductType[productType] || undefined },
   );
   const variantOptions = variantSource.data;
 
@@ -197,7 +152,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
   // taxPercent is cleared so it falls back to the shared invoice-level rate;
   // in "different" mode each line carries its own explicit override. The
   // backend computes totals with the exact same fallback rule.
-  const [taxMode, setTaxMode] = useState(TAX_MODE_OPTS[0]);
+  const [taxMode, setTaxMode] = useState(purchaseTaxModeOptions[0]);
 
   // Editing an existing invoice that already carries per-line overrides
   // (saved earlier in "different" mode) — detect that once the real lines
@@ -207,12 +162,12 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
   useEffect(() => {
     if (hydratedModeRef.current || !lines.length) return;
     const hasOverride = lines.some((l) => l?.taxPercent !== undefined && l?.taxPercent !== null && l?.taxPercent !== "");
-    if (hasOverride) setTaxMode(TAX_MODE_OPTS[1]);
+    if (hasOverride) setTaxMode(purchaseTaxModeOptions[1]);
     hydratedModeRef.current = true;
   }, [lines]);
 
   const handleTaxModeChange = (opt) => {
-    const next = opt || TAX_MODE_OPTS[0];
+    const next = opt || purchaseTaxModeOptions[0];
     setTaxMode(next);
     if (next.id === "same") {
       fields.forEach((_, idx) => setValue(`products.${idx}.taxPercent`, null));
@@ -243,13 +198,13 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
       maximumFractionDigits: 2,
     });
 
-  const [selStatus, setSelStatus] = useState(STATUS_OPTS[0]);
+  const [selStatus, setSelStatus] = useState(purchaseStatusOptions[0]);
   const st = watch("status");
   useEffect(() => {
-    if (st) setSelStatus(STATUS_OPTS.find((o) => o.id === st) || STATUS_OPTS[0]);
+    if (st) setSelStatus(purchaseStatusOptions.find((o) => o.id === st) || purchaseStatusOptions[0]);
   }, [st]);
 
-  const selPaymentStatus = PAYMENT_STATUS_OPTS.find((o) => o.id === paymentStatus) || PAYMENT_STATUS_OPTS[0];
+  const selPaymentStatus = purchasePaymentStatusOptions.find((o) => o.id === paymentStatus) || purchasePaymentStatusOptions[0];
 
   // Once Received, stock/cost/journal entries have already been posted off
   // these exact lines — editing qty/price afterward silently desynced them
@@ -266,11 +221,8 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
       <div>
         <h3 className={section}>{t("purchase:invoice_details")}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div>
-            <label className="text-sm text-linkText font-medium leading-6 mb-1 block">
-              {t("purchase:supplier")} <span className="text-[#EC1212]">*</span>
-            </label>
-            <SearchablePaginatedDropdown
+          <SearchablePaginatedDropdown
+              label={t("purchase:supplier")}
               data={supplierSource.data}
               selected={selSupplier}
               setSelected={(o) => {
@@ -291,7 +243,6 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
               disabled={locked}
               classes={`!h-[46px] !rounded-lg ${locked ? "opacity-70" : ""}`}
             />
-          </div>
           <FormInput
             label={t("purchase:date")}
             name="date"
@@ -310,11 +261,8 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
             disabled={locked}
             labelClass="text-sm text-linkText font-medium"
           />
-          <div>
-            <label className="text-sm text-linkText font-medium leading-6 mb-1 block">
-              {t("purchase:warehouse")} <span className="text-[#EC1212]">*</span>
-            </label>
-            <SearchablePaginatedDropdown
+          <SearchablePaginatedDropdown
+              label={t("purchase:warehouse")}
               data={warehouseSource.data}
               selected={selWarehouse}
               setSelected={(o) => {
@@ -335,7 +283,6 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
               disabled={locked}
               classes={`!h-[46px] !rounded-lg ${locked ? "opacity-70" : ""}`}
             />
-          </div>
           <FormInput
             label={t("purchase:receiver_name")}
             name="receiverName"
@@ -362,7 +309,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
           <div className="flex-1 min-w-[200px] max-w-xs">
             <SelectDropdown
               label={t("purchase:product_type")}
-              data={LINE_TYPE_OPTS}
+              data={purchaseLineTypeOptions}
               selected={selProductType}
               setSelected={(o) => {
                 setSelProductType(o || null);
@@ -383,11 +330,11 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
           <div className="flex-1 min-w-[220px] max-w-xs">
             <SelectDropdown
               label={t("purchase:tax_recoverable_label")}
-              data={TAX_RECOVERABLE_OPTS}
+              data={purchaseTaxRecoverableOptions}
               selected={selTaxRecoverable}
               setSelected={(o) => {
                 const val = o?.id ?? "yes";
-                setSelTaxRecoverable(o || TAX_RECOVERABLE_OPTS[0]);
+                setSelTaxRecoverable(o || purchaseTaxRecoverableOptions[0]);
                 setValue("taxRecoverable", val, { shouldValidate: true });
                 trigger("taxRecoverable");
               }}
@@ -405,7 +352,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
           <div className="flex-1 min-w-[220px] max-w-xs">
             <SelectDropdown
               label={t("purchase:tax_mode")}
-              data={TAX_MODE_OPTS}
+              data={purchaseTaxModeOptions}
               selected={taxMode}
               setSelected={handleTaxModeChange}
               valueKey="id"
@@ -415,27 +362,19 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
           </div>
           {taxMode.id === "same" && (
             <div className="w-32">
-              <label
-                htmlFor="purchase-tax-pct"
-                className="mb-1 block text-sm text-linkText font-medium leading-6"
-              >
-                {t("purchase:tax_percent")}
-              </label>
-              <input
-                id="purchase-tax-pct"
+              <FormInput
+                label={t("purchase:tax_percent")}
+                name="taxPercent"
                 type="number"
-                step="any"
+                min={0}
+                max={100}
+                decimal
+                decimalPlaces={2}
                 disabled={locked}
-                {...register("taxPercent", {
-                  valueAsNumber: true,
-                  min: { value: 0, message: "Minimum value is 0" },
-                  max: { value: 100, message: "Maximum value is 100" },
-                })}
-                className="w-full h-[46px] rounded-lg border border-slate-200 bg-white py-2 px-3 text-sm text-slate-900 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-white/20 dark:bg-white/10 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                register={register}
+                errors={errors}
+                inputClass="!h-[46px] !rounded-lg disabled:opacity-70 disabled:cursor-not-allowed"
               />
-              {errors.taxPercent && (
-                <p className="text-red text-xs mt-1 font-medium">{errors.taxPercent.message}</p>
-              )}
             </div>
           )}
           {!locked && (
@@ -542,7 +481,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
         <div>
           <SelectDropdown
             label={t("purchase:status")}
-            data={STATUS_OPTS}
+            data={purchaseStatusOptions}
             selected={selStatus}
             setSelected={(o) => {
               setSelStatus(o);
@@ -568,11 +507,9 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
         </div>
         {isEdit && (
           <div>
-            <label className="text-sm text-linkText font-medium leading-6 mb-1 block">
-              {t("purchase:payment_status")}
-            </label>
             <SelectDropdown
-              data={PAYMENT_STATUS_OPTS}
+              label={t("purchase:payment_status")}
+              data={purchasePaymentStatusOptions}
               selected={selPaymentStatus}
               setSelected={() => {}}
               disabled
@@ -588,26 +525,23 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
         )}
       </div>
 
-      <div>
-        <h4 className="text-sm font-medium text-slate-800 dark:text-white">
-          {t("purchase:notes")}
-        </h4>
-        <textarea
-          rows={3}
-          disabled={locked}
-          {...register("notes", { maxLength: { value: 500, message: "Maximum length is 500 characters" } })}
-          className="mt-2 w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm disabled:opacity-70 disabled:cursor-not-allowed"
-          placeholder={t("purchase:notes")}
-        />
-        {errors.notes && <p className="text-red text-xs mt-1 font-medium">{errors.notes.message}</p>}
-      </div>
+      <FormTextarea
+        label={t("purchase:notes")}
+        name="notes"
+        register={register}
+        errors={errors}
+        rows={3}
+        maxLength={500}
+        disabled={locked}
+        placeholder={t("purchase:notes")}
+        className="!rounded-lg disabled:opacity-70 disabled:cursor-not-allowed"
+      />
     </div>
   );
 };
 
 function LineRow({ index, sr, register, setValue, variantOptions, variantSource, remove, canRemove, t, taxMode, invoiceTaxPercent, taxRecoverable, fmtMoney, locked }) {
   const { watch, formState: { errors } } = useFormContext();
-  const lineErrors = errors?.products?.[index] || {};
   const row = watch(`products.${index}`) || {};
   const lt = lineTotal(row);
   const rowTaxAmount = lt * (effectiveLineTaxPercent(row, invoiceTaxPercent) / 100);
@@ -654,44 +588,46 @@ function LineRow({ index, sr, register, setValue, variantOptions, variantSource,
         <input type="hidden" {...register(`products.${index}.productName`)} />
       </td>
       <td className="p-2">
-        <input
+        <FormInput
+          name={`products.${index}.qty`}
           type="number"
-          step="any"
+          min={0}
+          decimal
+          decimalPlaces={3}
+          maxLength={10}
           disabled={locked}
-          onInput={(e) => { if (e.target.value.length > 10) e.target.value = e.target.value.slice(0, 10); }}
-          {...register(`products.${index}.qty`, {
-            valueAsNumber: true,
-            min: { value: 0, message: "Minimum value is 0" },
-          })}
-          className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm disabled:opacity-70 disabled:cursor-not-allowed"
+          register={register}
+          errors={errors}
+          inputClass="!h-9 !px-2 !py-1.5 !rounded disabled:opacity-70 disabled:cursor-not-allowed"
         />
-        {lineErrors.qty && <p className="mt-1 text-[11px] text-rose-600">{lineErrors.qty.message}</p>}
       </td>
       <td className="p-2">
-        <input
+        <FormInput
+          name={`products.${index}.price`}
           type="number"
-          step="any"
+          min={0}
+          decimal
+          decimalPlaces={3}
+          maxLength={10}
           placeholder="0.00"
           disabled={locked}
-          onInput={(e) => { if (e.target.value.length > 10) e.target.value = e.target.value.slice(0, 10); }}
-          {...register(`products.${index}.price`, {
-            valueAsNumber: true,
-            min: { value: 0, message: "Minimum value is 0" },
-          })}
-          className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm disabled:opacity-70 disabled:cursor-not-allowed"
+          register={register}
+          errors={errors}
+          inputClass="!h-9 !px-2 !py-1.5 !rounded disabled:opacity-70 disabled:cursor-not-allowed"
         />
-        {lineErrors.price && <p className="mt-1 text-[11px] text-rose-600">{lineErrors.price.message}</p>}
       </td>
       <td className="p-2 pt-3 text-slate-600 dark:text-white/80 text-sm">
         {row.unit || "—"}
         <input type="hidden" {...register(`products.${index}.unit`)} />
       </td>
       <td className="p-2">
-        <input
+        <FormInput
+          name={`products.${index}.expiryDate`}
           type="date"
           disabled={locked}
-          {...register(`products.${index}.expiryDate`)}
-          className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm disabled:opacity-70 disabled:cursor-not-allowed"
+          register={register}
+          errors={errors}
+          inputClass="!h-9 !px-2 !py-1.5 !rounded disabled:opacity-70 disabled:cursor-not-allowed"
         />
       </td>
       <td className="p-2 pt-3 font-semibold text-slate-800 dark:text-white">
@@ -699,21 +635,19 @@ function LineRow({ index, sr, register, setValue, variantOptions, variantSource,
       </td>
       <td className="p-2">
         {taxMode === "different" ? (
-          <>
-            <input
-              type="number"
-              step="any"
-              placeholder="0"
-              disabled={locked}
-              {...register(`products.${index}.taxPercent`, {
-                valueAsNumber: true,
-                min: { value: 0, message: "Minimum value is 0" },
-                max: { value: 100, message: "Maximum value is 100" },
-              })}
-              className="w-full rounded border border-slate-200 px-2 py-1.5 text-sm disabled:opacity-70 disabled:cursor-not-allowed"
-            />
-            {lineErrors.taxPercent && <p className="mt-1 text-[11px] text-rose-600">{lineErrors.taxPercent.message}</p>}
-          </>
+          <FormInput
+            name={`products.${index}.taxPercent`}
+            type="number"
+            min={0}
+            max={100}
+            decimal
+            decimalPlaces={2}
+            placeholder="0"
+            disabled={locked}
+            register={register}
+            errors={errors}
+            inputClass="!h-9 !px-2 !py-1.5 !rounded disabled:opacity-70 disabled:cursor-not-allowed"
+          />
         ) : (
           <div className="pt-1.5 text-slate-600 dark:text-white/80 tabular-nums">
             {effectiveLineTaxPercent(row, invoiceTaxPercent)}%
@@ -721,12 +655,12 @@ function LineRow({ index, sr, register, setValue, variantOptions, variantSource,
         )}
       </td>
       <td className="p-2 pt-3 text-slate-500 dark:text-white/60 tabular-nums">
-        <input
-          type="text"
+        <FormInput
+          name={`products.${index}.taxAmountDisplay`}
           value={fmtMoney(rowTaxAmount)}
           disabled
-          readOnly
-          className="w-full rounded border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-2 py-1.5 text-sm text-slate-500 dark:text-white/60 cursor-not-allowed"
+          readonly
+          inputClass="!h-9 !px-2 !py-1.5 !rounded !bg-slate-50 dark:!bg-white/5 !text-slate-500 dark:!text-white/60 cursor-not-allowed"
         />
       </td>
       <td className="p-2 pt-3 text-slate-600 dark:text-white/80 tabular-nums">

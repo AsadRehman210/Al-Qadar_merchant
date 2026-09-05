@@ -8,9 +8,8 @@ import SelectDropdown from "components/SelectDropdown";
 import { IoAdd } from "react-icons/io5";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { tableRows, statusFilterOptions } from "global/constant";
+import { tableRows, statusFilterOptions, designationLevelFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
-import { DESIGNATION_LEVELS } from "./designationFakeData";
 import {
   fetchDesignations,
   showDesignations,
@@ -38,7 +37,7 @@ const Designations = () => {
   const totalRecords = useSelector(showDesignationsTotal);
   const loading = useSelector(showDesignationsLoading);
 
-  const levelOpts = [{ id: "", title: "All Levels" }, ...DESIGNATION_LEVELS];
+  const levelOpts = designationLevelFilterOptions;
   const statusOpts = statusFilterOptions;
   const filterLevel = levelOpts.find((o) => o.id === filters.levelId) || levelOpts[0];
   const filterStatus = statusOpts.find((o) => o.id === filters.statusId) || statusOpts[0];

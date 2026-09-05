@@ -7,26 +7,15 @@ import { toast } from "react-toastify";
 import { FiArrowLeft, FiArrowRight, FiUpload, FiFileText, FiTrash2 } from "react-icons/fi";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
+import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
 import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { applyLoan } from "store/slices/loanSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
+import { loanTypeOptions, loanPurposeOptions } from "global/constant";
 
 const { add_employee } = rafeeqi_role_ids;
-
-const LOAN_TYPES = [
-  { title: "loans:advance_salary", id: "Advance Salary" },
-  { title: "loans:emi_loan", id: "EMI Loan" },
-];
-
-const LOAN_PURPOSES = [
-  { title: "loans:house", id: "House" },
-  { title: "loans:vehicle", id: "Vehicle" },
-  { title: "loans:personal", id: "Personal" },
-  { title: "loans:education", id: "Education" },
-  { title: "loans:medical", id: "Medical" },
-];
 
 // Applying for a loan only submits its terms — the backend computes status,
 // EMI schedule, approvals, disbursement, etc. through its own workflow
@@ -45,8 +34,8 @@ const AddLoan = ({ selfService = false }) => {
   }, [dispatch]);
 
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [selLoanType, setSelLoanType] = useState(LOAN_TYPES[0]);
-  const [selPurpose, setSelPurpose] = useState(LOAN_PURPOSES[0]);
+  const [selLoanType, setSelLoanType] = useState(loanTypeOptions[0]);
+  const [selPurpose, setSelPurpose] = useState(loanPurposeOptions[0]);
   const [submitting, setSubmitting] = useState(false);
 
   const employeeOptions = useMemo(
@@ -159,7 +148,7 @@ const AddLoan = ({ selfService = false }) => {
             </div>
             <SelectDropdown
               label={t("loans:loan_type")}
-              data={LOAN_TYPES}
+              data={loanTypeOptions}
               selected={selLoanType}
               setSelected={setSelLoanType}
               name="loanType"
@@ -172,7 +161,7 @@ const AddLoan = ({ selfService = false }) => {
             />
             <SelectDropdown
               label={t("loans:loan_purpose")}
-              data={LOAN_PURPOSES}
+              data={loanPurposeOptions}
               selected={selPurpose}
               setSelected={setSelPurpose}
               name="loanPurpose"
@@ -187,7 +176,7 @@ const AddLoan = ({ selfService = false }) => {
               label={t("loans:loan_amount")}
               name="loanAmount"
               type="number"
-              min={0}
+              min={0.01}
               decimal
               decimalPlaces={3}
               maxLength={10}
@@ -218,18 +207,16 @@ const AddLoan = ({ selfService = false }) => {
               errors={errors}
               required
             />
-            <div className="lg:col-span-3">
-              <label className="text-sm font-medium text-linkText leading-6 mb-1 block">
-                {t("loans:notes")}
-              </label>
-              <textarea
-                rows={3}
-                {...register("notes", { maxLength: { value: 500, message: t("max_length_500") || "Maximum length is 500 characters" } })}
-                placeholder={t("loans:notes")}
-                className="w-full rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 p-3 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:border-teal-500 focus:outline-0"
-              />
-              {errors.notes && <p className="text-xs text-red-500 mt-1">{errors.notes.message}</p>}
-            </div>
+            <FormTextarea
+              label={t("loans:notes")}
+              name="notes"
+              register={register}
+              errors={errors}
+              rows={3}
+              maxLength={{ value: 500, message: t("max_length_500") || "Maximum length is 500 characters" }}
+              placeholder={t("loans:notes")}
+              wrapperClass="lg:col-span-3"
+            />
             <div className="lg:col-span-3">
               <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
                 {t("loans:guarantor")}
@@ -258,6 +245,7 @@ const AddLoan = ({ selfService = false }) => {
                   name="guarantorAddress"
                   register={register}
                   errors={errors}
+                  pattern={/[a-zA-Z0-9\s.'-]/}
                   maxLength={200}
                 />
               </div>

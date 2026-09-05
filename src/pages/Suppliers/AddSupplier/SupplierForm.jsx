@@ -8,15 +8,10 @@ import SelectDropdown from "components/SelectDropdown";
 import PhoneNumberInput from "components/PhoneNumberInput";
 import PaginatedSelectBox from "components/PaginatedSelectBox";
 import { DEFAULT_ADD_SUPPLIER_VALUES } from "../supplierFakeData";
-
-const supplierTypeOptions = [
-  { title: "suppliers:company", id: "Company" },
-  { title: "suppliers:individual", id: "Individual" },
-];
-const statusOptions = [
-  { title: "suppliers:active", id: "Active" },
-  { title: "suppliers:inactive", id: "Inactive" },
-];
+import {
+  supplierTypeOptions,
+  supplierStatusOptions,
+} from "global/constant";
 
 const sectionTitle =
   "md:col-span-2 lg:col-span-3 text-lg font-semibold text-slate-900 dark:text-white pt-2 border-b border-slate-200 dark:border-white/10 pb-2";
@@ -35,8 +30,8 @@ const SupplierForm = ({ existing }) => {
   );
   const [selStatus, setSelStatus] = useState(
     () =>
-      statusOptions.find((o) => o.id === DEFAULT_ADD_SUPPLIER_VALUES.status) ||
-      statusOptions[0],
+      supplierStatusOptions.find((o) => o.id === DEFAULT_ADD_SUPPLIER_VALUES.status) ||
+      supplierStatusOptions[0],
   );
 
   const supplierTypeVal = watch("supplierType");
@@ -53,7 +48,7 @@ const SupplierForm = ({ existing }) => {
   useEffect(() => {
     if (statusVal == null || statusVal === "") return;
     const opt =
-      statusOptions.find((o) => o.id === statusVal) || statusOptions[0];
+      supplierStatusOptions.find((o) => o.id === statusVal) || supplierStatusOptions[0];
     setSelStatus(opt);
   }, [statusVal]);
 
@@ -246,7 +241,7 @@ const SupplierForm = ({ existing }) => {
         />
         <SelectDropdown
           label={t("suppliers:status")}
-          data={statusOptions}
+          data={supplierStatusOptions}
           selected={selStatus}
           setSelected={setSelStatus}
           name="status"
