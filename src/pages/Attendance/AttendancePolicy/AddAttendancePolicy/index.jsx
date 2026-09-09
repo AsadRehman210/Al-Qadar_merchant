@@ -8,14 +8,20 @@ import Button from "components/Button";
 import Checkboxes from "components/Checkboxes";
 import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
+import { SkeletonDetail } from "components/Skeleton";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchAttendancePolicyById,
   fetchCurrentAttendancePolicy,
   createAttendancePolicy,
   updateAttendancePolicy,
   showCurrentAttendancePolicy,
+  showCurrentAttendancePolicyLoading,
   clearCurrentAttendancePolicy,
 } from "store/slices/attendancePolicySlice";
+
+const { add_attendance_policy, edit_attendance_policy } = alqadar_role_ids;
 
 const SectionTitle = ({ title, hint }) => (
   <div className="pb-4 mb-5 border-b border-slate-100 dark:border-white/10">
@@ -97,6 +103,7 @@ const AddAttendancePolicy = () => {
   const isEditing = Boolean(id);
 
   const existing = useSelector(showCurrentAttendancePolicy);
+  const loading = useSelector(showCurrentAttendancePolicyLoading);
   const [policy, setPolicy] = useState({ ...BLANK_POLICY });
   const [saving, setSaving] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -161,6 +168,18 @@ const AddAttendancePolicy = () => {
   const current = !isEditing ? existing : null;
   const isReplacingCurrent = !isEditing && current;
 
+  if (!(isEditing ? checkRoleAuth(edit_attendance_policy) : checkRoleAuth(add_attendance_policy))) {
+    return null;
+  }
+
+  if (isEditing && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
+
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
       <div className="hidden dark:block absolute inset-0 bg-slate-900 z-0" />
@@ -214,7 +233,7 @@ const AddAttendancePolicy = () => {
               placeholder={t("attendance:policy_profile_optional_name")}
               pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
-              maxLength={150}
+              maxLength={100}
               inputClass="!h-11"
               labelClass="!text-xs"
               errors={formErrors.name ? { name: { message: formErrors.name } } : undefined}

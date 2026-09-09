@@ -9,20 +9,13 @@ import SelectDropdown from "components/SelectDropdown";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { FaRegEdit } from "react-icons/fa";
 import { toast } from "react-toastify";
-import {
-  fetchPurchaseInvoiceById,
-  updatePurchaseStatus,
-  addPurchasePayment,
-  addPurchaseRefund,
-  showCurrentPurchaseInvoice,
-  showCurrentPurchaseInvoiceLoading,
-} from "store/slices/purchaseInvoiceSlice";
+import { fetchPurchaseInvoiceById, updatePurchaseStatus, addPurchasePayment, addPurchaseRefund, showCurrentPurchaseInvoice, showCurrentPurchaseInvoiceLoading, clearCurrentPurchaseInvoice } from "store/slices/purchaseInvoiceSlice";
 import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth, formatAmount, lineTotal } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { paymentStatusBadge, purchaseStatusBadge, purchaseStatusOptions } from "global/constant";
 
-const { status_purchase_invoice } = rafeeqi_role_ids;
+const { status_purchase_invoice } = alqadar_role_ids;
 import PurchaseInvoicePreviewModal from "../PurchaseInvoicePreviewModal";
 import InvoiceDetailsTab from "./InvoiceDetailsTab";
 import PaymentHistoryTab from "./PaymentHistoryTab";
@@ -34,8 +27,14 @@ const TAB_CLASS =
 
 const PurchaseDetail = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentPurchaseInvoice());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const { id } = useParams();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [showStatusEdit, setShowStatusEdit] = useState(false);

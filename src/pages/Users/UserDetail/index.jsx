@@ -4,8 +4,9 @@ import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AiOutlineEdit } from "react-icons/ai";
 import Button from "components/Button";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids, flattenRoleModules } from "global/rafeeqiRoles";
+import { alqadar_role_ids, flattenRoleModules } from "global/alqadarRoles";
 import { showUserData } from "store/slices/uniqueSlice";
 import {
   fetchUserById,
@@ -14,7 +15,7 @@ import {
   showCurrentErpUserLoading,
 } from "store/slices/userSlice";
 
-const { edit_user } = rafeeqi_role_ids;
+const { view_user, edit_user } = alqadar_role_ids;
 
 const Row = ({ label, value }) => (
   <div className="flex flex-col gap-1">
@@ -63,8 +64,14 @@ const UserDetail = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  if (!checkRoleAuth(view_user)) return null;
+
   if (loading || !user) {
-    return <div className="p-10 text-center text-mutedForeground">{t("loading")}...</div>;
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={5} />
+      </div>
+    );
   }
 
   const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim() || user.user_name || "—";

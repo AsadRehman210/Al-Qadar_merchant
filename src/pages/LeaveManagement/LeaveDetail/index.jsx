@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormTextarea from "components/FormTextarea";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchLeaveById,
   clearCurrentLeave,
@@ -25,7 +25,7 @@ import { fetchDepartments, showDepartments } from "store/slices/departmentSlice"
 import { leaveStatusBadge } from "global/constant";
 import { SkeletonDetail } from "components/Skeleton";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_leave, approve_leave } = alqadar_role_ids;
 
 const Field = ({ label, value }) => (
   <div>
@@ -149,6 +149,8 @@ const LeaveDetail = () => {
       leaveTypeName: leaveTypesById[raw.leaveTypeId] || "—",
     };
   }, [raw, employeesById, departmentsById, leaveTypesById]);
+
+  if (!checkRoleAuth(view_leave)) return null;
 
   if (rawLoading && !item) {
     return (
@@ -305,8 +307,8 @@ const LeaveDetail = () => {
           </div>
         </div>
 
-        {/* Approval action panels — only HR/managers with add_employee can act, the record view itself stays open */}
-        {checkRoleAuth(add_employee) && item.status === "Pending Manager" && (
+        {/* Approval action panels — only HR/managers with add_leave can act, the record view itself stays open */}
+        {checkRoleAuth(approve_leave) && item.status === "Pending Manager" && (
           <ApprovalActionPanel
             title={t("leave:manager_action_title")}
             onApprove={(c) => doManager(true, c)}
@@ -314,7 +316,7 @@ const LeaveDetail = () => {
             color="amber"
           />
         )}
-        {checkRoleAuth(add_employee) && item.status === "Pending HR" && (
+        {checkRoleAuth(approve_leave) && item.status === "Pending HR" && (
           <ApprovalActionPanel
             title={t("leave:hr_action_title")}
             onApprove={(c) => doHr(true, c)}

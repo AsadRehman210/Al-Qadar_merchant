@@ -1,4 +1,4 @@
-ï»¿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -110,11 +110,11 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
   const warehouseSource = useDropdownSource(
     fetchWarehousesDropdown,
     { options: showWarehouseDropdownOptions, page: showWarehouseDropdownPage, hasMore: showWarehouseDropdownHasMore, loading: showWarehouseDropdownLoading },
-    (w) => `${w.code} â€” ${w.name}`,
+    (w) => `${w.code} — ${w.name}`,
     { status: "Active" },
   );
   // Filtered by the top "Type of Product" selector (Raw Material vs Finished
-  // Product) â€” NOT by warehouse. A purchase is how new stock gets INTO a
+  // Product) — NOT by warehouse. A purchase is how new stock gets INTO a
   // warehouse in the first place, so restricting the catalog to "already
   // stocked there" would make it impossible to buy something for the first
   // time. Warehouse stays a pure destination field here, unlike Sale
@@ -123,7 +123,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
   const variantSource = useDropdownSource(
     fetchVariantsDropdown,
     { options: showVariantDropdownOptions, page: showVariantDropdownPage, hasMore: showVariantDropdownHasMore, loading: showVariantDropdownLoading },
-    (v) => `${v.productName || ""} â€” ${v.variantName} (${v.sku})`,
+    (v) => `${v.productName || ""} — ${v.variantName} (${v.sku})`,
     { productType: purchaseLineTypeToProductType[productType] || undefined },
   );
   const variantOptions = variantSource.data;
@@ -147,7 +147,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
   const lines = useWatch({ control, name: "products" }) || [];
   const taxPercent = useWatch({ control, name: "taxPercent" }) ?? 0;
 
-  // "Same for all" (default) vs "different per product" â€” purely a UI mode,
+  // "Same for all" (default) vs "different per product" — purely a UI mode,
   // nothing separate is persisted for it. In "same" mode every line's own
   // taxPercent is cleared so it falls back to the shared invoice-level rate;
   // in "different" mode each line carries its own explicit override. The
@@ -155,7 +155,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
   const [taxMode, setTaxMode] = useState(purchaseTaxModeOptions[0]);
 
   // Editing an existing invoice that already carries per-line overrides
-  // (saved earlier in "different" mode) â€” detect that once the real lines
+  // (saved earlier in "different" mode) — detect that once the real lines
   // arrive via reset() and switch the UI mode to match, so the form doesn't
   // silently show "same" while the data underneath says otherwise.
   const hydratedModeRef = useRef(false);
@@ -207,7 +207,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
   const selPaymentStatus = purchasePaymentStatusOptions.find((o) => o.id === paymentStatus) || purchasePaymentStatusOptions[0];
 
   // Once Received, stock/cost/journal entries have already been posted off
-  // these exact lines â€” editing qty/price afterward silently desynced them
+  // these exact lines — editing qty/price afterward silently desynced them
   // from Stock (no server-side re-sync existed beyond expiryDate), so the
   // whole invoice becomes read-only here. Corrections belong in a Debit Note,
   // which already reverses stock/batch/ledger correctly.
@@ -290,7 +290,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
             errors={errors}
             pattern={/[a-zA-Z0-9\s.'&,-]/}
             minLength={2}
-            maxLength={150}
+            maxLength={100}
             disabled={locked}
             labelClass="text-sm text-linkText font-medium"
           />
@@ -298,7 +298,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
         {locked && (
           <p className="text-xs text-slate-400 dark:text-white/40 mt-3">
             {t("purchase:invoice_locked_hint", {
-              defaultValue: "This invoice is locked â€” stock and accounting entries have already been posted. Use a Debit Note to correct quantities or amounts.",
+              defaultValue: "This invoice is locked — stock and accounting entries have already been posted. Use a Debit Note to correct quantities or amounts.",
             })}
           </p>
         )}
@@ -500,7 +500,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
           {isEdit && currentStatus === "Received" && (
             <p className="text-xs text-slate-400 dark:text-white/40 mt-1">
               {t("purchase:status_locked_hint", {
-                defaultValue: "Status is locked once a purchase is Received â€” stock and accounting entries have already been posted.",
+                defaultValue: "Status is locked once a purchase is Received — stock and accounting entries have already been posted.",
               })}
             </p>
           )}
@@ -518,7 +518,7 @@ const PurchaseInvoiceForm = ({ isEdit = false, paymentStatus = null, currentStat
             />
             <p className="text-xs text-slate-400 dark:text-white/40 mt-1">
               {t("purchase:payment_status_hint", {
-                defaultValue: "Record payments from the invoice detail page â€” this only updates once money actually moves.",
+                defaultValue: "Record payments from the invoice detail page — this only updates once money actually moves.",
               })}
             </p>
           </div>
@@ -545,7 +545,7 @@ function LineRow({ index, sr, register, setValue, variantOptions, variantSource,
   const row = watch(`products.${index}`) || {};
   const lt = lineTotal(row);
   const rowTaxAmount = lt * (effectiveLineTaxPercent(row, invoiceTaxPercent) / 100);
-  // Per-unit landed cost â€” mirrors the backend's withLineTaxAmounts exactly
+  // Per-unit landed cost — mirrors the backend's withLineTaxAmounts exactly
   // (see purchase-invoice-service.ts), so what's shown here while entering
   // the purchase is the same number that gets saved on the line and later
   // reused as the stock batch's unitCost. Recoverable tax is a VAT Receivable
@@ -568,7 +568,7 @@ function LineRow({ index, sr, register, setValue, variantOptions, variantSource,
             setValue(`products.${index}.variantId`, opt?.id || "");
             if (opt?.id) {
               setValue(`products.${index}.productName`, opt.title);
-              // Price is deliberately NOT auto-filled â€” purchase price
+              // Price is deliberately NOT auto-filled — purchase price
               // legitimately differs every time (new supplier, new deal,
               // market change), so it's always typed fresh per line.
               setValue(`products.${index}.unit`, opt.unit || "pcs");
@@ -592,8 +592,6 @@ function LineRow({ index, sr, register, setValue, variantOptions, variantSource,
           name={`products.${index}.qty`}
           type="number"
           min={0}
-          decimal
-          decimalPlaces={3}
           maxLength={10}
           disabled={locked}
           register={register}
@@ -617,7 +615,7 @@ function LineRow({ index, sr, register, setValue, variantOptions, variantSource,
         />
       </td>
       <td className="p-2 pt-3 text-slate-600 dark:text-white/80 text-sm">
-        {row.unit || "â€”"}
+        {row.unit || "—"}
         <input type="hidden" {...register(`products.${index}.unit`)} />
       </td>
       <td className="p-2">

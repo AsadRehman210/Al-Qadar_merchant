@@ -9,12 +9,12 @@ import Button from "components/Button";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { markAttendance, markAttendanceBulk } from "store/slices/attendanceSlice";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import SingleAttendanceTab from "./SingleAttendanceTab";
 import BulkAttendanceTab from "./BulkAttendanceTab";
 import { attendanceStatusOptions, attendanceShiftOptions } from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { add_attendance } = alqadar_role_ids;
 
 const tabBtnClass = (active) =>
   `px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -189,7 +189,7 @@ const AddAttendance = () => {
     }
   };
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (!checkRoleAuth(add_attendance)) return null;
 
   const isRTL = i18n.language === "ar";
 

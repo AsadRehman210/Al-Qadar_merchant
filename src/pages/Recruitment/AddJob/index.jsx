@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+ï»¿import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
@@ -8,12 +8,16 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import RichTextEditor from "components/RichTextEditor";
-import { jobStatusOptions } from "global/constant";
-import { jobExperienceOptions } from "global/constant";
+import { SkeletonDetail } from "components/Skeleton";
+import { jobStatusOptions, jobExperienceOptions } from "global/constant";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { fetchDesignationsDropdown, showDesignationDropdownOptions } from "store/slices/designationSlice";
-import { fetchJobById, showCurrentJob, clearCurrentJob, createJob, updateJob } from "store/slices/recruitmentSlice";
+import { fetchJobById, showCurrentJob, showCurrentJobLoading, clearCurrentJob, createJob, updateJob } from "store/slices/recruitmentSlice";
 import { showUserData } from "store/slices/uniqueSlice";
+
+const { add_recruitment, edit_recruitment } = alqadar_role_ids;
 
 const AddJob = () => {
   const navigate = useNavigate();
@@ -24,6 +28,7 @@ const AddJob = () => {
   const departments = useSelector(showDepartments);
   const designationDropdownOptions = useSelector(showDesignationDropdownOptions);
   const existing = useSelector(showCurrentJob);
+  const loading = useSelector(showCurrentJobLoading);
   const userData = useSelector(showUserData);
   const tenantCurrency = userData?.currency || "SAR";
   const [submitting, setSubmitting] = useState(false);
@@ -43,7 +48,7 @@ const AddJob = () => {
 
   // Designations belong to a single department, so the Job Title picker only
   // ever needs the backend's designations for whichever department is
-  // selected — fetched fresh from the API on every department change,
+  // selected â€” fetched fresh from the API on every department change,
   // never filtered out of a bulk client-side list.
   useEffect(() => {
     if (selDept?.id) dispatch(fetchDesignationsDropdown({ departmentId: selDept.id }));
@@ -80,7 +85,7 @@ const AddJob = () => {
   }, [existing, isEdit, departmentOpts, reset]);
 
   // Changing the department invalidates whichever designation was picked
-  // under the previous one — but skip this on the initial edit-mode load,
+  // under the previous one â€” but skip this on the initial edit-mode load,
   // since that effect above sets both together.
   const handleDeptChange = (v) => {
     setSelDept(v);
@@ -138,6 +143,17 @@ const AddJob = () => {
 
   const labelCls = "text-sm font-medium text-slate-700 dark:text-white/70 mb-1.5 block";
   const sH = "text-lg font-semibold text-slate-900 dark:text-white pb-2 mb-6 border-b border-slate-200 dark:border-white/10";
+
+  if (isEdit && !checkRoleAuth(edit_recruitment)) return null;
+  if (!isEdit && !checkRoleAuth(add_recruitment)) return null;
+
+  if (isEdit && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={9} />
+      </div>
+    );
+  }
 
   return (
     <div>

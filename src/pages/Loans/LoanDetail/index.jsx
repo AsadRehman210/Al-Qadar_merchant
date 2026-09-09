@@ -8,7 +8,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchLoanById,
   showCurrentLoan,
@@ -25,11 +25,10 @@ import {
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { SkeletonDetail } from "components/Skeleton";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_loan, edit_loan, approve_loan } = alqadar_role_ids;
 
 const TAB_CLASS =
   "min-w-[140px] whitespace-nowrap cursor-pointer py-3 px-5 rounded-lg h-11 flex justify-center items-center font-medium text-sm text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:text-white data-[selected]:font-semibold hover:text-teal-700 hover:bg-teal-500/10 dark:hover:text-white dark:hover:bg-teal-500/20";
-
 
 import { loanStatusBadge as STATUS_BADGE } from "global/constant";
 
@@ -85,6 +84,8 @@ const LoanDetail = () => {
   const [rejectReason, setRejectReason] = useState("");
   const [showPreClose, setShowPreClose] = useState(false);
   const [pcAmount, setPcAmount] = useState("");
+
+  if (!checkRoleAuth(view_loan)) return null;
 
   if (loanLoading && (!loan || loan.id !== id)) {
     return (
@@ -174,7 +175,7 @@ const LoanDetail = () => {
         </div>
 
         {/* Action bar — Line manager stage (employee-applied loans) */}
-        {checkRoleAuth(add_employee) && loan.status === "Pending Manager" && (
+        {checkRoleAuth(approve_loan) && loan.status === "Pending Manager" && (
           <div className="mb-5 p-4 rounded-2xl bg-amber-50 dark:bg-amber-500/10 border-2 border-amber-200 dark:border-amber-500/30">
             <p className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-3 flex items-center gap-2">
               <FiAlertTriangle className="h-4 w-4" /> {t("requests:manager_approvals")}
@@ -189,7 +190,7 @@ const LoanDetail = () => {
         )}
 
         {/* Action bar — HR stage (Pending HR or HR-direct Pending) */}
-        {checkRoleAuth(add_employee) && (loan.status === "Pending" || loan.status === "Pending HR") && (
+        {checkRoleAuth(approve_loan) && (loan.status === "Pending" || loan.status === "Pending HR") && (
           <div className="mb-5 p-4 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border-2 border-blue-200 dark:border-blue-500/30">
             <p className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
               <FiAlertTriangle className="h-4 w-4" /> {loan.status === "Pending HR" ? t("requests:hr_approvals") : t("loans:awaiting_approval")}
@@ -230,7 +231,7 @@ const LoanDetail = () => {
         )}
 
         {/* Action bar — Approved, awaiting disbursement */}
-        {checkRoleAuth(add_employee) && loan.status === "Approved" && (
+        {checkRoleAuth(edit_loan) && loan.status === "Approved" && (
           <div className="mb-5 p-4 rounded-2xl bg-teal-50 dark:bg-teal-500/10 border-2 border-teal-200 dark:border-teal-500/30 flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm font-semibold text-teal-800 dark:text-teal-200">{t("loans:ready_to_disburse")}</p>
             <Button type="button" title={t("loans:disburse_loan")} disabled={busy} onClick={handleDisburse}
@@ -270,7 +271,7 @@ const LoanDetail = () => {
         </div>
 
         {/* Pre-closure CTA */}
-        {checkRoleAuth(add_employee) && loan.status === "Ongoing" && (
+        {checkRoleAuth(edit_loan) && loan.status === "Ongoing" && (
           <div className="mb-5">
             <button type="button" onClick={() => setShowPreClose(!showPreClose)}
               className="px-5 py-2.5 rounded-xl bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 text-sm font-semibold hover:bg-purple-200 transition-colors">
@@ -424,7 +425,7 @@ const LoanDetail = () => {
                               </span>
                             </td>
                             <td className="px-4 py-2.5">
-                              {!row.paid && loan.status === "Ongoing" && checkRoleAuth(add_employee) && (
+                              {!row.paid && loan.status === "Ongoing" && checkRoleAuth(edit_loan) && (
                                 <button type="button" disabled={busy} onClick={() => handleRepay(row.installmentNo)}
                                   className="px-3 py-1 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold disabled:opacity-50">
                                   {t("loans:mark_paid")}

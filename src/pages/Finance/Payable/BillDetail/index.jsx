@@ -7,17 +7,18 @@ import { AiOutlineEdit } from "react-icons/ai";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { financePayableStatusBadge as STATUS_BADGE } from "global/constant";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchVendorBillById,
   approveVendorBill,
   cancelVendorBill,
+  clearCurrentVendorBill,
   showCurrentVendorBill,
 } from "store/slices/financeSlice";
 import { SkeletonDetail } from "components/Skeleton";
+import { financePayableStatusBadge as STATUS_BADGE } from "global/constant";
 
-const { edit_customer } = rafeeqi_role_ids;
+const { view_finance_payable, edit_finance_payable } = alqadar_role_ids;
 
 const BillDetail = () => {
   const { t, i18n } = useTranslation();
@@ -29,9 +30,12 @@ const BillDetail = () => {
 
   useEffect(() => {
     dispatch(fetchVendorBillById(id));
+    return () => dispatch(clearCurrentVendorBill());
   }, [dispatch, id]);
 
   const isRTL = i18n.language === "ar";
+
+  if (!checkRoleAuth(view_finance_payable)) return null;
 
   const onApprove = async () => {
     setBusy(true);
@@ -83,7 +87,7 @@ const BillDetail = () => {
           </div>
           <div className="flex items-center gap-3">
             <span className={`px-3 py-1 rounded-full text-sm font-semibold ${STATUS_BADGE[bill.status] || ""}`}>{bill.status}</span>
-            {["Approved", "Partial"].includes(bill.status) && bill.balanceDue > 0 && checkRoleAuth(edit_customer) && (
+            {["Approved", "Partial"].includes(bill.status) && bill.balanceDue > 0 && checkRoleAuth(edit_finance_payable) && (
               <Link
                 to={`/finance/payments/add?billId=${id}`}
                 className="h-11 px-4 flex items-center rounded-xl bg-gradient-to-br from-teal-500 to-teal-600 text-white text-sm font-medium"
@@ -91,7 +95,7 @@ const BillDetail = () => {
                 {t("finance:record_payment")}
               </Link>
             )}
-            {bill.status === "Draft" && checkRoleAuth(edit_customer) && (
+            {bill.status === "Draft" && checkRoleAuth(edit_finance_payable) && (
               <>
                 <Link
                   to={`/finance/payable/edit/${id}`}

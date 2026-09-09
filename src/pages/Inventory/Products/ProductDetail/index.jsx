@@ -6,9 +6,10 @@ import { FiArrowLeft, FiArrowRight, FiEye } from "react-icons/fi";
 import { FaRegEdit } from "react-icons/fa";
 import Button from "components/Button";
 import { fetchProductById, showCurrentProduct, showCurrentProductLoading, clearCurrentProduct } from "store/slices/productSlice";
-import { fetchVariants, showVariants } from "store/slices/variantSlice";
-import { fetchStock, showStock } from "store/slices/stockSlice";
+import { fetchVariants, showVariants, showVariantsLoading } from "store/slices/variantSlice";
+import { fetchStock, showStock, showStockLoading } from "store/slices/stockSlice";
 import { SkeletonDetail } from "components/Skeleton";
+import TableState from "components/TableState";
 
 const formatTs = (iso) => {
   if (!iso) return "—";
@@ -28,7 +29,9 @@ const ProductDetail = () => {
   const product = useSelector(showCurrentProduct);
   const productLoading = useSelector(showCurrentProductLoading);
   const variants = useSelector(showVariants);
+  const variantsLoading = useSelector(showVariantsLoading);
   const stock = useSelector(showStock);
+  const stockLoading = useSelector(showStockLoading);
 
   useEffect(() => {
     dispatch(fetchProductById(id));
@@ -160,7 +163,15 @@ const ProductDetail = () => {
               {t("product:add_variant")}
             </Link>
           </div>
-          {variants.length === 0 ? (
+          {variantsLoading ? (
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/15">
+              <table className="w-full text-sm">
+                <tbody>
+                  <TableState loading data={[]} colSpan={6} />
+                </tbody>
+              </table>
+            </div>
+          ) : variants.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-white/60">—</p>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/15">
@@ -182,7 +193,7 @@ const ProductDetail = () => {
                       <td className="px-4 py-2">{v.variantName || "—"}</td>
                       <td className="px-4 py-2">{v.attributes?.Size || "—"}</td>
                       <td className="px-4 py-2">{v.attributes?.Color || "—"}</td>
-                      <td className="px-4 py-2">{stockByVariant(v.id)}</td>
+                      <td className="px-4 py-2">{stockLoading ? "—" : stockByVariant(v.id)}</td>
                       <td className="px-4 py-2">
                         <Link
                           to={`/inventory/variants/detail/${v.id}`}

@@ -6,17 +6,24 @@ import { HiOutlineCalendarDays } from "react-icons/hi2";
 import {
   fetchLeavesByEmployee,
   showEmployeeLeaves,
+  showEmployeeLeavesLoading,
   fetchLeaveBalance,
   showLeaveBalance,
+  showLeaveBalanceLoading,
+  clearEmployeeLeaves,
+  clearLeaveBalance,
 } from "store/slices/leaveSlice";
 import { fetchLeaveTypes, showLeaveTypes } from "store/slices/leaveTypeSlice";
 import { leaveStatusBadge } from "global/constant";
+import { SkeletonCards, SkeletonTable } from "components/Skeleton";
 
 const LeaveTab = ({ data }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const history = useSelector(showEmployeeLeaves);
+  const historyLoading = useSelector(showEmployeeLeavesLoading);
   const balance = useSelector(showLeaveBalance);
+  const balanceLoading = useSelector(showLeaveBalanceLoading);
   const leaveTypes = useSelector(showLeaveTypes);
 
   useEffect(() => {
@@ -25,6 +32,10 @@ const LeaveTab = ({ data }) => {
       dispatch(fetchLeaveBalance(data.id));
     }
     dispatch(fetchLeaveTypes());
+    return () => {
+      dispatch(clearEmployeeLeaves());
+      dispatch(clearLeaveBalance());
+    };
   }, [data?.id, dispatch]);
 
   const leaveTypesById = Object.fromEntries(leaveTypes.map((x) => [x.id, x.name]));
@@ -49,7 +60,11 @@ const LeaveTab = ({ data }) => {
           </Link>
         </div>
 
-        {balance.length > 0 ? (
+        {balanceLoading ? (
+          <div className="relative">
+            <SkeletonCards count={4} columns="grid-cols-2 md:grid-cols-4" />
+          </div>
+        ) : balance.length > 0 ? (
           <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4">
             {balance.map((b) => (
               <div
@@ -93,7 +108,11 @@ const LeaveTab = ({ data }) => {
             {t("leave:apply_leave")}
           </Link>
         </div>
-        {history.length === 0 ? (
+        {historyLoading ? (
+          <div className="p-4">
+            <SkeletonTable rows={4} columns={5} />
+          </div>
+        ) : history.length === 0 ? (
           <p className="p-6 text-center text-sm text-slate-500 dark:text-white/60">
             {t("no_record_found")}
           </p>

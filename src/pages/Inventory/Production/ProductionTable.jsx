@@ -6,7 +6,7 @@ import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
 import { FiEye } from "react-icons/fi";
 import { toast } from "react-toastify";
 import ActionPopup from "components/ActionPopup";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
@@ -76,7 +76,7 @@ const ProductionTable = ({ data, loading, page = 1, setPage, selRows, setSelRows
                   {t("production:output_quantity")}
                 </th>
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
-                  {t("production:scheduled_date")}
+                  {t("production:completed_date")}
                 </th>
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("production:status")}
@@ -106,7 +106,11 @@ const ProductionTable = ({ data, loading, page = 1, setPage, selRows, setSelRows
                       {row.outputQuantity ?? "—"}
                     </td>
                     <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap">
-                      {row.scheduledDate ? row.scheduledDate.slice(0, 10) : "—"}
+                      {row.completedDate
+                        ? String(row.completedDate).slice(0, 10)
+                        : row.scheduledDate
+                          ? String(row.scheduledDate).slice(0, 10)
+                          : "—"}
                     </td>
                     <td className="px-4 py-4 align-middle">
                       <span
@@ -168,7 +172,7 @@ const ProductionTable = ({ data, loading, page = 1, setPage, selRows, setSelRows
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

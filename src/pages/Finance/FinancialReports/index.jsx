@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { checkRoleAuth, formatAmount, formatSignedAmount } from "global/helper";
 import { monthShortLabels } from "global/constant";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchTrialBalance,
   fetchProfitAndLoss,
@@ -32,11 +32,9 @@ import TableState from "components/TableState";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 
-const { view_customer } = rafeeqi_role_ids;
+const { view_finance_reports } = alqadar_role_ids;
 
 const TAB = "min-w-[120px] whitespace-nowrap cursor-pointer py-3 px-4 rounded-lg h-11 flex justify-center items-center font-medium text-sm text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:text-white data-[selected]:font-semibold hover:bg-teal-500/10 dark:hover:bg-teal-500/20";
-
-
 
 const FinancialReports = () => {
   const { t } = useTranslation();
@@ -115,7 +113,7 @@ const FinancialReports = () => {
 
   return (
     <FinancePage title={t("finance:reports_title")} description={t("finance:reports_desc")}>
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_reports) && (
         <>
           {/* Date range filter */}
           <div className="flex flex-wrap gap-4 items-end mb-6 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10">

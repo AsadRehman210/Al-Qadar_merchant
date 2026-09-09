@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import Table from "components/Table";
 import {
@@ -9,7 +9,9 @@ import {
   showCustomerLedger,
   showCustomerLedgerTotal,
   showCustomerLedgerOpeningBalance,
+  showSalesCustomerTabLoading,
 } from "store/slices/salesCustomerSlice";
+import TableState from "components/TableState";
 
 const LIMIT = 10;
 
@@ -35,6 +37,7 @@ const LedgerTab = ({ customer }) => {
   const entries = useSelector(showCustomerLedger);
   const total = useSelector(showCustomerLedgerTotal);
   const openingBalance = useSelector(showCustomerLedgerOpeningBalance);
+  const loading = useSelector(showSalesCustomerTabLoading);
   const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
   const [page, setPage] = useState(1);
@@ -80,62 +83,68 @@ const LedgerTab = ({ customer }) => {
             </tr>
           </thead>
           <tbody>
-            {page === 1 && (
-              <tr className="border-t border-slate-100 dark:border-white/5 bg-slate-50/60 dark:bg-white/5">
-                <td className="px-4 py-3 text-slate-500 dark:text-white/60" colSpan={5}>
-                  {t("customers:ledger_opening_balance")}
-                </td>
-                <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
-                  {formatAmount(openingBalance)} {customer.currency || "SAR"}
-                </td>
-              </tr>
-            )}
-            {entries.length > 0 ? (
-              entries.map((e) => (
-                <tr key={e.id} className="border-t border-slate-100 dark:border-white/5">
-                  <td className="px-4 py-3 text-slate-600 dark:text-white/90">
-                    {e.date ? String(e.date).slice(0, 10) : "-"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {(() => {
-                      const typeMeta = ledgerTypeMeta(e.type, t);
-                      return (
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${typeMeta.className}`}>
-                          {typeMeta.label}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-white/90">{e.reference || "-"}</td>
-                  <td className="px-4 py-3 text-rose-600 dark:text-rose-400">
-                    {e.debit ? `${formatAmount(e.debit)} ${customer.currency || "SAR"}` : "-"}
-                  </td>
-                  <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400">
-                    {e.credit ? `${formatAmount(e.credit)} ${customer.currency || "SAR"}` : "-"}
-                  </td>
-                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
-                    {formatAmount(e.runningBalance)} {customer.currency || "SAR"}
-                  </td>
-                </tr>
-              ))
+            {loading ? (
+              <TableState loading data={[]} colSpan={6} />
             ) : (
-              page === 1 && (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-slate-500 dark:text-white/60"
-                  >
-                    {t("customers:ledger_empty")}
-                  </td>
-                </tr>
-              )
+              <>
+                {page === 1 && (
+                  <tr className="border-t border-slate-100 dark:border-white/5 bg-slate-50/60 dark:bg-white/5">
+                    <td className="px-4 py-3 text-slate-500 dark:text-white/60" colSpan={5}>
+                      {t("customers:ledger_opening_balance")}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
+                      {formatAmount(openingBalance)} {customer.currency || "SAR"}
+                    </td>
+                  </tr>
+                )}
+                {entries.length > 0 ? (
+                  entries.map((e) => (
+                    <tr key={e.id} className="border-t border-slate-100 dark:border-white/5">
+                      <td className="px-4 py-3 text-slate-600 dark:text-white/90">
+                        {e.date ? String(e.date).slice(0, 10) : "-"}
+                      </td>
+                      <td className="px-4 py-3">
+                        {(() => {
+                          const typeMeta = ledgerTypeMeta(e.type, t);
+                          return (
+                            <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${typeMeta.className}`}>
+                              {typeMeta.label}
+                            </span>
+                          );
+                        })()}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-white/90">{e.reference || "-"}</td>
+                      <td className="px-4 py-3 text-rose-600 dark:text-rose-400">
+                        {e.debit ? `${formatAmount(e.debit)} ${customer.currency || "SAR"}` : "-"}
+                      </td>
+                      <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400">
+                        {e.credit ? `${formatAmount(e.credit)} ${customer.currency || "SAR"}` : "-"}
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">
+                        {formatAmount(e.runningBalance)} {customer.currency || "SAR"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  page === 1 && (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-4 py-8 text-center text-slate-500 dark:text-white/60"
+                      >
+                        {t("customers:ledger_empty")}
+                      </td>
+                    </tr>
+                  )
+                )}
+              </>
             )}
           </tbody>
         </table>
       </Table>
 
       <div className="pagination mt-5 flex justify-end [&_.pagination_li.selected_a]:!bg-gradient-to-br [&_.pagination_li.selected_a]:!from-teal-500 [&_.pagination_li.selected_a]:!to-teal-600 [&_.pagination_li.selected_a]:!border-transparent [&_.pagination_li.selected_a]:!text-white">
-        <ReactPaginate
+        <Pagination
           breakLabel="..."
           nextLabel={<FaAngleRight />}
           previousLabel={<FaAngleLeft />}

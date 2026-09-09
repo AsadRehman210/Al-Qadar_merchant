@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,7 +8,7 @@ import FormTextarea from "components/FormTextarea";
 import { SkeletonDetail } from "components/Skeleton";
 import { APPROVAL_STATUS_BADGE, APPROVAL_STATUS, stepIndex } from "global/approvalEngine";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { FIELD_DEFS, requestTypeById } from "../requestsFakeData";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import {
@@ -23,7 +23,7 @@ import {
   cancelRequest,
 } from "store/slices/requestSlice";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_employee_request, approve_employee_request } = alqadar_role_ids;
 const DETAIL_LABELS = Object.fromEntries(
   Object.entries(FIELD_DEFS).map(([k, def]) => [k, def.labelKey]),
 );
@@ -103,6 +103,8 @@ const RequestDetail = () => {
     () => Object.fromEntries(employees.map((e) => [e.id, e])),
     [employees],
   );
+
+  if (!checkRoleAuth(view_employee_request)) return null;
 
   if (reqLoading && !req) {
     return (
@@ -221,7 +223,7 @@ const RequestDetail = () => {
             </div>
 
             {/* Action panels */}
-            {checkRoleAuth(add_employee) && req.status === APPROVAL_STATUS.PENDING_MANAGER && (
+            {checkRoleAuth(approve_employee_request) && req.status === APPROVAL_STATUS.PENDING_MANAGER && (
               <div className="bg-white dark:bg-white/10 border-2 border-amber-200 dark:border-amber-500/30 rounded-3xl p-7">
                 <h3 className="font-semibold text-amber-700 dark:text-amber-300 mb-3">{t("requests:manager_approvals")}</h3>
                 <ActionForm
@@ -231,7 +233,7 @@ const RequestDetail = () => {
                 />
               </div>
             )}
-            {checkRoleAuth(add_employee) && req.status === APPROVAL_STATUS.PENDING_HR && (
+            {checkRoleAuth(approve_employee_request) && req.status === APPROVAL_STATUS.PENDING_HR && (
               <div className="bg-white dark:bg-white/10 border-2 border-blue-200 dark:border-blue-500/30 rounded-3xl p-7">
                 <h3 className="font-semibold text-blue-700 dark:text-blue-300 mb-3">{t("requests:hr_approvals")}</h3>
                 <ActionForm
@@ -263,7 +265,7 @@ const RequestDetail = () => {
               </ol>
             </div>
 
-            {checkRoleAuth(add_employee) && (req.status === APPROVAL_STATUS.PENDING_MANAGER || req.status === APPROVAL_STATUS.PENDING_HR) && (
+            {checkRoleAuth(approve_employee_request) && (req.status === APPROVAL_STATUS.PENDING_MANAGER || req.status === APPROVAL_STATUS.PENDING_HR) && (
               <Button
                 type="button"
                 title={t("requests:cancel_request")}

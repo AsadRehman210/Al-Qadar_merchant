@@ -6,21 +6,21 @@ import { FiArrowLeft, FiArrowRight, FiCheck, FiX } from "react-icons/fi";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
 import { toast } from "react-toastify";
-import {
-  fetchCreditNoteById,
-  updateCreditNoteStatus,
-  showCurrentCreditNote,
-  showCurrentCreditNoteLoading,
-} from "store/slices/creditNoteSlice";
+import { fetchCreditNoteById, updateCreditNoteStatus, showCurrentCreditNote, showCurrentCreditNoteLoading, clearCurrentCreditNote } from "store/slices/creditNoteSlice";
 import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth, lineTotal } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 
-const { status_sales_credit_note } = rafeeqi_role_ids;
+const { status_sales_credit_note } = alqadar_role_ids;
 
 const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-import { noteStatusBadge as STATUS_BADGE, noteNextStatusMap as NEXT_STATUS } from "global/constant";
+import { noteStatusBadge as STATUS_BADGE, noteNextStatusMap } from "global/constant";
+
+// Mirrors the backend's VALID_NEXT_STATUS guard in credit-note-service.ts —
+// Applied/Voided are terminal (stock/journal effects already fired), so
+// once reached there is nothing left to transition to.
+const NEXT_STATUS = noteNextStatusMap;
 
 // Mirrors RESTOCK_REASONS in credit-note-service.ts — only these reasons put
 // the returned goods back on the shelf when the credit note is Applied.
@@ -29,10 +29,16 @@ const BILLING_ONLY_REASONS = new Set(["Wrong entry"]);
 
 const CreditNoteDetail = () => {
   const { t, i18n } = useTranslation();
-  const navigate     = useNavigate();
-  const dispatch      = useDispatch();
-  const { id }       = useParams();
-  const isRTL        = i18n.language === "ar";
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isRTL = i18n.language === "ar";
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentCreditNote());
+    };
+  }, [dispatch]);
 
   const [showStatusEdit, setShowStatusEdit] = useState(false);
   const [newStatus, setNewStatus] = useState("");

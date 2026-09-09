@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { Helmet } from "react-helmet";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { useSelector, useDispatch } from "react-redux";
 import { showUserStatus } from "store/slices/authSlice";
 import { showUserData } from "store/slices/uniqueSlice";
@@ -52,14 +52,21 @@ import {
   showHrOverview,
   showHrOverviewLoading,
   showAttendanceTrend,
+  showAttendanceTrendLoading,
   showInventoryOverview,
+  showInventoryOverviewLoading,
   showExpiryBuckets,
+  showExpiryBucketsLoading,
   showSalesOverview,
+  showSalesOverviewLoading,
   showProfitTrend,
+  showProfitTrendLoading,
   showTopProducts,
+  showTopProductsLoading,
 } from "store/slices/analyticsSlice";
+import { SkeletonCards, SkeletonChart, SkeletonList } from "components/Skeleton";
 
-const { view_dashboard } = rafeeqi_role_ids;
+const { view_dashboard } = alqadar_role_ids;
 
 const COLORS = ["#14b8a6", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#22c55e", "#06b6d4"];
 
@@ -115,11 +122,24 @@ const Dashboard = () => {
   const hr = useSelector(showHrOverview);
   const hrLoading = useSelector(showHrOverviewLoading);
   const attendanceTrend = useSelector(showAttendanceTrend);
+  const attendanceTrendLoading = useSelector(showAttendanceTrendLoading);
   const inventory = useSelector(showInventoryOverview);
+  const inventoryLoading = useSelector(showInventoryOverviewLoading);
   const expiry = useSelector(showExpiryBuckets);
+  const expiryLoading = useSelector(showExpiryBucketsLoading);
   const sales = useSelector(showSalesOverview);
+  const salesLoading = useSelector(showSalesOverviewLoading);
   const profitTrend = useSelector(showProfitTrend);
+  const profitTrendLoading = useSelector(showProfitTrendLoading);
   const topProducts = useSelector(showTopProducts);
+  const topProductsLoading = useSelector(showTopProductsLoading);
+
+  // Skeletons only stand in for the very first load — once a panel has data,
+  // refetches keep the previous numbers on screen instead of flashing back
+  // to placeholders.
+  const hrPending = hrLoading && !hr;
+  const inventoryPending = inventoryLoading && !inventory;
+  const salesPending = salesLoading && !sales;
 
   useEffect(() => {
     if (!isViewDashboard || userStatus) return;
@@ -173,67 +193,78 @@ const Dashboard = () => {
         </div>
 
         {/* KPI row 1 — HR */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <KpiCard
-            icon={FiUsers}
-            label={t("dashboard:total_employees")}
-            value={hrLoading ? "…" : fmtNum(hr?.totalEmployees)}
-            sub={`${fmtNum(hr?.activeEmployees)} ${t("dashboard:active")}`}
-            color="teal"
-          />
-          <KpiCard
-            icon={FiUserCheck}
-            label={t("dashboard:present_today")}
-            value={hrLoading ? "…" : fmtNum(hr?.presentToday)}
-            color="emerald"
-          />
-          <KpiCard
-            icon={FiUserX}
-            label={t("dashboard:absent_today")}
-            value={hrLoading ? "…" : fmtNum(hr?.absentToday)}
-            color="red"
-          />
-          <KpiCard
-            icon={FiUsers}
-            label={t("dashboard:on_leave_today")}
-            value={hrLoading ? "…" : fmtNum(hr?.onLeaveToday)}
-            color="amber"
-          />
-          <KpiCard
-            icon={FiUsers}
-            label={t("dashboard:not_marked_today")}
-            value={hrLoading ? "…" : fmtNum(hr?.notMarkedToday)}
-            sub={t("dashboard:attendance_not_marked_hint")}
-            color="blue"
-          />
-        </div>
+        {hrPending ? (
+          <SkeletonCards count={5} columns="grid-cols-2 lg:grid-cols-5" />
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <KpiCard
+              icon={FiUsers}
+              label={t("dashboard:total_employees")}
+              value={fmtNum(hr?.totalEmployees)}
+              sub={`${fmtNum(hr?.activeEmployees)} ${t("dashboard:active")}`}
+              color="teal"
+            />
+            <KpiCard
+              icon={FiUserCheck}
+              label={t("dashboard:present_today")}
+              value={fmtNum(hr?.presentToday)}
+              color="emerald"
+            />
+            <KpiCard
+              icon={FiUserX}
+              label={t("dashboard:absent_today")}
+              value={fmtNum(hr?.absentToday)}
+              color="red"
+            />
+            <KpiCard
+              icon={FiUsers}
+              label={t("dashboard:on_leave_today")}
+              value={fmtNum(hr?.onLeaveToday)}
+              color="amber"
+            />
+            <KpiCard
+              icon={FiUsers}
+              label={t("dashboard:not_marked_today")}
+              value={fmtNum(hr?.notMarkedToday)}
+              sub={t("dashboard:attendance_not_marked_hint")}
+              color="blue"
+            />
+          </div>
+        )}
 
         {/* KPI row 2 — Inventory + Finance */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <KpiCard
-            icon={FiPackage}
-            label={t("dashboard:total_products")}
-            value={fmtNum(inventory?.totalProducts)}
-            color="teal"
-          />
-          <KpiCard
-            icon={FiLayers}
-            label={t("dashboard:total_variants")}
-            value={fmtNum(inventory?.totalVariants)}
-            color="blue"
-          />
-          <KpiCard
-            icon={FiAlertTriangle}
-            label={t("dashboard:low_out_of_stock")}
-            value={`${fmtNum(inventory?.lowStockCount)} / ${fmtNum(inventory?.outOfStockCount)}`}
-            color="amber"
-          />
-          <KpiCard icon={FiTrendingUp} label={t("dashboard:total_profit")} value={fmtMoney(sales?.totalProfit)} color="emerald" />
-          <KpiCard icon={FiDollarSign} label={t("dashboard:total_revenue")} value={fmtMoney(sales?.totalRevenue)} color="purple" />
-        </div>
+        {inventoryPending && salesPending ? (
+          <SkeletonCards count={5} columns="grid-cols-2 lg:grid-cols-5" />
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <KpiCard
+              icon={FiPackage}
+              label={t("dashboard:total_products")}
+              value={inventoryPending ? "…" : fmtNum(inventory?.totalProducts)}
+              color="teal"
+            />
+            <KpiCard
+              icon={FiLayers}
+              label={t("dashboard:total_variants")}
+              value={inventoryPending ? "…" : fmtNum(inventory?.totalVariants)}
+              color="blue"
+            />
+            <KpiCard
+              icon={FiAlertTriangle}
+              label={t("dashboard:low_out_of_stock")}
+              value={inventoryPending ? "…" : `${fmtNum(inventory?.lowStockCount)} / ${fmtNum(inventory?.outOfStockCount)}`}
+              color="amber"
+            />
+            <KpiCard icon={FiTrendingUp} label={t("dashboard:total_profit")} value={salesPending ? "…" : fmtMoney(sales?.totalProfit)} color="emerald" />
+            <KpiCard icon={FiDollarSign} label={t("dashboard:total_revenue")} value={salesPending ? "…" : fmtMoney(sales?.totalRevenue)} color="purple" />
+          </div>
+        )}
 
         {/* Expiry buckets — clickable, each opens a paginated drilldown popup */}
         <Panel title={t("dashboard:expiry_overview")}>
+          {expiryLoading && !expiry ? (
+            <SkeletonCards count={4} />
+          ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {(expiry?.buckets || []).map((b) => (
               <button
@@ -252,9 +283,13 @@ const Dashboard = () => {
               </button>
             ))}
           </div>
+          )}
         </Panel>
 
         {/* Profit trend graph */}
+        {profitTrendLoading && !profitTrend.length ? (
+          <SkeletonChart height={260} />
+        ) : (
         <Panel title={t("dashboard:profit_trend")}>
           <ResponsiveContainer width="100%" height={260}>
             <AreaChart data={profitTrend}>
@@ -278,9 +313,13 @@ const Dashboard = () => {
             </AreaChart>
           </ResponsiveContainer>
         </Panel>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Attendance trend */}
+          {attendanceTrendLoading && !attendanceTrend.length ? (
+            <SkeletonChart height={240} />
+          ) : (
           <Panel title={t("dashboard:attendance_trend")}>
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={attendanceTrend}>
@@ -295,8 +334,12 @@ const Dashboard = () => {
               </BarChart>
             </ResponsiveContainer>
           </Panel>
+          )}
 
           {/* Employees by department */}
+          {hrPending ? (
+            <SkeletonChart height={240} />
+          ) : (
           <Panel title={t("dashboard:employees_by_department")}>
             {(hr?.byDepartment || []).length === 0 ? (
               <p className="text-sm text-slate-400 text-center py-16">{t("dashboard:no_data")}</p>
@@ -329,8 +372,12 @@ const Dashboard = () => {
               </ResponsiveContainer>
             )}
           </Panel>
+          )}
 
           {/* Inventory by category */}
+          {inventoryPending ? (
+            <SkeletonChart height={240} />
+          ) : (
           <Panel title={t("dashboard:inventory_by_category")}>
             {(inventory?.byCategory || []).length === 0 ? (
               <p className="text-sm text-slate-400 text-center py-16">{t("dashboard:no_data")}</p>
@@ -363,6 +410,7 @@ const Dashboard = () => {
               </ResponsiveContainer>
             )}
           </Panel>
+          )}
 
           {/* Top selling products */}
           <Panel
@@ -383,7 +431,9 @@ const Dashboard = () => {
               </button>
             }
           >
-            {topProducts.length === 0 ? (
+            {topProductsLoading && !topProducts.length ? (
+              <SkeletonList rows={5} />
+            ) : topProducts.length === 0 ? (
               <p className="text-sm text-slate-400 text-center py-16">{t("dashboard:no_data")}</p>
             ) : (
               <div className="space-y-3">

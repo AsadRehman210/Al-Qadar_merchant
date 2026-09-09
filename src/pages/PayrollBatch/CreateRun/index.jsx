@@ -7,6 +7,10 @@ import FormInput from "components/FormInput";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { createPayrollRun } from "store/slices/payrollBatchSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { add_payroll_run } = alqadar_role_ids;
 
 const STEPS = ["payroll:step_config", "payroll:step_employees"];
 
@@ -71,6 +75,8 @@ const CreateRun = () => {
       navigate(`/payroll-batch/details/${result.payload.id}`);
     }
   };
+
+  if (!checkRoleAuth(add_payroll_run)) return null;
 
   const panelCls = "bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-[var(--color-teal-500)]";
 

@@ -6,12 +6,13 @@ import { FiArrowLeft, FiArrowRight, FiDownload } from "react-icons/fi";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { SP_STATUS, SP_STATUS_BADGE } from "global/constant";
 import {
   fetchSpecialPaymentById,
   showCurrentSpecialPayment,
   showCurrentSpecialPaymentLoading,
+  clearCurrentSpecialPayment,
   fetchSpTypes,
   showSpTypes,
   submitSpecialPayment,
@@ -24,8 +25,7 @@ import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { SkeletonDetail } from "components/Skeleton";
 
-const { view_employee, add_employee } = rafeeqi_role_ids;
-
+const { view_special_payment, edit_special_payment } = alqadar_role_ids;
 
 const FLOW_STEPS = [
   { key: SP_STATUS.DRAFT, label: "Created" },
@@ -75,6 +75,7 @@ const SPDetail = () => {
     dispatch(fetchSpTypes());
     dispatch(fetchEmployees());
     dispatch(fetchDepartments());
+    return () => dispatch(clearCurrentSpecialPayment());
   }, [dispatch, id]);
 
   const refresh = () => dispatch(fetchSpecialPaymentById(id));
@@ -95,7 +96,7 @@ const SPDetail = () => {
     });
   }, [sp, employeesById]);
 
-  if (!checkRoleAuth(view_employee)) return null;
+  if (!checkRoleAuth(view_special_payment)) return null;
 
   if (loading && !sp) return <SkeletonDetail fields={8} />;
 
@@ -145,7 +146,7 @@ const SPDetail = () => {
         </div>
 
         {/* Action bar */}
-        {checkRoleAuth(add_employee) && sp.status !== SP_STATUS.PAID && sp.status !== SP_STATUS.CANCELLED && (
+        {checkRoleAuth(edit_special_payment) && sp.status !== SP_STATUS.PAID && sp.status !== SP_STATUS.CANCELLED && (
           <div className="p-4 rounded-2xl border-2 border-teal-200 bg-teal-50 dark:bg-teal-500/10 dark:border-teal-500/30">
             <p className="text-sm font-semibold text-teal-800 dark:text-teal-300 mb-3">{t("payroll:available_actions")}</p>
             <div className="flex flex-wrap gap-2">

@@ -9,7 +9,7 @@ import Button from "components/Button";
 import FormTextarea from "components/FormTextarea";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { EXPENSE_STATUS } from "global/constant";
 import {
   fetchExpenseById,
@@ -31,7 +31,7 @@ import ExpenseInfoTab from "./ExpenseInfoTab";
 import ApprovalHistoryTab from "./ApprovalHistoryTab";
 import PaymentHistoryTab from "./PaymentHistoryTab";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_expense, approve_expense } = alqadar_role_ids;
 
 const TAB_CLASS =
   "min-w-[140px] whitespace-nowrap cursor-pointer py-3 px-5 rounded-lg h-11 flex justify-center items-center font-medium text-sm text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:text-white data-[selected]:font-semibold hover:text-teal-700 hover:bg-teal-500/10 dark:hover:text-white dark:hover:bg-teal-500/20";
@@ -70,6 +70,8 @@ const ExpenseDetail = () => {
       managerName: manager ? `${manager.first_name || ""} ${manager.last_name || ""}`.trim() : t("expenses:no_manager_assigned"),
     };
   }, [current, id, employees, departments, t]);
+
+  if (!checkRoleAuth(view_expense)) return null;
 
   const runAction = async (thunk, successMsg) => {
     setActing(true);
@@ -140,7 +142,7 @@ const ExpenseDetail = () => {
               </Badge>
             </p>
           </div>
-          {checkRoleAuth(add_employee) &&
+          {checkRoleAuth(approve_expense) &&
             expense.approvalStatus === EXPENSE_STATUS.APPROVED &&
             expense.paymentStatus !== "Reimbursed" && (
               <Button
@@ -185,7 +187,7 @@ const ExpenseDetail = () => {
             {expense.appliedVia === "hr" ? t("requests:no_approval_needed") : `${t("requests:manager")}: ${expense.managerName}`}
           </p>
 
-          {checkRoleAuth(add_employee) && (isPendingManager || isPendingHr) && (
+          {checkRoleAuth(approve_expense) && (isPendingManager || isPendingHr) && (
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10">
               <p className={`text-sm font-semibold mb-2 ${isPendingManager ? "text-amber-700 dark:text-amber-300" : "text-blue-700 dark:text-blue-300"}`}>
                 {isPendingManager ? t("requests:manager_approvals") : t("requests:hr_approvals")}

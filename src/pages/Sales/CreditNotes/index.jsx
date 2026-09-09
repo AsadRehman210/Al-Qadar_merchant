@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -6,19 +6,16 @@ import { FiPlus } from "react-icons/fi";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
-import { tableRows } from "global/constant";
+import { tableRows, noteStatusBadge as STATUS_BADGE } from "global/constant";
 import TableState from "components/TableState";
 import { useListFilters } from "hooks/useListFilters";
-import {
-  fetchCreditNotes,
-  showCreditNotes,
-  showCreditNotesTotal,
-  showCreditNotesLoading,
-} from "store/slices/creditNoteSlice";
+import { fetchCreditNotes, showCreditNotes, showCreditNotesTotal, showCreditNotesLoading, clearCreditNotesList } from "store/slices/creditNoteSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_sales_credit_note, add_sales_credit_note } = alqadar_role_ids;
 
 const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-import { noteStatusBadge as STATUS_BADGE } from "global/constant";
 
 export const CN_STATUS = ["Draft", "Approved", "Applied", "Voided"];
 
@@ -26,6 +23,12 @@ const CreditNotes = () => {
   const { t }    = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearCreditNotesList());
+    };
+  }, [dispatch]);
+
   const [filters, setFilters] = useListFilters("sales-credit-notes", { page: 1, search: "", limitId: tableRows[0].id });
   const { page, search } = filters;
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
@@ -47,9 +50,11 @@ const CreditNotes = () => {
             <h1 className="text-3xl font-bold">{t("sales:credit_notes")}</h1>
             <p className="text-mutedForeground text-sm mt-1">{t("sales:credit_notes_desc")}</p>
           </div>
-          <Button title={t("sales:add_credit_note")} icon={FiPlus} btn="primary"
-            onClick={() => navigate("/credit-notes/add")}
-            className="!w-auto !rounded-md !h-11 !px-5 !border-0 !text-white !bg-teal-500" />
+          {checkRoleAuth(add_sales_credit_note) && (
+            <Button title={t("sales:add_credit_note")} icon={FiPlus} btn="primary"
+              onClick={() => navigate("/credit-notes/add")}
+              className="!w-auto !rounded-md !h-11 !px-5 !border-0 !text-white !bg-teal-500" />
+          )}
         </div>
 
         {/* Search */}

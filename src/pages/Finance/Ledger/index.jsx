@@ -2,12 +2,12 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth, formatAmount, formatSignedAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonTable } from "components/Skeleton";
@@ -29,8 +29,7 @@ import {
 } from "store/slices/financeSlice";
 import FinancePage from "../FinancePage";
 
-const { view_customer } = rafeeqi_role_ids;
-
+const { view_finance_ledger } = alqadar_role_ids;
 
 const Ledger = () => {
   const { t } = useTranslation();
@@ -66,6 +65,10 @@ const Ledger = () => {
   }, [dispatch, accountId, page, selRows.id, search]);
 
   useEffect(() => {
+    return () => dispatch(clearLedgerByAccount());
+  }, [dispatch]);
+
+  useEffect(() => {
     setFilters({ page: 1 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accountId]);
@@ -81,7 +84,7 @@ const Ledger = () => {
       title={t("finance:ledger_title")}
       description={t("finance:ledger_desc")}
     >
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_ledger) && (
         <>
           <div className="mb-6 flex flex-wrap gap-3 items-end">
             <div className="flex-1 min-w-[200px] max-w-xs">
@@ -174,7 +177,7 @@ const Ledger = () => {
                 <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page")}</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}

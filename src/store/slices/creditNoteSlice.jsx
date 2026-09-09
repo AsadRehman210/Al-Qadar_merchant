@@ -10,7 +10,6 @@ const initialState = {
   error: null,
   returnableInvoice: null,
   returnableLines: [],
-  returnableLoading: false,
 };
 
 export const fetchCreditNotes = createAsyncThunk(
@@ -76,24 +75,34 @@ const creditNoteSlice = createSlice({
   reducers: {
     clearCurrentCreditNote: (state) => {
       state.current = null;
+      state.loading = false;
+      state.returnableInvoice = null;
+      state.returnableLines = [];
+    },
+    clearCreditNotesList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
     },
     clearReturnableLines: (state) => {
       state.returnableInvoice = null;
       state.returnableLines = [];
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchReturnableLines.pending, (state) => {
-        state.returnableLoading = true;
+        state.loading = true;
       })
       .addCase(fetchReturnableLines.fulfilled, (state, action) => {
-        state.returnableLoading = false;
+        state.loading = false;
         state.returnableInvoice = action.payload?.invoice || null;
         state.returnableLines = action.payload?.lines || [];
       })
       .addCase(fetchReturnableLines.rejected, (state) => {
-        state.returnableLoading = false;
+        state.loading = false;
         state.returnableInvoice = null;
         state.returnableLines = [];
       })
@@ -112,14 +121,14 @@ const creditNoteSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchCreditNoteById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchCreditNoteById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchCreditNoteById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(createCreditNote.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -128,13 +137,13 @@ const creditNoteSlice = createSlice({
   },
 });
 
-export const { clearCurrentCreditNote, clearReturnableLines } = creditNoteSlice.actions;
+export const { clearCurrentCreditNote, clearCreditNotesList, clearReturnableLines } = creditNoteSlice.actions;
 export const showCreditNotes = (state) => state.creditNote.list;
 export const showCreditNotesTotal = (state) => state.creditNote.totalRecords;
 export const showCreditNotesLoading = (state) => state.creditNote.loading;
 export const showCurrentCreditNote = (state) => state.creditNote.current;
-export const showCurrentCreditNoteLoading = (state) => state.creditNote.currentLoading;
+export const showCurrentCreditNoteLoading = (state) => state.creditNote.loading;
 export const showReturnableInvoice = (state) => state.creditNote.returnableInvoice;
 export const showReturnableLines = (state) => state.creditNote.returnableLines;
-export const showReturnableLoading = (state) => state.creditNote.returnableLoading;
+export const showReturnableLoading = (state) => state.creditNote.loading;
 export default creditNoteSlice.reducer;

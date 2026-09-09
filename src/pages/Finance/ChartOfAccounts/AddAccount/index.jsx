@@ -8,21 +8,23 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth, mapCoaToOptions } from "global/helper";
 import {
   coaAccountTypeOptions,
   coaAccountSubTypeOptions,
   coaAccountStatusOptions,
 } from "global/constant";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchChartOfAccounts,
   createChartOfAccount,
   updateChartOfAccount,
   showChartOfAccounts,
+  showChartOfAccountsLoading,
 } from "store/slices/financeSlice";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_finance_coa, edit_finance_coa } = alqadar_role_ids;
 
 const AddAccount = () => {
   const { t, i18n } = useTranslation();
@@ -30,6 +32,7 @@ const AddAccount = () => {
   const dispatch = useDispatch();
   const { id } = useParams();
   const accounts = useSelector(showChartOfAccounts);
+  const loading = useSelector(showChartOfAccountsLoading);
 
   useEffect(() => {
     if (!accounts.length) dispatch(fetchChartOfAccounts());
@@ -69,10 +72,10 @@ const AddAccount = () => {
   }, [existing, reset, parentOpts]);
 
   useEffect(() => {
-    if (id && !checkRoleAuth(edit_customer)) {
+    if (id && !checkRoleAuth(edit_finance_coa)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/coa");
-    } else if (!id && !checkRoleAuth(add_customer)) {
+    } else if (!id && !checkRoleAuth(add_finance_coa)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/coa");
     }
@@ -116,7 +119,16 @@ const AddAccount = () => {
     }
   };
 
-  if ((id && !checkRoleAuth(edit_customer)) || (!id && !checkRoleAuth(add_customer))) return null;
+  if ((id && !checkRoleAuth(edit_finance_coa)) || (!id && !checkRoleAuth(add_finance_coa))) return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
+
   const isRTL = i18n.language === "ar";
 
   return (
@@ -141,7 +153,7 @@ const AddAccount = () => {
         >
           <div className="grid md:grid-cols-2 gap-6">
             <FormInput label={t("finance:account_code")} name="code" pattern={/[A-Za-z0-9\-_/]/} minLength={2} maxLength={50} register={register} required disabled={!!id} />
-            <FormInput label={t("finance:account_name")} name="name" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={150} register={register} required />
+            <FormInput label={t("finance:account_name")} name="name" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={100} register={register} required />
 
             {/* Account Type */}
             <SelectDropdown

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -10,15 +10,15 @@ import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { applyLeave } from "store/slices/leaveSlice";
 import { fetchLeaveTypes, showLeaveTypes } from "store/slices/leaveTypeSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { leaveHalfDayOptions } from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { add_leave, approve_leave } = alqadar_role_ids;
 
-// Create-only — the backend has no PUT/update endpoint for a leave request
+// Create-only � the backend has no PUT/update endpoint for a leave request
 // (only apply/approve/reject/cancel), so the earlier edit-mode path was
 // dropped. HR-direct entries are submitted with appliedVia: "hr", which the
 // backend auto-approves through both approval stages immediately.
@@ -110,7 +110,7 @@ const AddLeave = () => {
     }
   };
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (!checkRoleAuth(add_leave)) return null;
 
   const isRTL = i18n.language === "ar";
 
@@ -205,7 +205,7 @@ const AddLeave = () => {
               </div>
             </div>
             <FormInput label={t("leave:handover_to")} name="handoverTo" register={register} errors={errors}
-              pattern={/[a-zA-Z\s.'-]/} minLength={2} maxLength={150} />
+              pattern={/[a-zA-Z\s.'-]/} minLength={2} maxLength={100} />
             <FormInput
               label={t("leave:emergency_contact")}
               name="emergencyContact"

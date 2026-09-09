@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useNavigate, useSearchParams } from "react-router";
@@ -11,38 +11,18 @@ import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
-import {
-  fetchSuppliersDropdown,
-  showSupplierDropdownOptions,
-  showSupplierDropdownPage,
-  showSupplierDropdownHasMore,
-  showSupplierDropdownLoading,
-} from "store/slices/supplierSlice";
-import {
-  fetchPurchaseInvoicesDropdown,
-  showPurchaseInvoiceDropdownOptions,
-  showPurchaseInvoiceDropdownPage,
-  showPurchaseInvoiceDropdownHasMore,
-  showPurchaseInvoiceDropdownLoading,
-} from "store/slices/purchaseInvoiceSlice";
-import {
-  createDebitNote,
-  fetchReturnableLines,
-  clearReturnableLines,
-  showReturnableInvoice,
-  showReturnableLines,
-  showReturnableLoading,
-} from "store/slices/debitNoteSlice";
+import { fetchSuppliersDropdown, showSupplierDropdownOptions, showSupplierDropdownPage, showSupplierDropdownHasMore, showSupplierDropdownLoading, resetSupplierDropdown } from "store/slices/supplierSlice";
+import { fetchPurchaseInvoicesDropdown, showPurchaseInvoiceDropdownOptions, showPurchaseInvoiceDropdownPage, showPurchaseInvoiceDropdownHasMore, showPurchaseInvoiceDropdownLoading, resetPurchaseInvoiceDropdown } from "store/slices/purchaseInvoiceSlice";
+import { createDebitNote, fetchReturnableLines, clearReturnableLines, showReturnableInvoice, showReturnableLines, showReturnableLoading, clearCurrentDebitNote } from "store/slices/debitNoteSlice";
 import { SkeletonTable } from "components/Skeleton";
 import {
   debitNoteReasonOptions,
   purchaseReturnTypeOptions,
 } from "global/constant";
-import { effectiveLineTaxPercent } from "global/helper";
+import { effectiveLineTaxPercent, checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 
-const DN_REASONS = debitNoteReasonOptions.map((o) => o.id);
-
-// Only these reasons mean stock physically leaves the warehouse back to the
+const { add_purchase_debit_note } = alqadar_role_ids;
 // supplier — mirrors NO_STOCK_MOVEMENT_REASONS in debit-note-service.ts
 // exactly. "Price discrepancy" / "Wrong entry" are pure billing (nothing
 // physical moved); "Short shipment" means the goods were never received
@@ -85,6 +65,14 @@ const AddDebitNote = () => {
   const [searchParams]  = useSearchParams();
   const isRTL           = i18n.language === "ar";
 
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentDebitNote());
+      dispatch(clearReturnableLines());
+      dispatch(resetPurchaseInvoiceDropdown());
+      dispatch(resetSupplierDropdown());
+    };
+  }, [dispatch]);
   const prefillInvoiceId = searchParams.get("invoiceId") || "";
 
   const { register, handleSubmit, control, watch, setValue, getValues, formState: { errors } } = useForm({
@@ -94,7 +82,7 @@ const AddDebitNote = () => {
       supplierId: "",
       originalInvoiceId: prefillInvoiceId,
       warehouseId: "",
-      reason: DN_REASONS[0],
+      reason: debitNoteReasonOptions[0].id,
       returnType: purchaseReturnTypeOptions[0].id,
       taxPercent: 0,
       discount: 0,
@@ -186,7 +174,7 @@ const AddDebitNote = () => {
     }
   };
 
-  const selReason = { id: watch("reason"), title: watch("reason") };
+  const selReason = debitNoteReasonOptions.find((o) => o.id === watch("reason")) || debitNoteReasonOptions[0];
   const reasonOpts = debitNoteReasonOptions;
   const selReturnType =
     purchaseReturnTypeOptions.find((o) => o.id === returnType) || purchaseReturnTypeOptions[0];
@@ -239,6 +227,8 @@ const AddDebitNote = () => {
 
   const panelCls = "bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-amber-400";
 
+  if (!checkRoleAuth(add_purchase_debit_note)) return null;
+
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
       <div className="hidden dark:block absolute inset-0 bg-slate-900 z-0 overflow-hidden" />
@@ -286,7 +276,7 @@ const AddDebitNote = () => {
                 />
               </div>
               <div>
-                <SelectDropdown label={t("purchase:reason")} data={reasonOpts} selected={selReason} setSelected={(o) => setValue("reason", o?.id || DN_REASONS[0])} hideClear />
+                <SelectDropdown label={t("purchase:reason")} data={reasonOpts} selected={selReason} setSelected={(o) => setValue("reason", o?.id || debitNoteReasonOptions[0].id)} hideClear />
                 <p className={`mt-1 text-xs ${movesStock ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
                   {movesStock
                     ? t("purchase:stock_hint_yes", { defaultValue: "Stock will leave the warehouse (returned to supplier) once this debit note is Applied." })
@@ -371,8 +361,6 @@ const AddDebitNote = () => {
                               type="number"
                               min={0}
                               max={maxQty}
-                              decimal
-                              decimalPlaces={3}
                               disabled={returnType === "Full return" || maxQty === 0}
                               register={register}
                               errors={errors}

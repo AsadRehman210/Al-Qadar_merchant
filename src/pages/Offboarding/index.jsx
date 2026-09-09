@@ -5,15 +5,15 @@ import { useNavigate } from "react-router";
 import dayjs from "dayjs";
 import { LuUserMinus, LuBriefcase, LuCalendarDays, LuArrowRight } from "react-icons/lu";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import DataState from "components/DataState";
-import { cardRows } from "global/constant";
+import { SkeletonCards } from "components/Skeleton";
+import { cardRows, exitStatusFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import Button from "components/Button";
 import { EXIT_STATUS_BADGE } from "global/constant";
-import { exitStatusFilterOptions } from "global/constant";
 import {
   fetchExits,
   fetchExitsSummary,
@@ -22,6 +22,10 @@ import {
   showExitsLoading,
   showExitsSummary,
 } from "store/slices/offboardingSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_offboarding, add_offboarding } = alqadar_role_ids;
 
 const STAT_TILES = [
   { key: "total", label: "offboarding:total", from: "from-slate-500", to: "to-slate-600" },
@@ -67,6 +71,8 @@ const Offboarding = () => {
 
   const statusOpts = exitStatusFilterOptions;
 
+  if (!checkRoleAuth(view_offboarding)) return null;
+
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
       <div className="hidden dark:block absolute inset-0 bg-slate-900 z-0 overflow-hidden" />
@@ -76,6 +82,7 @@ const Offboarding = () => {
             <h1 className="text-3xl font-bold tracking-tight">{t("offboarding:title")}</h1>
             <p className="text-mutedForeground mt-1">{t("offboarding:desc")}</p>
           </div>
+          {checkRoleAuth(add_offboarding) && (
           <Button
             type="button"
             title={t("offboarding:initiate_exit")}
@@ -83,16 +90,23 @@ const Offboarding = () => {
             onClick={() => navigate("/offboarding/add")}
             className="!w-auto !rounded-md !bg-[var(--color-teal-500)] hover:!bg-[var(--color-teal-600)] !border-0 !text-white !px-5"
           />
+          )}
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          {STAT_TILES.map((tile) => (
-            <div key={tile.key} className={`p-5 rounded-2xl bg-gradient-to-br ${tile.from} ${tile.to} text-white`}>
-              <p className="text-sm font-medium opacity-80">{t(tile.label)}</p>
-              <p className="text-3xl font-bold mt-1">{summary[tile.key]}</p>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="mb-6">
+            <SkeletonCards count={5} columns="grid-cols-2 lg:grid-cols-5" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+            {STAT_TILES.map((tile) => (
+              <div key={tile.key} className={`p-5 rounded-2xl bg-gradient-to-br ${tile.from} ${tile.to} text-white`}>
+                <p className="text-sm font-medium opacity-80">{t(tile.label)}</p>
+                <p className="text-3xl font-bold mt-1">{summary[tile.key]}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -125,12 +139,12 @@ const Offboarding = () => {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="h-11 w-11 rounded-xl bg-rose-50 dark:bg-rose-500/15 text-rose-700 dark:text-rose-300 flex items-center justify-center font-bold shrink-0">
-                      {(e.employeeName || "—").split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                      {(e.employeeName || "?").split(" ").map((n) => n[0]).join("").slice(0, 2)}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-bold text-slate-800 dark:text-white truncate">{e.employeeName || "—"}</p>
+                      <p className="font-bold text-slate-800 dark:text-white truncate">{e.employeeName || "?"}</p>
                       <p className="text-xs text-slate-500 dark:text-white/50 flex items-center gap-1.5">
-                        <LuBriefcase className="h-3.5 w-3.5" /> {e.designation} · {e.department}
+                        <LuBriefcase className="h-3.5 w-3.5" /> {e.designation} ? {e.department}
                       </p>
                     </div>
                   </div>
@@ -159,7 +173,7 @@ const Offboarding = () => {
               <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
             </div>
             <div className="pagination ltr:ml-auto rtl:mr-auto">
-              <ReactPaginate
+              <Pagination
                 breakLabel="..."
                 nextLabel={<FaAngleRight />}
                 previousLabel={<FaAngleLeft />}

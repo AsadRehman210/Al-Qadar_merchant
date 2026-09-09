@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -12,27 +12,28 @@ import SearchInput from "components/SearchInput";
 import ActionPopup from "components/ActionPopup";
 import TableState from "components/TableState";
 import { useListFilters } from "hooks/useListFilters";
-import { tableRows, quotationStatusBadge as STATUS_BADGE, quotationStatusList, quotationStatusFilterOptions } from "global/constant";
-import {
-  fetchQuotations,
-  deleteQuotation,
-  showQuotations,
-  showQuotationsTotal,
-  showQuotationsLoading,
-} from "store/slices/quotationSlice";
+import { tableRows, quotationStatusBadge as STATUS_BADGE, quotationStatusFilterOptions } from "global/constant";
+import { fetchQuotations, deleteQuotation, showQuotations, showQuotationsTotal, showQuotationsLoading, clearQuotationsList } from "store/slices/quotationSlice";
 import QuotationPreviewModal from "./QuotationPreviewModal";
 import dayjs from "dayjs";
-import { formatAmount } from "global/helper";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 
-const fmt = formatAmount;
+const { view_sales_quotation, add_sales_quotation, edit_sales_quotation, delete_sales_quotation } = alqadar_role_ids;
 
-export const QUOTE_STATUS = quotationStatusList;
+const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const statusOpts = quotationStatusFilterOptions;
 
 const Quotations = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearQuotationsList());
+    };
+  }, [dispatch]);
+
+  const navigate = useNavigate();
   const [filters, setFilters] = useListFilters("sales-quotations", { page: 1, search: "", statusId: statusOpts[0].id, limitId: tableRows[0].id });
   const { page, search } = filters;
   const statusFilter = statusOpts.find((o) => o.id === filters.statusId) || statusOpts[0];
@@ -83,9 +84,11 @@ const Quotations = () => {
             <h1 className="text-3xl font-bold">{t("sales:quotations")}</h1>
             <p className="text-mutedForeground text-sm mt-1">{t("sales:quotations_desc")}</p>
           </div>
-          <Button title={t("sales:add_quotation")} icon={FiPlus} btn="primary"
-            onClick={() => navigate("/quotation/add")}
-            className="!w-auto !rounded-md !h-11 !px-5 !border-0 !text-white !bg-teal-500" />
+          {checkRoleAuth(add_sales_quotation) && (
+            <Button title={t("sales:add_quotation")} icon={FiPlus} btn="primary"
+              onClick={() => navigate("/quotation/add")}
+              className="!w-auto !rounded-md !h-11 !px-5 !border-0 !text-white !bg-teal-500" />
+          )}
         </div>
 
         {/* Filters */}
@@ -139,36 +142,44 @@ const Quotations = () => {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Link
-                          to={`/quotation/detail/${r.id}`}
-                          className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
-                          title={t("view")}
-                        >
-                          <FiEye className="h-4 w-4" />
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => setPreviewQuote(r)}
-                          className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
-                          title={t("sales:preview_quotation")}
-                        >
-                          <HiOutlineDocumentText className="h-4 w-4" />
-                        </button>
-                        <Link
-                          to={`/quotation/edit/${r.id}`}
-                          className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
-                          title={t("edit")}
-                        >
-                          <AiOutlineEdit className="h-4 w-4" />
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(r)}
-                          className="text-slate-500 dark:text-white/80 transition-all hover:text-red-600 dark:hover:text-red-400"
-                          title={t("delete")}
-                        >
-                          <AiOutlineDelete className="h-4 w-4" />
-                        </button>
+                        {checkRoleAuth(view_sales_quotation) && (
+                          <Link
+                            to={`/quotation/detail/${r.id}`}
+                            className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
+                            title={t("view")}
+                          >
+                            <FiEye className="h-4 w-4" />
+                          </Link>
+                        )}
+                        {checkRoleAuth(view_sales_quotation) && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewQuote(r)}
+                            className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
+                            title={t("sales:preview_quotation")}
+                          >
+                            <HiOutlineDocumentText className="h-4 w-4" />
+                          </button>
+                        )}
+                        {checkRoleAuth(edit_sales_quotation) && (
+                          <Link
+                            to={`/quotation/edit/${r.id}`}
+                            className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
+                            title={t("edit")}
+                          >
+                            <AiOutlineEdit className="h-4 w-4" />
+                          </Link>
+                        )}
+                        {checkRoleAuth(delete_sales_quotation) && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(r)}
+                            className="text-slate-500 dark:text-white/80 transition-all hover:text-red-600 dark:hover:text-red-400"
+                            title={t("delete")}
+                          >
+                            <AiOutlineDelete className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

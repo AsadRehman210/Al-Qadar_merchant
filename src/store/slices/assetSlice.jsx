@@ -14,6 +14,7 @@ const initialState = {
   assetCurrentLoading: false,
   assetLocations: [],
   assetSummary: { total: 0, totalPurchaseCost: 0, totalBookValue: 0, byStatus: {} },
+  assetSummaryLoading: false,
   assetAlertsList: [],
 
   requestList: [],
@@ -353,8 +354,15 @@ const assetSlice = createSlice({
       .addCase(fetchAssetLocations.fulfilled, (state, action) => {
         state.assetLocations = action.payload || [];
       })
+      .addCase(fetchAssetSummary.pending, (state) => {
+        state.assetSummaryLoading = true;
+      })
       .addCase(fetchAssetSummary.fulfilled, (state, action) => {
+        state.assetSummaryLoading = false;
         if (action.payload) state.assetSummary = action.payload;
+      })
+      .addCase(fetchAssetSummary.rejected, (state) => {
+        state.assetSummaryLoading = false;
       })
       .addCase(fetchAssetsForAlerts.fulfilled, (state, action) => {
         state.assetAlertsList = action.payload || [];
@@ -470,6 +478,7 @@ export const showAssetsTotal = (state) => state.asset.assetTotal;
 export const showAssetsLoading = (state) => state.asset.assetLoading;
 export const showAssetLocations = (state) => state.asset.assetLocations;
 export const showAssetSummary = (state) => state.asset.assetSummary;
+export const showAssetSummaryLoading = (state) => state.asset.assetSummaryLoading;
 export const showAssetAlertsList = (state) => state.asset.assetAlertsList;
 export const showCurrentAsset = (state) => state.asset.assetCurrent;
 export const showCurrentAssetLoading = (state) => state.asset.assetCurrentLoading;

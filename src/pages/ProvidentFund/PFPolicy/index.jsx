@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,10 +9,11 @@ import { FiSave, FiInfo, FiClock } from "react-icons/fi";
 import FormInput from "components/FormInput";
 import Button from "components/Button";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
-import { fetchPfPolicy, upsertPfPolicy, showPfPolicy } from "store/slices/providentFundSlice";
+import { alqadar_role_ids } from "global/alqadarRoles";
+import { fetchPfPolicy, upsertPfPolicy, showPfPolicy, showPfPolicyLoading } from "store/slices/providentFundSlice";
+import { SkeletonDetail } from "components/Skeleton";
 
-const { add_employee } = rafeeqi_role_ids;
+const { edit_provident_fund } = alqadar_role_ids;
 
 const DEFAULTS = { employeeRate: 10, employerRate: 12, employerContributionMultiplier: 1, minServiceMonths: 0, vestingYears: 0, interestRate: 0 };
 
@@ -21,6 +22,7 @@ const PFPolicy = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const policy = useSelector(showPfPolicy);
+  const policyLoading = useSelector(showPfPolicyLoading);
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
@@ -65,7 +67,7 @@ const PFPolicy = () => {
     }
   };
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (!checkRoleAuth(edit_provident_fund)) return null;
 
   // Only the most recent previous version — enough to answer "what did I
   // just change this from", without turning the page into a full audit log.
@@ -94,6 +96,9 @@ const PFPolicy = () => {
             {t("pf:current_policy")}
           </p>
         )}
+        {policyLoading && !policy ? (
+          <SkeletonDetail fields={6} />
+        ) : (
         <form onSubmit={handleSubmit(onSubmit)}
           className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -126,6 +131,7 @@ const PFPolicy = () => {
               className="!rounded-md !h-11 !px-6 !bg-teal-500 !border-0" />
           </div>
         </form>
+        )}
 
         {previousPolicy && (
           <div className="mt-6">

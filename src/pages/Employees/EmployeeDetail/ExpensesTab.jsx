@@ -5,12 +5,13 @@ import dayjs from "dayjs";
 import { Receipt } from "lucide-react";
 import { HiOutlineCurrencyDollar } from "react-icons/hi2";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import SelectDropdown from "components/SelectDropdown";
 import { rows } from "global/constant";
 import { formatAmount } from "global/helper";
 import { EXPENSE_STATUS } from "global/constant";
-import { fetchExpensesByEmployee, showEmployeeExpenses } from "store/slices/expenseSlice";
+import { fetchExpensesByEmployee, showEmployeeExpenses, showEmployeeExpensesLoading, clearEmployeeExpenses } from "store/slices/expenseSlice";
+import { SkeletonCards, SkeletonTable } from "components/Skeleton";
 
 const ExpensesTab = ({ data }) => {
   const { t } = useTranslation();
@@ -19,9 +20,11 @@ const ExpensesTab = ({ data }) => {
   const [selRows, setSelRows] = useState(rows[0]);
   const [selectedExpense, setSelectedExpense] = useState(null);
   const employeeExpenses = useSelector(showEmployeeExpenses);
+  const isLoading = useSelector(showEmployeeExpensesLoading);
 
   useEffect(() => {
     if (data?._id) dispatch(fetchExpensesByEmployee(data._id));
+    return () => dispatch(clearEmployeeExpenses());
   }, [data?._id, dispatch]);
 
   const fullList = employeeExpenses || [];
@@ -60,44 +63,52 @@ const ExpensesTab = ({ data }) => {
             {t("employees:expenses")}
           </h3>
         </div>
-        <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-white/50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
-            <p className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase">
-              {t("employees:total_expenses")}
-            </p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white mt-1">
-              {fullList.length}
-            </p>
+        {isLoading ? (
+          <div className="relative">
+            <SkeletonCards count={4} columns="grid-cols-2 md:grid-cols-4" />
           </div>
-          <div className="p-4 rounded-xl bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
-            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase">
-              {t("employees:approved")}
-            </p>
-            <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300 mt-1">
-              {formatAmount(approvedAmount)}
-            </p>
+        ) : (
+          <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-4 rounded-xl bg-white/50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
+              <p className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase">
+                {t("employees:total_expenses")}
+              </p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white mt-1">
+                {fullList.length}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-emerald-50/80 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
+              <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400 uppercase">
+                {t("employees:approved")}
+              </p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300 mt-1">
+                {formatAmount(approvedAmount)}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-amber-50/80 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20">
+              <p className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase">
+                {t("employees:pending")}
+              </p>
+              <p className="text-lg font-bold text-amber-700 dark:text-amber-300 mt-1">
+                {formatAmount(pendingAmount)}
+              </p>
+            </div>
+            <div className="p-4 rounded-xl bg-teal-50 dark:bg-teal-500/20 border-2 border-teal-500/30 dark:border-teal-500/50">
+              <p className="text-xs font-medium text-teal-600 dark:text-teal-400 uppercase">
+                {t("employees:total_amount")}
+              </p>
+              <p className="text-xl font-bold text-teal-700 dark:text-teal-300 mt-1">
+                {formatAmount(totalAmount)}
+              </p>
+            </div>
           </div>
-          <div className="p-4 rounded-xl bg-amber-50/80 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20">
-            <p className="text-xs font-medium text-amber-600 dark:text-amber-400 uppercase">
-              {t("employees:pending")}
-            </p>
-            <p className="text-lg font-bold text-amber-700 dark:text-amber-300 mt-1">
-              {formatAmount(pendingAmount)}
-            </p>
-          </div>
-          <div className="p-4 rounded-xl bg-teal-50 dark:bg-teal-500/20 border-2 border-teal-500/30 dark:border-teal-500/50">
-            <p className="text-xs font-medium text-teal-600 dark:text-teal-400 uppercase">
-              {t("employees:total_amount")}
-            </p>
-            <p className="text-xl font-bold text-teal-700 dark:text-teal-300 mt-1">
-              {formatAmount(totalAmount)}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Table */}
-      {fullList.length === 0 ? (
+      {isLoading ? (
+        <SkeletonTable rows={5} columns={5} />
+      ) : fullList.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 dark:border-white/10 p-10 text-center text-slate-500 dark:text-white/60">
           {t("no_record_found")}
         </div>
@@ -237,7 +248,7 @@ const ExpensesTab = ({ data }) => {
             <span className="whitespace-nowrap">{t("per_page")}</span>
           </div>
           <div className="pagination ltr:ml-auto rtl:mr-auto">
-            <ReactPaginate
+            <Pagination
               breakLabel="..."
               nextLabel={<FaAngleRight />}
               previousLabel={<FaAngleLeft />}

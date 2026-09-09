@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { AiOutlineEdit, AiOutlineEye, AiOutlineDelete } from "react-icons/ai";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { toast } from "react-toastify";
 import SelectDropdown from "components/SelectDropdown";
@@ -13,11 +13,11 @@ import Table from "components/Table";
 import ActionPopup from "components/ActionPopup";
 import { tableRows, userRoleStatusOptions } from "global/constant";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { showUserData } from "store/slices/uniqueSlice";
 import { deleteUser, setUserStatus } from "store/slices/userSlice";
 
-const { edit_user, delete_user, view_user } = rafeeqi_role_ids;
+const { edit_user, delete_user, view_user } = alqadar_role_ids;
 
 const UsersTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, totalPages, onChanged }) => {
   const { t } = useTranslation();
@@ -148,7 +148,7 @@ const UsersTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

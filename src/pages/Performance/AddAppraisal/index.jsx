@@ -1,7 +1,6 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight, FiPlus, FiTrash2 } from "react-icons/fi";
 import { toast } from "react-toastify";
@@ -9,14 +8,16 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { getAppraisalById, createAppraisal, updateAppraisal } from "../performanceFakeData";
 import { appraisalCycleOptions, kpiCategoryOptions } from "global/constant";
-import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
-import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
+import { getActiveEmployeeOptions } from "../../Employees/employeesFakeData";
+import { FAKE_DEPARTMENTS } from "../../Departments/departmentFakeData";
 
-const { add_employee } = rafeeqi_role_ids;
+const { add_performance, edit_performance } = alqadar_role_ids;
 
+const deptOpts = (FAKE_DEPARTMENTS || []).map((d) => ({ id: d.name, title: d.name }));
+const empOpts = getActiveEmployeeOptions();
 const yearOpts = [2024, 2025, 2026].map((y) => ({ id: y, title: String(y) }));
 
 const EDITABLE_STATUSES = ["Draft"];
@@ -24,40 +25,10 @@ const EDITABLE_STATUSES = ["Draft"];
 const AddAppraisal = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const { id } = useParams();
   const isEdit = Boolean(id);
   const existing = useMemo(() => (id ? getAppraisalById(id) : null), [id]);
   const isRTL = i18n.language === "ar";
-
-  const employees = useSelector(showEmployees);
-  const departments = useSelector(showDepartments);
-
-  useEffect(() => {
-    dispatch(fetchEmployees());
-    dispatch(fetchDepartments());
-  }, [dispatch]);
-
-  const empOpts = useMemo(
-    () =>
-      (employees || [])
-        .filter((e) => e.status === "active")
-        .map((e) => ({
-          id: e.id || e._id,
-          title: `${e.first_name || ""} ${e.last_name || ""} (${e.employeeCode || e.employee_id || ""})`.trim(),
-          name: `${e.first_name || ""} ${e.last_name || ""}`.trim(),
-        })),
-    [employees],
-  );
-
-  const deptOpts = useMemo(
-    () =>
-      (departments || []).map((d) => ({
-        id: d.name || d.title,
-        title: d.name || d.title,
-      })),
-    [departments],
-  );
 
   const [selEmployee, setSelEmployee] = useState(null);
   const [selReviewer, setSelReviewer] = useState(null);
@@ -83,7 +54,7 @@ const AddAppraisal = () => {
       setSelYear(yearOpts.find((y) => y.id === existing.year) || yearOpts[1]);
       if (existing.kpis?.length) setKpis(existing.kpis.map((k) => ({ category: k.category, goal: k.goal, targetScore: k.targetScore, weight: k.weight })));
     }
-  }, [existing, reset, empOpts, deptOpts]);
+  }, [existing, reset]);
 
   const addKpi = () => setKpis((p) => [...p, { category: "Productivity", goal: "", targetScore: 5, weight: 10 }]);
   const removeKpi = (i) => setKpis((p) => p.filter((_, idx) => idx !== i));
@@ -133,7 +104,7 @@ const AddAppraisal = () => {
 
   const sH = "text-lg font-semibold text-slate-900 dark:text-white pb-2 mb-6 border-b border-slate-200 dark:border-white/10";
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (isEdit ? !checkRoleAuth(edit_performance) : !checkRoleAuth(add_performance)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

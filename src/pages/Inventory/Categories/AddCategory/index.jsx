@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -8,17 +8,19 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   createCategory,
   updateCategory,
   fetchCategoryById,
   showCurrentCategory,
+  showCurrentCategoryLoading,
   clearCurrentCategory,
 } from "store/slices/categorySlice";
 
-const { add_customer } = rafeeqi_role_ids;
+const { add_inventory_category } = alqadar_role_ids;
 
 const AddCategory = () => {
   const { t, i18n } = useTranslation();
@@ -27,6 +29,7 @@ const AddCategory = () => {
   const { id } = useParams();
 
   const existing = useSelector(showCurrentCategory);
+  const loading = useSelector(showCurrentCategoryLoading);
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm({
     mode: "onChange",
@@ -70,7 +73,15 @@ const AddCategory = () => {
     }
   };
 
-  if (!checkRoleAuth(add_customer)) return null;
+  if (!checkRoleAuth(add_inventory_category)) return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
 
@@ -109,7 +120,7 @@ const AddCategory = () => {
               required
               pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
-              maxLength={150}
+              maxLength={100}
               placeholder={t("product:category_name_placeholder")}
             />
             <FormTextarea

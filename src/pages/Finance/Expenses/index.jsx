@@ -2,14 +2,14 @@ import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { fetchBusinessExpenses, showBusinessExpenses, showBusinessExpensesTotal, showBusinessExpensesLoading } from "store/slices/financeSlice";
 import FinancePage from "../FinancePage";
@@ -17,7 +17,7 @@ import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 import { useListFilters } from "hooks/useListFilters";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_finance_expense, add_finance_expense } = alqadar_role_ids;
 
 
 // A business expense paid straight from Bank/Cash that doesn't need a formal
@@ -47,7 +47,7 @@ const FinanceExpenses = () => {
       title={t("finance:fin_exp_title")}
       description={t("finance:fin_exp_desc")}
       action={
-        checkRoleAuth(add_customer) ? (
+        checkRoleAuth(add_finance_expense) ? (
           <Button
             className="!w-auto !rounded-lg !h-11 !px-5 !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600"
             onClick={() => navigate("/finance/expenses/add")}
@@ -59,7 +59,7 @@ const FinanceExpenses = () => {
         ) : null
       }
     >
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_expense) && (
         <>
           <div className="mb-6 max-w-md">
             <SearchInput
@@ -120,7 +120,7 @@ const FinanceExpenses = () => {
                 <span className="whitespace-nowrap">{t("per_page")}</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}

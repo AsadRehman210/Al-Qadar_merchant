@@ -4,19 +4,20 @@ import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import { IoAdd } from "react-icons/io5";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { LuCalendarDays, LuTrash2, LuPencil } from "react-icons/lu";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import DataState from "components/DataState";
+import { SkeletonCards } from "components/Skeleton";
 import { cardRows, holidayTypeOptions, holidayTypeFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchHolidays,
   fetchHolidaysSummary,
@@ -30,12 +31,11 @@ import {
 } from "store/slices/holidaySlice";
 import { HOLIDAY_TYPE_BADGE } from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_holiday, add_holiday, edit_holiday, delete_holiday } = alqadar_role_ids;
 
 const HolidayCalendar = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const isHR = checkRoleAuth(add_employee);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [selType, setSelType] = useState(holidayTypeOptions[0]);
@@ -112,7 +112,7 @@ const HolidayCalendar = () => {
     setEditingId(holiday.id);
     reset({ name: holiday.name, date: holiday.date });
     setRecurring(holiday.recurring);
-    setSelType(holidayTypeOptions.find((x) => x.id === holiday.type) || holidayTypeOptions[0]);
+    setSelType(holidayTypeOptions.find((o) => o.id === holiday.type) || holidayTypeOptions[0]);
     setShowForm(true);
   };
 
@@ -143,6 +143,10 @@ const HolidayCalendar = () => {
     refreshSummary();
   };
 
+  if (!checkRoleAuth(view_holiday)) return null;
+
+  const canMutateForm = editingId ? checkRoleAuth(edit_holiday) : checkRoleAuth(add_holiday);
+
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
       <div className="hidden dark:block absolute inset-0 bg-slate-900 z-0 overflow-hidden" />
@@ -153,7 +157,7 @@ const HolidayCalendar = () => {
             <h1 className="text-3xl font-bold tracking-tight">{t("hrhub:holiday_title")}</h1>
             <p className="text-mutedForeground mt-1">{t("hrhub:holiday_desc")}</p>
           </div>
-          {isHR && (
+          {checkRoleAuth(add_holiday) && (
             <Button
               className="!w-auto !rounded-lg !h-10 !px-4 !border-0 !text-white !bg-gradient-to-br !from-emerald-500 !to-emerald-600 hover:!from-emerald-600 hover:!to-emerald-700"
               onClick={openAddForm}
@@ -166,6 +170,11 @@ const HolidayCalendar = () => {
         </div>
 
         {/* Stat cards */}
+        {loading ? (
+          <div className="mb-6">
+            <SkeletonCards count={3} columns="grid-cols-2 lg:grid-cols-3" />
+          </div>
+        ) : (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-600 text-white">
             <p className="text-sm font-medium opacity-80">{t("hrhub:total_holidays")}</p>
@@ -177,13 +186,14 @@ const HolidayCalendar = () => {
           </div>
           <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white col-span-2 lg:col-span-1">
             <p className="text-sm font-medium opacity-80">{t("hrhub:next_holiday")}</p>
-            <p className="text-lg font-bold mt-1 truncate">{summary.next ? summary.next.name : "—"}</p>
+            <p className="text-lg font-bold mt-1 truncate">{summary.next ? summary.next.name : "ï¿½"}</p>
             {summary.next && <p className="text-xs opacity-80">{dayjs(summary.next.date).format("ddd, DD MMM YYYY")}</p>}
           </div>
         </div>
+        )}
 
         {/* Add / Edit form */}
-        {showForm && isHR && (
+        {showForm && canMutateForm && (
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-6 mb-6"
@@ -254,7 +264,7 @@ const HolidayCalendar = () => {
                       <p className="text-xs text-slate-500 dark:text-white/50 flex items-center gap-1.5">
                         <LuCalendarDays className="h-3.5 w-3.5" />
                         {dayjs(h.date).format("dddd, DD MMM YYYY")}
-                        {h.recurring && <span className="ml-1">· {t("hrhub:recurring")}</span>}
+                        {h.recurring && <span className="ml-1">ï¿½ {t("hrhub:recurring")}</span>}
                       </p>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${HOLIDAY_TYPE_BADGE[h.type]}`}>{typeLabel(h.type)}</span>
@@ -263,24 +273,28 @@ const HolidayCalendar = () => {
                         {t("hrhub:past_holiday")}
                       </span>
                     )}
-                    {isHR && !past && (
+                    {(checkRoleAuth(edit_holiday) || checkRoleAuth(delete_holiday)) && !past && (
                       <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => openEditForm(h)}
-                          className="p-2 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-500/10"
-                          aria-label={t("edit")}
-                        >
-                          <LuPencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(h.id)}
-                          className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10"
-                          aria-label={t("delete")}
-                        >
-                          <LuTrash2 className="h-4 w-4" />
-                        </button>
+                        {checkRoleAuth(edit_holiday) && (
+                          <button
+                            type="button"
+                            onClick={() => openEditForm(h)}
+                            className="p-2 rounded-lg text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-500/10"
+                            aria-label={t("edit")}
+                          >
+                            <LuPencil className="h-4 w-4" />
+                          </button>
+                        )}
+                        {checkRoleAuth(delete_holiday) && (
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(h.id)}
+                            className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                            aria-label={t("delete")}
+                          >
+                            <LuTrash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -296,7 +310,7 @@ const HolidayCalendar = () => {
                 <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}

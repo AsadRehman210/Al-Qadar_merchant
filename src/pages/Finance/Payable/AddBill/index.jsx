@@ -9,18 +9,21 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchChartOfAccounts,
   fetchVendorBillById,
   createVendorBill,
   updateVendorBill,
+  clearCurrentVendorBill,
   showChartOfAccounts,
   showCurrentVendorBill,
+  showCurrentVendorBillLoading,
 } from "store/slices/financeSlice";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_finance_payable, edit_finance_payable } = alqadar_role_ids;
 
 const emptyLine = () => ({ key: `${Date.now()}-${Math.random()}`, description: "", amount: "", account: null });
 
@@ -34,6 +37,7 @@ const AddBill = () => {
   const { id } = useParams();
   const accounts = useSelector(showChartOfAccounts);
   const existing = useSelector(showCurrentVendorBill);
+  const loading = useSelector(showCurrentVendorBillLoading);
 
   useEffect(() => {
     if (!accounts.length) dispatch(fetchChartOfAccounts());
@@ -41,6 +45,7 @@ const AddBill = () => {
 
   useEffect(() => {
     if (id) dispatch(fetchVendorBillById(id));
+    return () => dispatch(clearCurrentVendorBill());
   }, [dispatch, id]);
 
   const expenseOpts = useMemo(
@@ -82,10 +87,10 @@ const AddBill = () => {
   }, [id, existing, reset, navigate, t]);
 
   useEffect(() => {
-    if (id && !checkRoleAuth(edit_customer)) {
+    if (id && !checkRoleAuth(edit_finance_payable)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/payable");
-    } else if (!id && !checkRoleAuth(add_customer)) {
+    } else if (!id && !checkRoleAuth(add_finance_payable)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/payable");
     }
@@ -134,7 +139,16 @@ const AddBill = () => {
     }
   };
 
-  if ((id && !checkRoleAuth(edit_customer)) || (!id && !checkRoleAuth(add_customer))) return null;
+  if ((id && !checkRoleAuth(edit_finance_payable)) || (!id && !checkRoleAuth(add_finance_payable))) return null;
+
+  if (id && loading && existing?.id !== id) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
+
   const isRTL = i18n.language === "ar";
 
   return (
@@ -156,8 +170,8 @@ const AddBill = () => {
           className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-8 border-l-4 !border-l-[var(--color-teal-500)]"
         >
           <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <FormInput label={t("finance:supplier")} name="vendorName" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={150} register={register} required />
-            <FormInput label={t("contact")} name="vendorContact" pattern={/[a-zA-Z0-9\s.'&,-]/} maxLength={150} register={register} />
+            <FormInput label={t("finance:supplier")} name="vendorName" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={100} register={register} required />
+            <FormInput label={t("contact")} name="vendorContact" pattern={/[a-zA-Z0-9\s.'&,-]/} maxLength={100} register={register} />
             <FormInput label={t("finance:bill_ref")} name="billNumber" pattern={/[A-Za-z0-9\-/]/} minLength={2} maxLength={100} register={register} required />
             <FormInput label={t("finance:posted_date")} name="billDate" type="date" register={register} required max={new Date().toISOString().slice(0, 10)} />
             <FormInput label={t("finance:due_date")} name="dueDate" type="date" register={register} required min={billDate || undefined} />

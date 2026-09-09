@@ -8,6 +8,7 @@ import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import Button from "components/Button";
 import PhoneNumberInput from "components/PhoneNumberInput";
+import { SkeletonDetail } from "components/Skeleton";
 import { fetchActiveRoles, showActiveRoles } from "store/slices/roleSlice";
 import {
   createUser,
@@ -19,6 +20,10 @@ import {
   showErpUserSaving,
 } from "store/slices/userSlice";
 import { userRoleStatusOptions } from "global/constant";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { add_user, edit_user } = alqadar_role_ids;
 
 const AddUser = () => {
   const { t } = useTranslation();
@@ -106,8 +111,14 @@ const AddUser = () => {
     }
   };
 
+  if ((id && !checkRoleAuth(edit_user)) || (!id && !checkRoleAuth(add_user))) return null;
+
   if (id && loadingEdit) {
-    return <div className="p-10 text-center text-mutedForeground">{t("loading")}...</div>;
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={8} />
+      </div>
+    );
   }
 
   const passwordValue = watch("password");

@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, useParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,15 +9,21 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { activeInactiveOptions as WAREHOUSE_STATUS_OPTS } from "global/constant";
 import {
   fetchWarehouseById,
   createWarehouse,
   updateWarehouse,
   showCurrentWarehouse,
+  showCurrentWarehouseLoading,
   clearCurrentWarehouse,
 } from "store/slices/warehouseSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { add_warehouse, edit_warehouse } = alqadar_role_ids;
 
 const AddWarehouse = () => {
   const { t } = useTranslation("warehouse");
@@ -27,6 +33,7 @@ const AddWarehouse = () => {
   const isEdit   = Boolean(id);
 
   const existing = useSelector(showCurrentWarehouse);
+  const loading = useSelector(showCurrentWarehouseLoading);
   const employees = useSelector(showEmployees);
   const [selStatus, setSelStatus] = useState(WAREHOUSE_STATUS_OPTS[0]);
   const employeeOptions = useMemo(
@@ -75,6 +82,17 @@ const AddWarehouse = () => {
     }
   };
 
+  if (isEdit && !checkRoleAuth(edit_warehouse)) return null;
+  if (!isEdit && !checkRoleAuth(add_warehouse)) return null;
+
+  if (isEdit && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-7 flex flex-wrap items-center gap-4 dark:text-white">
@@ -91,7 +109,7 @@ const AddWarehouse = () => {
             <FormInput label={t("code")} name="code" register={register} errors={errors} disabled />
           )}
           <FormInput label={t("name")}     name="name"     register={register} errors={errors} required={t("name_required")} placeholder={t("name")}
-            pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
+            pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={100} />
           <div>
             <SelectDropdown
               label={t("manager")}
@@ -109,7 +127,7 @@ const AddWarehouse = () => {
           <FormInput label={t("unit")}     name="unit"     register={register} errors={errors} placeholder="sqm / pallets" pattern={/[a-zA-Z0-9\s./-]/} maxLength={20} />
           <SelectDropdown label={t("status")} data={WAREHOUSE_STATUS_OPTS} selected={selStatus} setSelected={setSelStatus} hideClear classes="!h-[46px] !rounded-lg" />
           <FormInput label={t("location")} name="location" register={register} errors={errors} required={t("location_required")} placeholder={t("location_placeholder")}
-            pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
+            pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={100} />
           <div className="md:col-span-2 lg:col-span-3">
             <FormTextarea label={t("description")} name="description" register={register} errors={errors} placeholder={t("description_placeholder")} maxLength={500} rows={4} />
           </div>

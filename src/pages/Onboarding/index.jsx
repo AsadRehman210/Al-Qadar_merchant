@@ -12,14 +12,15 @@ import {
   LuSettings2,
 } from "react-icons/lu";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import DataState from "components/DataState";
+import { SkeletonCards } from "components/Skeleton";
 import { cardRows, onboardingTaskCategoryOptions } from "global/constant";
+import { onboardingProgressOf, onboardingCategoryLabel, checkRoleAuth } from "global/helper";
 import { useListFilters } from "hooks/useListFilters";
 import Button from "components/Button";
-import { onboardingProgressOf, onboardingCategoryLabel } from "global/helper";
 import { ONBOARDING_STATUS } from "global/constant";
 import {
   fetchOnboardings,
@@ -30,6 +31,9 @@ import {
   showOnboardingsSummary,
   toggleOnboardingTask,
 } from "store/slices/onboardingSlice";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_onboarding, edit_onboarding, view_onboarding_template } = alqadar_role_ids;
 
 const FILTERS = [
   { id: "all", labelKey: "hrhub:all" },
@@ -103,6 +107,8 @@ const Onboarding = () => {
   const handleRowsChange = (v) => setFilters({ limitId: v.id, page: 1 });
   const handleFilterChange = (id) => setFilters({ filter: id, page: 1 });
 
+  if (!checkRoleAuth(view_onboarding)) return null;
+
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
       <div className="hidden dark:block absolute inset-0 bg-slate-900 z-0 overflow-hidden" />
@@ -113,30 +119,38 @@ const Onboarding = () => {
             <h1 className="text-3xl font-bold tracking-tight">{t("hrhub:onb_title")}</h1>
             <p className="text-mutedForeground mt-1">{t("hrhub:onb_desc")}</p>
           </div>
-          <Button
-            type="button"
-            title={t("hrhub:manage_checklist")}
-            icon={LuSettings2}
-            onClick={() => navigate("/onboarding/templates")}
-            className="!w-auto !rounded-md !h-11 !px-5 !border border-slate-200 dark:!border-white/25 !text-slate-700 dark:!text-white dark:!bg-white/10 hover:!bg-slate-50 dark:hover:!bg-white/20"
-          />
+          {checkRoleAuth(view_onboarding_template) && (
+            <Button
+              type="button"
+              title={t("hrhub:manage_checklist")}
+              icon={LuSettings2}
+              onClick={() => navigate("/onboarding/templates")}
+              className="!w-auto !rounded-md !h-11 !px-5 !border border-slate-200 dark:!border-white/25 !text-slate-700 dark:!text-white dark:!bg-white/10 hover:!bg-slate-50 dark:hover:!bg-white/20"
+            />
+          )}
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-600 text-white">
-            <p className="text-sm font-medium opacity-80">{t("hrhub:new_hires")}</p>
-            <p className="text-3xl font-bold mt-1">{summary.total}</p>
+        {loading ? (
+          <div className="mb-6">
+            <SkeletonCards count={3} columns="grid-cols-2 lg:grid-cols-3" />
           </div>
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white">
-            <p className="text-sm font-medium opacity-80">{t("hrhub:in_progress")}</p>
-            <p className="text-3xl font-bold mt-1">{summary.inProgress}</p>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-500 to-slate-600 text-white">
+              <p className="text-sm font-medium opacity-80">{t("hrhub:new_hires")}</p>
+              <p className="text-3xl font-bold mt-1">{summary.total}</p>
+            </div>
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white">
+              <p className="text-sm font-medium opacity-80">{t("hrhub:in_progress")}</p>
+              <p className="text-3xl font-bold mt-1">{summary.inProgress}</p>
+            </div>
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white col-span-2 lg:col-span-1">
+              <p className="text-sm font-medium opacity-80">{t("hrhub:completed")}</p>
+              <p className="text-3xl font-bold mt-1">{summary.completed}</p>
+            </div>
           </div>
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 text-white col-span-2 lg:col-span-1">
-            <p className="text-sm font-medium opacity-80">{t("hrhub:completed")}</p>
-            <p className="text-3xl font-bold mt-1">{summary.completed}</p>
-          </div>
-        </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
@@ -181,14 +195,14 @@ const Onboarding = () => {
                   <div className="flex items-start justify-between gap-3">
                     <Link to={`/employees/details/${o.employeeId}`} className="flex items-center gap-3 min-w-0 group">
                       <div className="h-11 w-11 rounded-xl bg-teal-50 dark:bg-teal-500/15 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold shrink-0">
-                        {(o.employeeName || "ó").split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                        {(o.employeeName || "ù").split(" ").map((n) => n[0]).join("").slice(0, 2)}
                       </div>
                       <div className="min-w-0">
                         <p className="font-bold text-slate-800 dark:text-white truncate group-hover:text-teal-600 dark:group-hover:text-teal-300">
-                          {o.employeeName || "ó"}
+                          {o.employeeName || "ù"}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-white/50 flex items-center gap-1.5">
-                          <LuBriefcase className="h-3.5 w-3.5" /> {o.position} ∑ {o.department}
+                          <LuBriefcase className="h-3.5 w-3.5" /> {o.position} ù {o.department}
                         </p>
                       </div>
                     </Link>
@@ -208,7 +222,7 @@ const Onboarding = () => {
                         {t("hrhub:required_progress", { done: p.requiredDone, total: p.requiredTotal })}
                         {p.optionalTotal > 0 && (
                           <span className="text-slate-400 dark:text-white/40">
-                            {" ∑ "}
+                            {" ù "}
                             {t("hrhub:optional_progress", { done: p.optionalDone, total: p.optionalTotal })}
                           </span>
                         )}
@@ -232,8 +246,9 @@ const Onboarding = () => {
                             <button
                               key={task.templateId}
                               type="button"
+                              disabled={!checkRoleAuth(edit_onboarding)}
                               onClick={() => handleToggleTask(o.id, task.templateId)}
-                              className="w-full flex items-center gap-3 text-start p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5"
+                              className="w-full flex items-center gap-3 text-start p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5 disabled:opacity-60 disabled:cursor-not-allowed"
                             >
                               <span className={`h-5 w-5 rounded-md flex items-center justify-center shrink-0 border ${task.done ? "bg-teal-500 border-teal-500 text-white" : "border-slate-300 dark:border-white/30"}`}>
                                 {task.done && <LuCheck className="h-3.5 w-3.5" />}
@@ -282,7 +297,7 @@ const Onboarding = () => {
               <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
             </div>
             <div className="pagination ltr:ml-auto rtl:mr-auto">
-              <ReactPaginate
+              <Pagination
                 breakLabel="..."
                 nextLabel={<FaAngleRight />}
                 previousLabel={<FaAngleLeft />}

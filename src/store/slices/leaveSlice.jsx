@@ -16,6 +16,7 @@ const initialState = {
   loading: false,
   current: null,
   employeeLeaves: [],
+  employeeLeavesLoading: false,
   balance: [],
   balanceLoading: false,
   summary: { total: 0, pending: 0, pendingManager: 0, pendingHr: 0, approved: 0, rejected: 0 },
@@ -141,6 +142,14 @@ const leaveSlice = createSlice({
     setCurrentPage: (state, action) => { state.currentPage = action.payload; },
     triggerRefresh: (state) => { state.lastUpdated = Date.now(); },
     clearCurrentLeave: (state) => { state.current = null; },
+    clearEmployeeLeaves: (state) => {
+      state.employeeLeaves = [];
+      state.employeeLeavesLoading = false;
+    },
+    clearLeaveBalance: (state) => {
+      state.balance = [];
+      state.balanceLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -161,7 +170,15 @@ const leaveSlice = createSlice({
       .addCase(fetchLeaveById.pending, (state) => { state.currentLoading = true; })
       .addCase(fetchLeaveById.fulfilled, (state, action) => { state.currentLoading = false; state.current = action.payload; })
       .addCase(fetchLeaveById.rejected, (state) => { state.currentLoading = false; })
-      .addCase(fetchLeavesByEmployee.fulfilled, (state, action) => { state.employeeLeaves = action.payload; })
+      .addCase(fetchLeavesByEmployee.pending, (state) => { state.employeeLeavesLoading = true; })
+      .addCase(fetchLeavesByEmployee.fulfilled, (state, action) => {
+        state.employeeLeavesLoading = false;
+        state.employeeLeaves = action.payload;
+      })
+      .addCase(fetchLeavesByEmployee.rejected, (state) => {
+        state.employeeLeavesLoading = false;
+        state.employeeLeaves = [];
+      })
       .addCase(fetchLeaveBalance.pending, (state) => { state.balanceLoading = true; })
       .addCase(fetchLeaveBalance.fulfilled, (state, action) => {
         state.balanceLoading = false;
@@ -191,6 +208,8 @@ export const {
   setCurrentPage,
   triggerRefresh,
   clearCurrentLeave,
+  clearEmployeeLeaves,
+  clearLeaveBalance,
 } = leaveSlice.actions;
 
 export const showSearch = (s) => s.leave.search;
@@ -206,6 +225,7 @@ export const showLeaveSummary = (s) => s.leave.summary;
 export const showCurrentLeave = (s) => s.leave.current;
 export const showCurrentLeaveLoading = (s) => s.leave.currentLoading;
 export const showEmployeeLeaves = (s) => s.leave.employeeLeaves;
+export const showEmployeeLeavesLoading = (s) => s.leave.employeeLeavesLoading;
 export const showLeaveBalance = (s) => s.leave.balance;
 export const showLeaveBalanceLoading = (s) => s.leave.balanceLoading;
 

@@ -5,14 +5,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { IoAdd } from "react-icons/io5";
 import { LuClipboardList, LuClock, LuTimer, LuFileText, LuLogOut, LuBadgeCheck, LuTrendingUp, LuDoorOpen, LuRepeat, LuPlane, LuLaptop, LuUserCog, LuGraduationCap, LuTriangleAlert, LuShieldAlert, LuLifeBuoy } from "react-icons/lu";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import TableState from "components/TableState";
+import { SkeletonCards } from "components/Skeleton";
 import { tableRows } from "global/constant";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { APPROVAL_STATUS_BADGE } from "global/approvalEngine";
 import { useListFilters } from "hooks/useListFilters";
 import {
@@ -30,7 +31,7 @@ import {
   showLastUpdated,
 } from "store/slices/requestSlice";
 
-const { add_employee, view_employee } = rafeeqi_role_ids;
+const { add_employee_request, view_employee_request, approve_employee_request } = alqadar_role_ids;
 
 export const TYPE_ICON = {
   clock: LuClock,
@@ -99,6 +100,8 @@ const Requests = () => {
   const pendingManager = summary.pendingManager;
   const pendingHr = summary.pendingHr;
 
+  if (!checkRoleAuth(view_employee_request)) return null;
+
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
       <div className="hidden dark:block absolute inset-0 bg-slate-900 z-0 overflow-hidden" />
@@ -118,7 +121,7 @@ const Requests = () => {
               icon={IoAdd}
               iconClass="h-4 w-4 text-white"
             />
-            {checkRoleAuth(add_employee) && (
+            {checkRoleAuth(add_employee_request) && (
               <Button
                 className="!w-auto !rounded-lg !h-10 !px-4 !border border-slate-200 dark:!border-white/25 !bg-white dark:!bg-white/10 !text-slate-700 dark:!text-white hover:!bg-slate-50"
                 onClick={() => navigate("/requests/add")}
@@ -130,16 +133,23 @@ const Requests = () => {
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {STAT_CARDS.map((c) => (
-            <div key={c.label} className={`p-5 rounded-2xl bg-gradient-to-br ${c.color} text-white`}>
-              <p className="text-sm font-medium opacity-80">{c.label}</p>
-              <p className="text-3xl font-bold mt-1">{c.value}</p>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="mb-6">
+            <SkeletonCards count={4} columns="grid-cols-2 lg:grid-cols-4" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {STAT_CARDS.map((c) => (
+              <div key={c.label} className={`p-5 rounded-2xl bg-gradient-to-br ${c.color} text-white`}>
+                <p className="text-sm font-medium opacity-80">{c.label}</p>
+                <p className="text-3xl font-bold mt-1">{c.value}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Approval shortcuts */}
+        {checkRoleAuth(approve_employee_request) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <button
             type="button"
@@ -164,6 +174,7 @@ const Requests = () => {
             <span className="text-2xl font-bold text-blue-700 dark:text-blue-300">{pendingHr}</span>
           </button>
         </div>
+        )}
 
         {/* Table */}
         <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-5 sm:p-7">
@@ -251,7 +262,7 @@ const Requests = () => {
                 <span className="whitespace-nowrap">{t("per_page")}</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}
@@ -267,7 +278,6 @@ const Requests = () => {
             </div>
           )}
         </div>
-        {!checkRoleAuth(view_employee) && null}
       </div>
     </div>
   );

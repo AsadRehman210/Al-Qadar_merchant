@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -12,7 +12,7 @@ import SelectDropdown from "components/SelectDropdown";
 import ActionPopup from "components/ActionPopup";
 import { SkeletonTable } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchLeaveTypes,
   createLeaveType,
@@ -23,12 +23,19 @@ import {
 } from "store/slices/leaveTypeSlice";
 import { leaveApplicableGenderOptions, activeInactiveOptions } from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_leave_type, add_leave_type, edit_leave_type, delete_leave_type } = alqadar_role_ids;
+
 const LeaveTypeForm = ({ existing, onDone }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const [selGender, setSelGender] = useState(leaveApplicableGenderOptions.find((g) => g.id === (existing?.applicableGender || "all")) || leaveApplicableGenderOptions[0]);
-  const [selStatus, setSelStatus] = useState(activeInactiveOptions.find((s) => s.id === (existing?.status || "Active")) || activeInactiveOptions[0]);
+  const [selGender, setSelGender] = useState(
+    leaveApplicableGenderOptions.find((g) => g.id === (existing?.applicableGender || "all")) ||
+      leaveApplicableGenderOptions[0],
+  );
+  const [selStatus, setSelStatus] = useState(
+    activeInactiveOptions.find((s) => s.id === (existing?.status || "Active")) ||
+      activeInactiveOptions[0],
+  );
 
   const { register, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
@@ -148,7 +155,7 @@ const LeaveTypes = () => {
     dispatch(fetchLeaveTypes());
   }, [dispatch]);
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (!checkRoleAuth(view_leave_type)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -166,18 +173,20 @@ const LeaveTypes = () => {
             <h1 className="text-3xl font-bold tracking-tight">{t("leave:leave_types")}</h1>
             <p className="text-mutedForeground">{t("leave:leave_types_desc")}</p>
           </div>
-          <Button
-            type="button"
-            title={t("leave:add_type")}
-            icon={IoAdd}
-            iconClass="h-4 w-4 text-white"
-            btn="primary"
-            onClick={() => { setEditing(null); setShowForm(true); }}
-            className="!w-auto !rounded-md !h-10 !px-4 !border-0 !text-white !bg-teal-500 hover:!bg-teal-600"
-          />
+          {checkRoleAuth(add_leave_type) && (
+            <Button
+              type="button"
+              title={t("leave:add_type")}
+              icon={IoAdd}
+              iconClass="h-4 w-4 text-white"
+              btn="primary"
+              onClick={() => { setEditing(null); setShowForm(true); }}
+              className="!w-auto !rounded-md !h-10 !px-4 !border-0 !text-white !bg-teal-500 hover:!bg-teal-600"
+            />
+          )}
         </div>
 
-        {showForm && !editing && (
+        {showForm && !editing && checkRoleAuth(add_leave_type) && (
           <LeaveTypeForm onDone={() => setShowForm(false)} />
         )}
 
@@ -222,16 +231,20 @@ const LeaveTypes = () => {
                     </td>
                     <td className="px-4 py-4 pr-6">
                       <div className="flex gap-2 text-slate-500 dark:text-white/70">
-                        <button type="button" onClick={() => { setEditing(type); setShowForm(true); }} className="hover:text-teal-600">
-                          <FiEdit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setDeletingId(type.id); deleteRef.current?.openModal?.(type); }}
-                          className="hover:text-red-600"
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                        </button>
+                        {checkRoleAuth(edit_leave_type) && (
+                          <button type="button" onClick={() => { setEditing(type); setShowForm(true); }} className="hover:text-teal-600">
+                            <FiEdit2 className="h-4 w-4" />
+                          </button>
+                        )}
+                        {checkRoleAuth(delete_leave_type) && (
+                          <button
+                            type="button"
+                            onClick={() => { setDeletingId(type.id); deleteRef.current?.openModal?.(type); }}
+                            className="hover:text-red-600"
+                          >
+                            <FiTrash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -242,7 +255,7 @@ const LeaveTypes = () => {
           )}
         </div>
 
-        {editing && showForm && (
+        {editing && showForm && checkRoleAuth(edit_leave_type) && (
           <div className="mt-4">
             <p className="text-sm font-semibold mb-2 text-slate-700 dark:text-white">{t("leave:edit_type")}: {editing.name}</p>
             <LeaveTypeForm

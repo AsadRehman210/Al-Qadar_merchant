@@ -6,12 +6,16 @@ import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
 import { FiEye } from "react-icons/fi";
 import { toast } from "react-toastify";
 import ActionPopup from "components/ActionPopup";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
 import { tableRows, activeInactiveBadgeClass } from "global/constant";
 import { deleteDepartment } from "store/slices/departmentSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_department, edit_department, delete_department } = alqadar_role_ids;
 
 const DepartmentsTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, totalPages, onDeleted }) => {
   const { t } = useTranslation();
@@ -101,28 +105,34 @@ const DepartmentsTable = ({ data, loading, page = 1, setPage, selRows, setSelRow
                     </td>
                     <td className="px-4 py-4 align-middle pr-6">
                       <div className="flex items-center gap-2">
-                        <Link
-                          to={`/departments/details/${row.id}`}
-                          className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
-                          title={t("view")}
-                        >
-                          <FiEye className="h-4 w-4" />
-                        </Link>
-                        <Link
-                          to={`/departments/edit/${row.id}`}
-                          className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
-                          title={t("edit")}
-                        >
-                          <AiOutlineEdit className="h-4 w-4" />
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(row)}
-                          className="text-slate-500 dark:text-white/80 transition-all hover:text-red-600 dark:hover:text-red-400"
-                          title={t("delete")}
-                        >
-                          <AiOutlineDelete className="h-4 w-4" />
-                        </button>
+                        {checkRoleAuth(view_department) && (
+                          <Link
+                            to={`/departments/details/${row.id}`}
+                            className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
+                            title={t("view")}
+                          >
+                            <FiEye className="h-4 w-4" />
+                          </Link>
+                        )}
+                        {checkRoleAuth(edit_department) && (
+                          <Link
+                            to={`/departments/edit/${row.id}`}
+                            className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
+                            title={t("edit")}
+                          >
+                            <AiOutlineEdit className="h-4 w-4" />
+                          </Link>
+                        )}
+                        {checkRoleAuth(delete_department) && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(row)}
+                            className="text-slate-500 dark:text-white/80 transition-all hover:text-red-600 dark:hover:text-red-400"
+                            title={t("delete")}
+                          >
+                            <AiOutlineDelete className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -145,7 +155,7 @@ const DepartmentsTable = ({ data, loading, page = 1, setPage, selRows, setSelRow
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

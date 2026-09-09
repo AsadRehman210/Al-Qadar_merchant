@@ -12,6 +12,10 @@ import {
   clearCurrentAttendancePolicy,
 } from "store/slices/attendancePolicySlice";
 import { SkeletonDetail } from "components/Skeleton";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_attendance_policy, edit_attendance_policy } = alqadar_role_ids;
 
 const InfoRow = ({ label, value }) => (
   <div className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-white/10 last:border-b-0">
@@ -38,6 +42,8 @@ const AttendancePolicyDetail = () => {
   // "Current" is simply the one policy with no endDate yet — no separate
   // lookup needed, the fetched record already carries that.
   const isCurrent = policy && policy.id === id && !policy.endDate;
+
+  if (!checkRoleAuth(view_attendance_policy)) return null;
 
   if (policyLoading && (!policy || policy.id !== id)) {
     return (
@@ -81,7 +87,7 @@ const AttendancePolicyDetail = () => {
                   })}
             </p>
           </div>
-          {isCurrent && (
+          {isCurrent && checkRoleAuth(edit_attendance_policy) && (
             <Button
               type="button"
               title={t("edit")}

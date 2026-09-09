@@ -1,9 +1,9 @@
 // ─────────────────────────────────────────────────────────────────────────────
-// ERP permission catalog (merchant portal). Keys here are the exact strings the
+// ERP permission catalog (admin portal). Keys here are the exact strings the
 // backend's `source/utility/helper/constants/permissions.ts` enforces — keep
-// the two in sync. `rafeeqi_role_ids` maps readable JS identifiers to those
+// the two in sync. `alqadar_role_ids` maps readable JS identifiers to those
 // strings (used by `menuSections` + page-level `checkRoleAuth`);
-// `rafeeqi_roles` is the module tree the Role builder renders as checkboxes.
+// `alqadar_roles` is the module tree the Role builder renders as checkboxes.
 //
 // The Account owner (is_default_user) bypasses every check. A sub-user holds
 // exactly the strings their assigned Role grants.
@@ -19,13 +19,14 @@ function key(base) {
   return base.replace(/[.-]/g, "_");
 }
 
-export const rafeeqi_role_ids = {
+export const alqadar_role_ids = {
   // Access control
   ...crud("user"),
   ...crud("role"),
 
   // Platform
   view_dashboard: "dashboard.view",
+  ...crud("merchant-management"),
   view_reports: "reports.view",
   view_settings: "settings.view",
   edit_settings: "settings.edit",
@@ -135,12 +136,10 @@ export const rafeeqi_role_ids = {
 
 // Set of the legacy wildcard placeholder strings — consumed by
 // global/helper.js `checkRoleAuth`.
-export const LEGACY_WILDCARD_PERMISSIONS = new Set([
-  "sales-customer.view",
-  "sales-customer.create",
-  "sales-customer.edit",
-  "sales-customer.delete",
-]);
+// Previously held sales-customer.* as universal placeholders for unfinished
+// modules. Operations pages now use real module keys, so this set is empty —
+// Customers enforce sales-customer.* like every other module.
+export const LEGACY_WILDCARD_PERMISSIONS = new Set([]);
 
 const grp = (title, title_key, subs) => ({
   title,
@@ -153,17 +152,18 @@ const section = (title, title_key, modules) => ({ title, title_key, modules });
 function crudRows(base, label) {
   const k = key(base);
   return [
-    [rafeeqi_role_ids[`view_${k}`], `View ${label}`, `view_${k}`],
-    [rafeeqi_role_ids[`add_${k}`], `Add ${label}`, `add_${k}`],
-    [rafeeqi_role_ids[`edit_${k}`], `Edit ${label}`, `edit_${k}`],
-    [rafeeqi_role_ids[`delete_${k}`], `Delete ${label}`, `delete_${k}`],
+    [alqadar_role_ids[`view_${k}`], `View ${label}`, `view_${k}`],
+    [alqadar_role_ids[`add_${k}`], `Add ${label}`, `add_${k}`],
+    [alqadar_role_ids[`edit_${k}`], `Edit ${label}`, `edit_${k}`],
+    [alqadar_role_ids[`delete_${k}`], `Delete ${label}`, `delete_${k}`],
   ];
 }
 
 // Nested: section → modules (each module has CRUD/status permissions).
-export const rafeeqi_roles = [
+// PermissionMatrix renders section headers with module cards underneath.
+export const alqadar_roles = [
   section("MAIN", "sidebar_main", [
-    grp("Dashboard", "dashboard", [[rafeeqi_role_ids.view_dashboard, "View Dashboard", "view_dashboard"]]),
+    grp("Dashboard", "dashboard", [[alqadar_role_ids.view_dashboard, "View Dashboard", "view_dashboard"]]),
   ]),
   section("HR Management", "sidebar_hr", [
     grp("Recruitment / Jobs", "sidebar_recruitment", crudRows("recruitment", "Job")),
@@ -179,59 +179,59 @@ export const rafeeqi_roles = [
     grp("Attendance Policies", "sidebar_attendance_policies", crudRows("attendance-policy", "Attendance Policy")),
     grp("Leave", "sidebar_leave_management", [
       ...crudRows("leave", "Leave"),
-      [rafeeqi_role_ids.approve_leave, "Approve Leave", "approve_leave"],
+      [alqadar_role_ids.approve_leave, "Approve Leave", "approve_leave"],
     ]),
     grp("Leave Types", "leave_types", crudRows("leave-type", "Leave Type")),
     grp("Holidays", "sidebar_holiday_calendar", crudRows("holiday", "Holiday")),
     grp("Salary", "sidebar_salary", crudRows("salary", "Salary")),
     grp("Payroll Runs", "sidebar_payroll_batch", [
       ...crudRows("payroll-run", "Payroll Run"),
-      [rafeeqi_role_ids.process_payroll_run, "Process Payroll", "process_payroll_run"],
+      [alqadar_role_ids.process_payroll_run, "Process Payroll", "process_payroll_run"],
     ]),
     grp("Special Payments", "sidebar_special_payments", crudRows("special-payment", "Special Payment")),
     grp("Special Payment Types", "special_payment_types", crudRows("special-payment-type", "Special Payment Type")),
     grp("Provident Fund", "sidebar_provident_fund", crudRows("provident-fund", "Provident Fund")),
     grp("Loans", "sidebar_loans", [
       ...crudRows("loan", "Loan"),
-      [rafeeqi_role_ids.approve_loan, "Approve Loan", "approve_loan"],
+      [alqadar_role_ids.approve_loan, "Approve Loan", "approve_loan"],
     ]),
     grp("Expenses", "sidebar_expenses", [
       ...crudRows("expense", "Expense"),
-      [rafeeqi_role_ids.approve_expense, "Approve Expense", "approve_expense"],
+      [alqadar_role_ids.approve_expense, "Approve Expense", "approve_expense"],
     ]),
     grp("Employee Requests", "sidebar_requests", [
       ...crudRows("employee-request", "Employee Request"),
-      [rafeeqi_role_ids.approve_employee_request, "Approve Request", "approve_employee_request"],
+      [alqadar_role_ids.approve_employee_request, "Approve Request", "approve_employee_request"],
     ]),
     grp("Announcements", "sidebar_announcements", crudRows("announcement", "Announcement")),
   ]),
   section("Asset Management", "sidebar_asset_management", [
     grp("Assets", "sidebar_assets_register", [
       ...crudRows("asset", "Asset"),
-      [rafeeqi_role_ids.import_asset, "Import Assets", "import_asset"],
+      [alqadar_role_ids.import_asset, "Import Assets", "import_asset"],
     ]),
     grp("Asset Categories", "sidebar_asset_categories", crudRows("asset-category", "Asset Category")),
     grp("Asset Requests", "sidebar_asset_requests", [
       ...crudRows("asset-request", "Asset Request"),
-      [rafeeqi_role_ids.approve_asset_request, "Approve Asset Request", "approve_asset_request"],
+      [alqadar_role_ids.approve_asset_request, "Approve Asset Request", "approve_asset_request"],
     ]),
     grp("Asset Audits", "sidebar_asset_audits", crudRows("asset-audit", "Asset Audit")),
   ]),
   section("Products & Inventory", "sidebar_products_inventory", [
     grp("Products", "sidebar_products", [
       ...crudRows("inventory-product", "Product"),
-      [rafeeqi_role_ids.import_inventory_product, "Import Products", "import_inventory_product"],
+      [alqadar_role_ids.import_inventory_product, "Import Products", "import_inventory_product"],
     ]),
     grp("Categories", "sidebar_categories", crudRows("inventory-category", "Category")),
     grp("Variants", "sidebar_variants", crudRows("inventory-variant", "Variant")),
     grp("Production", "sidebar_production", crudRows("inventory-production", "Production")),
     grp("Quarantine", "sidebar_quarantine", crudRows("inventory-quarantine", "Quarantine")),
     grp("Stock Batches", "stock_batches", [
-      [rafeeqi_role_ids.view_inventory_stock_batch, "View Stock Batches", "view_inventory_stock_batch"],
+      [alqadar_role_ids.view_inventory_stock_batch, "View Stock Batches", "view_inventory_stock_batch"],
     ]),
     grp("Opening Stock Import", "opening_stock_import", [
-      [rafeeqi_role_ids.view_inventory_opening_stock, "View Opening Stock Import", "view_inventory_opening_stock"],
-      [rafeeqi_role_ids.add_inventory_opening_stock, "Run Opening Stock Import", "add_inventory_opening_stock"],
+      [alqadar_role_ids.view_inventory_opening_stock, "View Opening Stock Import", "view_inventory_opening_stock"],
+      [alqadar_role_ids.add_inventory_opening_stock, "Run Opening Stock Import", "add_inventory_opening_stock"],
     ]),
   ]),
   section("Warehouse", "sidebar_warehouse", [
@@ -245,33 +245,41 @@ export const rafeeqi_roles = [
     grp("Suppliers", "suppliers", crudRows("purchase-supplier", "Supplier")),
     grp("Sale Invoices", "sales", [
       ...crudRows("sales-invoice", "Sale Invoice"),
-      [rafeeqi_role_ids.status_sales_invoice, "Change Sale Invoice Status", "status_sales_invoice"],
+      [alqadar_role_ids.status_sales_invoice, "Change Sale Invoice Status", "status_sales_invoice"],
     ]),
     grp("Quotations", "sidebar_quotations", [
       ...crudRows("sales-quotation", "Quotation"),
-      [rafeeqi_role_ids.status_sales_quotation, "Change Quotation Status", "status_sales_quotation"],
+      [alqadar_role_ids.status_sales_quotation, "Change Quotation Status", "status_sales_quotation"],
     ]),
     grp("Credit Notes", "sidebar_credit_notes", [
       ...crudRows("sales-credit-note", "Credit Note"),
-      [rafeeqi_role_ids.status_sales_credit_note, "Change Credit Note Status", "status_sales_credit_note"],
+      [alqadar_role_ids.status_sales_credit_note, "Change Credit Note Status", "status_sales_credit_note"],
     ]),
     grp("Purchase Invoices", "purchases", [
       ...crudRows("purchase-invoice", "Purchase Invoice"),
-      [rafeeqi_role_ids.status_purchase_invoice, "Change Purchase Invoice Status", "status_purchase_invoice"],
+      [alqadar_role_ids.status_purchase_invoice, "Change Purchase Invoice Status", "status_purchase_invoice"],
     ]),
     grp("Debit Notes", "sidebar_debit_notes", [
       ...crudRows("purchase-debit-note", "Debit Note"),
-      [rafeeqi_role_ids.status_purchase_debit_note, "Change Debit Note Status", "status_purchase_debit_note"],
+      [alqadar_role_ids.status_purchase_debit_note, "Change Debit Note Status", "status_purchase_debit_note"],
+    ]),
+  ]),
+  section("Merchants", "sidebar_merchants_group", [
+    grp("Merchants", "sidebar_merchants", [
+      [alqadar_role_ids.view_merchant_management, "View Merchants", "view_merchant_management"],
+      [alqadar_role_ids.add_merchant_management, "Add Merchant", "add_merchant_management"],
+      [alqadar_role_ids.edit_merchant_management, "Edit Merchant", "edit_merchant_management"],
+      [alqadar_role_ids.delete_merchant_management, "Delete Merchant", "delete_merchant_management"],
     ]),
   ]),
   section("Finance Management", "sidebar_finance_management", [
     grp("Chart of Accounts", "sidebar_finance_coa", crudRows("finance-coa", "Chart of Accounts")),
     grp("Journal Entries", "sidebar_finance_journal", crudRows("finance-journal", "Journal Entry")),
     grp("Ledger", "sidebar_finance_ledger", [
-      [rafeeqi_role_ids.view_finance_ledger, "View Ledger", "view_finance_ledger"],
+      [alqadar_role_ids.view_finance_ledger, "View Ledger", "view_finance_ledger"],
     ]),
     grp("Financial Reports", "sidebar_finance_reports", [
-      [rafeeqi_role_ids.view_finance_reports, "View Financial Reports", "view_finance_reports"],
+      [alqadar_role_ids.view_finance_reports, "View Financial Reports", "view_finance_reports"],
     ]),
     grp("Bank & Cash", "sidebar_finance_bank", crudRows("finance-bank", "Bank & Cash")),
     grp("Accounts Payable", "sidebar_finance_ap", crudRows("finance-payable", "Accounts Payable")),
@@ -286,16 +294,16 @@ export const rafeeqi_roles = [
   ]),
   section("Reports", "sidebar_reports", [
     grp("Reports Hub", "sidebar_reports_hub", [
-      [rafeeqi_role_ids.view_reports, "View Reports", "view_reports"],
+      [alqadar_role_ids.view_reports, "View Reports", "view_reports"],
     ]),
     grp("HR Analytics", "hr_analytics", [
-      [rafeeqi_role_ids.view_analytics_hr, "View HR Analytics", "view_analytics_hr"],
+      [alqadar_role_ids.view_analytics_hr, "View HR Analytics", "view_analytics_hr"],
     ]),
     grp("Inventory Analytics", "inventory_analytics", [
-      [rafeeqi_role_ids.view_analytics_inventory, "View Inventory Analytics", "view_analytics_inventory"],
+      [alqadar_role_ids.view_analytics_inventory, "View Inventory Analytics", "view_analytics_inventory"],
     ]),
     grp("Sales Analytics", "sales_analytics", [
-      [rafeeqi_role_ids.view_analytics_sales, "View Sales Analytics", "view_analytics_sales"],
+      [alqadar_role_ids.view_analytics_sales, "View Sales Analytics", "view_analytics_sales"],
     ]),
   ]),
   section("Access Control", "sidebar_access_control", [
@@ -304,12 +312,13 @@ export const rafeeqi_roles = [
   ]),
   section("Settings", "sidebar_settings_section", [
     grp("Settings", "sidebar_settings", [
-      [rafeeqi_role_ids.view_settings, "View Settings", "view_settings"],
-      [rafeeqi_role_ids.edit_settings, "Edit Settings", "edit_settings"],
+      [alqadar_role_ids.view_settings, "View Settings", "view_settings"],
+      [alqadar_role_ids.edit_settings, "Edit Settings", "edit_settings"],
     ]),
   ]),
 ];
 
-export const flattenRoleModules = (sections = rafeeqi_roles) =>
+// Flat module list for consumers that don't need section headers (e.g. UserDetail).
+export const flattenRoleModules = (sections = alqadar_roles) =>
   sections.flatMap((s) => s.modules || []);
 

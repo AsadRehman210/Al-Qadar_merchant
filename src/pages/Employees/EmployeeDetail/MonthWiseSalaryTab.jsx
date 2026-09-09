@@ -9,13 +9,14 @@ import {
 import { HiOutlineDocumentText, HiOutlineArrowDownTray, HiOutlineCurrencyDollar } from "react-icons/hi2";
 import { IoClose } from "react-icons/io5";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import SelectDropdown from "components/SelectDropdown";
 import { rows } from "global/constant";
-import { formatAmount } from "global/helper";
 import dayjs from "dayjs";
 
 import { numberWordsOnes as ONES, numberWordsTens as TENS, numberWordsTeens as TEENS } from "global/constant";
+import { SkeletonTable } from "components/Skeleton";
+import { formatAmount } from "global/helper";
 
 const numberToWords = (n) => {
   if (n === 0) return "Zero";
@@ -58,7 +59,7 @@ const SLIP_ROWS = Math.max(EARNING_ITEMS.length, DEDUCTION_ITEMS.length);
 // [{ runId, runNumber, month, runStatus, line }], newest first. `employee`
 // supplies the identity fields (name/department/designation) the slip
 // header needs.
-const MonthWiseSalaryTab = ({ employee, payrollHistory }) => {
+const MonthWiseSalaryTab = ({ employee, payrollHistory, payrollHistoryLoading }) => {
   const { t } = useTranslation();
   const [selectedSlip, setSelectedSlip] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -113,6 +114,10 @@ const MonthWiseSalaryTab = ({ employee, payrollHistory }) => {
   };
 
   const fullName = [employee?.first_name, employee?.last_name].filter(Boolean).join(" ") || "-";
+
+  if (payrollHistoryLoading) {
+    return <SkeletonTable rows={5} columns={7} />;
+  }
 
   if (!fullList.length) {
     return (
@@ -230,7 +235,7 @@ const MonthWiseSalaryTab = ({ employee, payrollHistory }) => {
         </div>
 
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

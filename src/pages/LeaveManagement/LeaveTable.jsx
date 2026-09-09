@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { FiEye } from "react-icons/fi";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
@@ -108,7 +108,7 @@ const LeaveTable = ({ data = [], loading, page = 1, setPage, selRows, setSelRows
           <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

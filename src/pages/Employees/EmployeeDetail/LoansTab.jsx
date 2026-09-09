@@ -1,11 +1,12 @@
 import { useEffect } from "react";
-import { formatAmount } from "global/helper";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import dayjs from "dayjs";
 import { HiOutlineCurrencyDollar, HiOutlineCalendar } from "react-icons/hi2";
 import { FiCreditCard } from "react-icons/fi";
-import { fetchLoansByEmployee, showEmployeeLoans } from "store/slices/loanSlice";
+import { fetchLoansByEmployee, showEmployeeLoans, showEmployeeLoansLoading, clearEmployeeLoans } from "store/slices/loanSlice";
+import { formatAmount } from "global/helper";
+import { SkeletonCards, SkeletonList } from "components/Skeleton";
 
 // Real loans have no `remainingAmount`/`paidAmount`/`startDate` fields —
 // derived from `emiSchedule` (empty until disbursed) and `createdAt` instead.
@@ -26,11 +27,12 @@ const LoansTab = ({ data }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const loans = useSelector(showEmployeeLoans);
+  const isLoading = useSelector(showEmployeeLoansLoading);
 
   useEffect(() => {
     if (data?.id) dispatch(fetchLoansByEmployee(data.id));
+    return () => dispatch(clearEmployeeLoans());
   }, [data?.id, dispatch]);
-
 
   const ACTIVE_STATUSES = ["Pending Manager", "Pending HR", "Pending", "Approved", "Ongoing"];
 
@@ -46,6 +48,11 @@ const LoansTab = ({ data }) => {
             {t("employees:loans")}
           </h3>
         </div>
+        {isLoading ? (
+          <div className="relative">
+            <SkeletonCards count={4} columns="grid-cols-2 md:grid-cols-4" />
+          </div>
+        ) : (
         <div className="relative grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-xl bg-white/50 dark:bg-white/5 border border-slate-100 dark:border-white/10">
             <p className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase">
@@ -80,10 +87,13 @@ const LoansTab = ({ data }) => {
             </p>
           </div>
         </div>
+        )}
       </div>
 
       {/* Loan Cards */}
-      {loans.length === 0 ? (
+      {isLoading ? (
+        <SkeletonList rows={3} />
+      ) : loans.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 dark:border-white/20 p-10 text-center text-slate-500 dark:text-white/60">
           {t("no_record_found")}
         </div>

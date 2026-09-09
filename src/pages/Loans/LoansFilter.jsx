@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
-import { loanStatusFilterOptions, loanTypeFilterOptions } from "global/constant";
+import { loanTypeFilterOptions, loanStatusFilterOptions } from "global/constant";
 
 const LoansFilter = ({ filters, setFilters }) => {
   const { t } = useTranslation();

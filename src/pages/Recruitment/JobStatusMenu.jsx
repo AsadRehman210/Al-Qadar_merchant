@@ -3,7 +3,11 @@ import { Menu, MenuButton, MenuItems, MenuItem, Transition } from "@headlessui/r
 import { FiChevronDown, FiCheck } from "react-icons/fi";
 import { toast } from "react-toastify";
 import { jobStatusOptions } from "global/constant";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { updateJob } from "store/slices/recruitmentSlice";
+
+const { edit_recruitment } = alqadar_role_ids;
 
 export const jobStatusColor = (s) => {
   if (s === "Open") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300";
@@ -14,6 +18,8 @@ export const jobStatusColor = (s) => {
 /** Inline, clickable status pill — lets HR change a job's status from the list or detail header without opening Edit. */
 const JobStatusMenu = ({ jobId, status, onChanged, size = "sm" }) => {
   const dispatch = useDispatch();
+  const canEdit = checkRoleAuth(edit_recruitment);
+  const pillCls = `${size === "sm" ? "text-xs px-2.5 py-1" : "text-sm px-3 py-1.5"} ${jobStatusColor(status)}`;
 
   const handleSelect = async (e, newStatus) => {
     e.stopPropagation();
@@ -26,12 +32,18 @@ const JobStatusMenu = ({ jobId, status, onChanged, size = "sm" }) => {
     }
   };
 
+  if (!canEdit) {
+    return (
+      <span className={`inline-flex items-center rounded-full font-medium ${pillCls}`}>
+        {status}
+      </span>
+    );
+  }
+
   return (
     <Menu as="div" className="relative inline-block text-left" onClick={(e) => e.stopPropagation()}>
       <MenuButton
-        className={`flex items-center gap-1 rounded-full font-medium transition-opacity hover:opacity-80 ${
-          size === "sm" ? "text-xs px-2.5 py-1" : "text-sm px-3 py-1.5"
-        } ${jobStatusColor(status)}`}
+        className={`flex items-center gap-1 rounded-full font-medium transition-opacity hover:opacity-80 ${pillCls}`}
       >
         {status}
         <FiChevronDown className={size === "sm" ? "h-3 w-3" : "h-3.5 w-3.5"} />

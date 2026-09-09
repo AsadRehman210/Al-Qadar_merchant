@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm, useFieldArray, useFormContext, FormProvider } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -10,48 +10,35 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { erpGet, buildQuery } from "api/erpClient";
 import { erpUrls } from "global/config";
 import dayjs from "dayjs";
-import {
-  lineTotal,
-  lineProfit,
-  computeInvoiceProfit,
-  effectiveLineTaxPercent,
-} from "global/helper";
-import { salesTaxModeOptions } from "global/constant";
-import {
-  fetchSalesCustomersDropdown,
-  showSalesCustomerDropdownOptions,
-  showSalesCustomerDropdownPage,
-  showSalesCustomerDropdownHasMore,
-  showSalesCustomerDropdownLoading,
-} from "store/slices/salesCustomerSlice";
-import {
-  fetchVariantsDropdown,
-  showVariantDropdownOptions,
-  showVariantDropdownPage,
-  showVariantDropdownHasMore,
-  showVariantDropdownLoading,
-} from "store/slices/variantSlice";
-import {
-  fetchWarehousesDropdown,
-  showWarehouseDropdownOptions,
-  showWarehouseDropdownPage,
-  showWarehouseDropdownHasMore,
-  showWarehouseDropdownLoading,
-} from "store/slices/warehouseSlice";
+import { fetchSalesCustomersDropdown, showSalesCustomerDropdownOptions, showSalesCustomerDropdownPage, showSalesCustomerDropdownHasMore, showSalesCustomerDropdownLoading, resetSalesCustomerDropdown } from "store/slices/salesCustomerSlice";
+import { fetchVariantsDropdown, showVariantDropdownOptions, showVariantDropdownPage, showVariantDropdownHasMore, showVariantDropdownLoading, resetVariantDropdown } from "store/slices/variantSlice";
+import { fetchWarehousesDropdown, showWarehouseDropdownOptions, showWarehouseDropdownPage, showWarehouseDropdownHasMore, showWarehouseDropdownLoading, resetWarehouseDropdown } from "store/slices/warehouseSlice";
 import {
   createQuotation,
   updateQuotation,
   fetchQuotationById,
   showCurrentQuotation,
+  showCurrentQuotationLoading,
   clearCurrentQuotation,
 } from "store/slices/quotationSlice";
+import {
+  defaultSaleLine,
+  lineTotal,
+  lineProfit,
+  computeInvoiceProfit,
+  effectiveLineTaxPercent,
+  checkRoleAuth,
+} from "global/helper";
+import { salesTaxModeOptions } from "global/constant";
+import { alqadar_role_ids } from "global/alqadarRoles";
 
-// Quotation batch pick is reference-only (costing/expiry) — never reserved
-// or consumed, since a quote never moves real stock.
-const defaultLine = () => ({ variantId: "", productName: "", qty: 1, price: 0, costPrice: 0, unit: "pcs", batchId: "", taxPercent: null });
+const { add_sales_quotation, edit_sales_quotation } = alqadar_role_ids;
+
+const defaultLine = () => ({ ...defaultSaleLine(), unit: "pcs", batchId: "", taxPercent: null });
 
 const DEFAULT_QUOTE_FORM = {
   customerId: "", date: dayjs().format("YYYY-MM-DD"), validUntil: dayjs().add(30, "day").format("YYYY-MM-DD"),
@@ -100,12 +87,20 @@ const AddQuotation = () => {
   const isEdit = !!id;
   const isRTL = i18n.language === "ar";
 
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentQuotation());
+      dispatch(resetSalesCustomerDropdown());
+      dispatch(resetWarehouseDropdown());
+      dispatch(resetVariantDropdown());
+    };
+  }, [dispatch]);
+
   const [selCustomer, setSelCustomer] = useState(null);
   const [selWarehouse, setSelWarehouse] = useState(null);
 
   useEffect(() => {
     if (isEdit) dispatch(fetchQuotationById(id));
-    return () => { if (isEdit) dispatch(clearCurrentQuotation()); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, id]);
 
@@ -159,6 +154,7 @@ const AddQuotation = () => {
   );
 
   const current = useSelector(showCurrentQuotation);
+  const loading = useSelector(showCurrentQuotationLoading);
   useEffect(() => {
     if (isEdit && current) {
       reset({
@@ -270,6 +266,19 @@ const AddQuotation = () => {
   };
 
   const panelCls = "bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-[var(--color-teal-500)]";
+
+  if (isEdit && !checkRoleAuth(edit_sales_quotation)) return null;
+  if (!isEdit && !checkRoleAuth(add_sales_quotation)) return null;
+
+  // Edit mode renders an empty form until fetchQuotationById lands and
+  // reset() hydrates it — show the skeleton instead of that blank flash.
+  if (isEdit && loading && current?.id !== id) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

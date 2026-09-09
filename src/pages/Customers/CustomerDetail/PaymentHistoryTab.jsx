@@ -1,15 +1,28 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import ReactPaginate from "react-paginate";
+import { toast } from "react-toastify";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import { FiX } from "react-icons/fi";
+import { FiPlus, FiX } from "react-icons/fi";
+import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
+import FormInput from "components/FormInput";
 import Table from "components/Table";
-import { tableRows } from "global/constant";
-import { fetchCustomerPayments, showCustomerPayments, showCustomerPaymentsTotal } from "store/slices/salesCustomerSlice";
+import { salesPaymentMethodOptions, tableRows } from "global/constant";
+import {
+  addCustomerOpeningPayment,
+  fetchCustomerDebitCreditSummary,
+  fetchCustomerPayments,
+  fetchSalesCustomerById,
+  showCustomerDebitCreditSummary,
+  showCustomerPayments,
+  showCustomerPaymentsTotal,
+  showSalesCustomerTabLoading,
+} from "store/slices/salesCustomerSlice";
 import { DateRangePicker } from "components/DateRangePicker";
+import TableState from "components/TableState";
 
 const toIsoDate = (d) => (d ? new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0, 10) : undefined);
 
@@ -18,6 +31,8 @@ const PaymentHistoryTab = ({ customer }) => {
   const dispatch = useDispatch();
   const paymentHistory = useSelector(showCustomerPayments);
   const total = useSelector(showCustomerPaymentsTotal);
+  const summary = useSelector(showCustomerDebitCreditSummary);
+  const loading = useSelector(showSalesCustomerTabLoading);
   const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
   const [page, setPage] = useState(1);
@@ -25,8 +40,24 @@ const PaymentHistoryTab = ({ customer }) => {
   const [dateRange, setDateRange] = useState({ from: undefined, to: undefined });
   const [amount, setAmount] = useState("");
   const [invoiceNumber, setInvoiceNumber] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [payDate, setPayDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [payAmount, setPayAmount] = useState("");
+  const [selMethod, setSelMethod] = useState(salesPaymentMethodOptions[1]);
+  const [reference, setReference] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  const remainingOpening = Number(
+    summary?.remainingOpeningBalance ??
+      customer?.remainingOpeningBalance ??
+      Math.max(
+        0,
+        (Number(summary?.openingBalance ?? customer?.openingBalance) || 0) -
+          (Number(summary?.openingBalancePaid ?? customer?.openingBalancePaid) || 0),
+      ),
+  );
+
+  const reload = () => {
     if (!customer?.id) return;
     dispatch(
       fetchCustomerPayments({
@@ -39,6 +70,12 @@ const PaymentHistoryTab = ({ customer }) => {
         invoiceNumber: invoiceNumber || undefined,
       }),
     );
+    dispatch(fetchCustomerDebitCreditSummary(customer.id));
+  };
+
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, customer?.id, page, selRows, dateRange, amount, invoiceNumber]);
 
   const totalPages = useMemo(() => Math.ceil((total || 0) / selRows.id) || 1, [total, selRows]);
@@ -50,9 +87,41 @@ const PaymentHistoryTab = ({ customer }) => {
     setPage(1);
   };
 
+  const handleSaveOpeningPayment = async () => {
+    if (!payAmount || Number(payAmount) <= 0) {
+      toast.error(t("customers:opening_payment_amount_required"));
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await dispatch(
+        addCustomerOpeningPayment({
+          id: customer.id,
+          data: {
+            date: payDate,
+            amount: Number(payAmount),
+            method: selMethod.id,
+            reference,
+          },
+        }),
+      ).unwrap();
+      toast.success(res.message || t("customers:opening_payment_recorded"));
+      setPayAmount("");
+      setReference("");
+      setShowForm(false);
+      dispatch(fetchSalesCustomerById(customer.id));
+      reload();
+    } catch (err) {
+      toast.error(err?.message || err || "");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!customer) return null;
 
   const hasActiveFilters = !!(dateRange.from || dateRange.to || amount !== "" || invoiceNumber);
+  const methodOptions = salesPaymentMethodOptions.map((o) => ({ ...o, title: t(o.title) }));
 
   return (
     <div>
@@ -60,16 +129,89 @@ const PaymentHistoryTab = ({ customer }) => {
         <h4 className="font-semibold text-slate-900 dark:text-white">
           {t("customers:payment_history")}
         </h4>
+        {remainingOpening > 0 && (
+          <Button
+            type="button"
+            title={t("customers:record_opening_receipt")}
+            icon={FiPlus}
+            onClick={() => setShowForm((s) => !s)}
+            className="!w-auto !rounded-lg !h-9 !px-3 !border border-teal-400/40 !text-teal-700 dark:!text-teal-300 !bg-teal-50 dark:!bg-teal-500/10"
+          />
+        )}
       </div>
+
+      {remainingOpening > 0 && showForm && (
+        <div className="mb-5 p-4 rounded-2xl border border-teal-200 dark:border-teal-500/30 bg-teal-50/50 dark:bg-teal-500/5">
+          <p className="text-xs text-slate-600 dark:text-white/70 mb-3">
+            {t("customers:opening_payment_remaining_hint", {
+              amount: formatAmount(remainingOpening),
+            })}
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <FormInput
+                label={t("customers:payment_date")}
+                labelClass="!text-xs"
+                name="openingPayDate"
+                type="date"
+                value={payDate}
+                onValueChange={setPayDate}
+                inputClass="!h-9 !rounded-lg"
+              />
+            </div>
+            <div className="w-32">
+              <FormInput
+                label={t("amount")}
+                labelClass="!text-xs"
+                name="openingPayAmount"
+                type="number"
+                min={0}
+                decimal
+                decimalPlaces={3}
+                value={payAmount}
+                onValueChange={setPayAmount}
+                inputClass="!h-9 !rounded-lg"
+              />
+            </div>
+            <div className="w-40">
+              <SelectDropdown
+                label={t("customers:payment_method")}
+                labelClass="!text-xs"
+                data={methodOptions}
+                selected={selMethod}
+                setSelected={(o) => setSelMethod(o || salesPaymentMethodOptions[1])}
+                valueKey="id"
+                hideClear
+                classes="!h-9 !rounded-lg"
+              />
+            </div>
+            <div>
+              <FormInput
+                label={t("customers:reference")}
+                labelClass="!text-xs"
+                name="openingPayRef"
+                type="text"
+                value={reference}
+                onValueChange={setReference}
+                inputClass="!h-9 !rounded-lg"
+              />
+            </div>
+            <Button
+              type="button"
+              title={t("save")}
+              btn="primary"
+              loading={saving}
+              disabled={saving}
+              onClick={handleSaveOpeningPayment}
+              className="!rounded-md !h-9"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3 p-3 mb-4 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5">
         <div className="w-72">
           <DateRangePicker
-            // The pasted component's placeholder styling (`text-muted-foreground`)
-            // is gated on `!value` — the whole DateRange object, not `!value?.from`
-            // — so an empty-but-truthy `{ from: undefined, to: undefined }` would
-            // never read as "empty" to it. Passing `undefined` outright when
-            // nothing's picked yet is what actually triggers its own placeholder color.
             value={dateRange.from || dateRange.to ? dateRange : undefined}
             onChange={(range) => { setDateRange(range || { from: undefined, to: undefined }); setPage(1); }}
             numberOfMonths={1}
@@ -100,6 +242,7 @@ const PaymentHistoryTab = ({ customer }) => {
           </button>
         )}
       </div>
+
       <Table>
         <table className="w-full text-sm">
           <thead>
@@ -122,10 +265,10 @@ const PaymentHistoryTab = ({ customer }) => {
             </tr>
           </thead>
           <tbody>
-            {paymentHistory.length > 0 ? (
-              paymentHistory.map((pay, idx) => (
+            <TableState loading={loading} data={paymentHistory} colSpan={5}>
+              {paymentHistory.map((pay, idx) => (
                 <tr
-                  key={`${pay.invoiceId}-${idx}`}
+                  key={`${pay.source || "inv"}-${pay.invoiceId || "ob"}-${idx}`}
                   className="border-t border-slate-100 dark:border-white/5"
                 >
                   <td className="px-4 py-3 text-slate-600 dark:text-white/90">
@@ -141,20 +284,13 @@ const PaymentHistoryTab = ({ customer }) => {
                     {pay.reference || "-"}
                   </td>
                   <td className="px-4 py-3 text-slate-600 dark:text-white/90">
-                    {pay.invoiceNumber || "-"}
+                    {pay.source === "opening"
+                      ? t("customers:opening_balance")
+                      : pay.invoiceNumber || "-"}
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-4 py-8 text-center text-slate-500 dark:text-white/60"
-                >
-                  {t("no_record_found")}
-                </td>
-              </tr>
-            )}
+              ))}
+            </TableState>
           </tbody>
         </table>
       </Table>
@@ -171,7 +307,7 @@ const PaymentHistoryTab = ({ customer }) => {
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { AiOutlineEdit } from "react-icons/ai";
 import { FiEye } from "react-icons/fi";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import ExportButton from "components/ExportButton";
@@ -213,7 +213,7 @@ const AssetsTable = ({ data, loading, categories = [], page = 1, setPage, selRow
             <span className="whitespace-nowrap">{t("per_page")}</span>
           </div>
           <div className="pagination ltr:ml-auto rtl:mr-auto">
-            <ReactPaginate
+            <Pagination
               breakLabel="..."
               nextLabel={<FaAngleRight />}
               previousLabel={<FaAngleLeft />}

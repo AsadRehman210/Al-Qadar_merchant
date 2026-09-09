@@ -8,6 +8,7 @@ import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import Button from "components/Button";
 import PermissionMatrix from "components/PermissionMatrix";
+import { SkeletonDetail } from "components/Skeleton";
 import {
   createRole,
   updateRole,
@@ -18,6 +19,10 @@ import {
   showRoleSaving,
 } from "store/slices/roleSlice";
 import { userRoleStatusOptions } from "global/constant";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { add_role, edit_role } = alqadar_role_ids;
 
 const AddRole = () => {
   const { t } = useTranslation();
@@ -72,8 +77,14 @@ const AddRole = () => {
     }
   };
 
+  if ((id && !checkRoleAuth(edit_role)) || (!id && !checkRoleAuth(add_role))) return null;
+
   if (id && loadingEdit) {
-    return <div className="p-10 text-center text-mutedForeground">{t("loading")}...</div>;
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
   }
 
   return (

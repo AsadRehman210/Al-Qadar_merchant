@@ -1,8 +1,8 @@
-﻿import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useSearchParams } from "react-router";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/react";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import {
   FiUsers, FiPackage, FiTrendingUp, FiDollarSign,
@@ -10,33 +10,25 @@ import {
 } from "react-icons/fi";
 import {
   fetchHrOverview, showHrOverview, showHrOverviewLoading,
-  fetchInventoryOverview, showInventoryOverview,
+  fetchInventoryOverview, showInventoryOverview, showInventoryOverviewLoading,
   fetchExpiryBuckets, showExpiryBuckets, showExpiryBucketsLoading,
-  fetchSalesOverview, showSalesOverview,
-  fetchProfitTrend, showProfitTrend,
-  fetchTopProducts, showTopProducts,
+  fetchSalesOverview, showSalesOverview, showSalesOverviewLoading,
+  fetchProfitTrend, showProfitTrend, showProfitTrendLoading,
+  fetchTopProducts, showTopProducts, showTopProductsLoading,
 } from "store/slices/analyticsSlice";
 import { fetchStock, showStock, showStockLoading } from "store/slices/stockSlice";
 import { fetchReceivables, showReceivables, showReceivablesLoading } from "store/slices/saleInvoiceSlice";
 import { fetchPayables, showPayables, showPayablesLoading } from "store/slices/purchaseInvoiceSlice";
 import { fetchExpiryBucketDetail } from "global/drilldownFetchers";
-import {
-  tableRows,
-  agingBucketLabels,
-  agingReportTypeOptions,
-  expiryBucketOrder,
-} from "global/constant";
-import {
-  agingBucketOf,
-  formatMoneyWithCurrency,
-  formatReportDate,
-} from "global/helper";
-import { SkeletonTable } from "components/Skeleton";
+import { tableRows, agingBucketLabels, expiryBucketOrder, agingReportTypeOptions } from "global/constant";
+import { agingBucketOf, formatMoneyWithCurrency, formatReportDate } from "global/helper";
+import { SkeletonCards, SkeletonChart, SkeletonList, SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
+import TableState from "components/TableState";
 import SelectDropdown from "components/SelectDropdown";
 import { useListFilters } from "hooks/useListFilters";
 
-// ── Shared helpers ────────────────────────────────────────────────────────────
+// -- Shared helpers ------------------------------------------------------------
 const inputCls = "h-9 px-3 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-900 dark:text-white";
 const sectionTitle = "font-semibold text-slate-900 dark:text-white text-base mb-4";
 const TH = ({ children }) => <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-white/40">{children}</th>;
@@ -60,7 +52,7 @@ const SummaryCard = ({ label, value, sub, color = "teal" }) => {
   );
 };
 
-// ── HR Reports Tab ────────────────────────────────────────────────────────────
+// -- HR Reports Tab ------------------------------------------------------------
 const HRReport = () => {
   const dispatch = useDispatch();
   const hr = useSelector(showHrOverview);
@@ -70,7 +62,17 @@ const HRReport = () => {
     dispatch(fetchHrOverview());
   }, [dispatch]);
 
-  if (loading && !hr) return <p className="text-center text-slate-400 py-10">Loading…</p>;
+  if (loading && !hr) {
+    return (
+      <div className="space-y-6">
+        <SkeletonCards count={5} columns="grid-cols-2 md:grid-cols-5" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <SkeletonChart height={180} />
+          <SkeletonChart height={180} />
+        </div>
+      </div>
+    );
+  }
   if (!hr) return null;
 
   const maxDept = Math.max(1, ...hr.byDepartment.map((d) => d.count));
@@ -132,11 +134,12 @@ const HRReport = () => {
   );
 };
 
-// ── Inventory Reports Tab ─────────────────────────────────────────────────────
+// -- Inventory Reports Tab -----------------------------------------------------
 const InventoryReport = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const overview = useSelector(showInventoryOverview);
+  const overviewLoading = useSelector(showInventoryOverviewLoading);
   const stockRows = useSelector(showStock);
   const stockLoading = useSelector(showStockLoading);
 
@@ -150,16 +153,20 @@ const InventoryReport = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard label="Total SKUs" value={overview?.totalSkus ?? "…"} color="teal" />
-        <SummaryCard label="Total Units" value={(overview?.totalUnits ?? 0).toLocaleString()} color="blue" />
-        <SummaryCard label="Stock Value" value={formatMoneyWithCurrency(overview?.totalStockValue)} color="purple" sub="at cost price" />
-        <SummaryCard label="Low / Out" value={`${overview?.lowStockCount ?? 0} / ${overview?.outOfStockCount ?? 0}`} color={(overview?.outOfStockCount || 0) > 0 ? "red" : "amber"} />
-      </div>
+      {overviewLoading && !overview ? (
+        <SkeletonCards count={4} columns="grid-cols-2 md:grid-cols-4" />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <SummaryCard label="Total SKUs" value={overview?.totalSkus ?? 0} color="teal" />
+          <SummaryCard label="Total Units" value={(overview?.totalUnits ?? 0).toLocaleString()} color="blue" />
+          <SummaryCard label="Stock Value" value={formatMoneyWithCurrency(overview?.totalStockValue)} color="purple" sub="at cost price" />
+          <SummaryCard label="Low / Out" value={`${overview?.lowStockCount ?? 0} / ${overview?.outOfStockCount ?? 0}`} color={(overview?.outOfStockCount || 0) > 0 ? "red" : "amber"} />
+        </div>
+      )}
 
       {lowStock.length > 0 && (
         <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-5">
-          <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-3">⚠ Low Stock Items ({lowStock.length})</h4>
+          <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-3">? Low Stock Items ({lowStock.length})</h4>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-amber-200"><TH>SKU</TH><TH>Product</TH><TH>Qty</TH><TH>Min Qty</TH></tr></thead>
@@ -188,21 +195,21 @@ const InventoryReport = () => {
               </tr>
             </thead>
             <tbody>
-              {stockLoading ? (
-                <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-400">Loading…</td></tr>
-              ) : stockRows.map((r) => (
-                <tr key={r.variantId} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer" onClick={() => navigate(`/inventory/stock/detail/${r.variantId}`)}>
-                  <td className="px-4 py-3 font-mono text-xs text-slate-400">{r.sku}</td>
-                  <TD className="font-medium">{r.productName}</TD>
-                  <TD className="text-slate-400">{r.variantName || "—"}</TD>
-                  <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{r.totalQty}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === "out_of_stock" ? "bg-red-100 text-red-700" : r.status === "low_stock" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
-                      {r.status === "out_of_stock" ? "Out" : r.status === "low_stock" ? "Low" : "OK"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              <TableState loading={stockLoading} data={stockRows} colSpan={5}>
+                {stockRows.map((r) => (
+                  <tr key={r.variantId} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer" onClick={() => navigate(`/inventory/stock/detail/${r.variantId}`)}>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-400">{r.sku}</td>
+                    <TD className="font-medium">{r.productName}</TD>
+                    <TD className="text-slate-400">{r.variantName || "�"}</TD>
+                    <td className="px-4 py-3 font-semibold text-slate-900 dark:text-white">{r.totalQty}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.status === "out_of_stock" ? "bg-red-100 text-red-700" : r.status === "low_stock" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
+                        {r.status === "out_of_stock" ? "Out" : r.status === "low_stock" ? "Low" : "OK"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </TableState>
             </tbody>
           </table>
         </div>
@@ -212,17 +219,20 @@ const InventoryReport = () => {
   );
 };
 
-// ── Profit & Loss Report Tab ──────────────────────────────────────────────────
+// -- Profit & Loss Report Tab --------------------------------------------------
 // Revenue/profit are read straight off the real Sale Invoice lines
-// (analytics/sales/overview and /top-products, aggregated server-side) —
+// (analytics/sales/overview and /top-products, aggregated server-side) �
 // nothing is re-derived client-side, and both numbers are the exact same
 // ones Finance's own P&L page would show for the same range.
 const ProfitLossReport = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const sales = useSelector(showSalesOverview);
+  const salesLoading = useSelector(showSalesOverviewLoading);
   const trend = useSelector(showProfitTrend);
+  const trendLoading = useSelector(showProfitTrendLoading);
   const topProducts = useSelector(showTopProducts);
+  const topProductsLoading = useSelector(showTopProductsLoading);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
 
@@ -256,12 +266,16 @@ const ProfitLossReport = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard label="Revenue" value={formatMoneyWithCurrency(sales?.totalRevenue)} color="teal" />
-        <SummaryCard label="Invoices" value={sales?.totalInvoices ?? 0} color="blue" />
-        <SummaryCard label="Gross Profit" value={formatMoneyWithCurrency(sales?.totalProfit)} color={(sales?.totalProfit || 0) >= 0 ? "teal" : "red"} />
-        <SummaryCard label="Gross Margin" value={`${grossMargin.toFixed(1)}%`} color={grossMargin >= 0 ? "blue" : "red"} />
-      </div>
+      {salesLoading && !sales ? (
+        <SkeletonCards count={4} columns="grid-cols-2 md:grid-cols-4" />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <SummaryCard label="Revenue" value={formatMoneyWithCurrency(sales?.totalRevenue)} color="teal" />
+          <SummaryCard label="Invoices" value={sales?.totalInvoices ?? 0} color="blue" />
+          <SummaryCard label="Gross Profit" value={formatMoneyWithCurrency(sales?.totalProfit)} color={(sales?.totalProfit || 0) >= 0 ? "teal" : "red"} />
+          <SummaryCard label="Gross Margin" value={`${grossMargin.toFixed(1)}%`} color={grossMargin >= 0 ? "blue" : "red"} />
+        </div>
+      )}
 
       <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-6">
         <h4 className={sectionTitle}>Monthly Revenue vs Profit</h4>
@@ -269,14 +283,16 @@ const ProfitLossReport = () => {
           <table className="w-full text-sm min-w-[600px]">
             <thead><tr className="border-b border-slate-100 dark:border-white/10"><TH>Month</TH><TH>Revenue</TH><TH>Expenses</TH><TH>Profit</TH></tr></thead>
             <tbody>
-              {trend.map((m) => (
-                <tr key={m.month} className="border-b border-slate-50 dark:border-white/5">
-                  <TD className="font-medium">{m.month}</TD>
-                  <td className="px-4 py-3 tabular-nums">{formatMoneyWithCurrency(m.revenue)}</td>
-                  <td className="px-4 py-3 tabular-nums text-slate-500">{formatMoneyWithCurrency(m.expenses)}</td>
-                  <td className={`px-4 py-3 tabular-nums font-semibold ${m.profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>{formatMoneyWithCurrency(m.profit)}</td>
-                </tr>
-              ))}
+              <TableState loading={trendLoading} data={trend} colSpan={4}>
+                {trend.map((m) => (
+                  <tr key={m.month} className="border-b border-slate-50 dark:border-white/5">
+                    <TD className="font-medium">{m.month}</TD>
+                    <td className="px-4 py-3 tabular-nums">{formatMoneyWithCurrency(m.revenue)}</td>
+                    <td className="px-4 py-3 tabular-nums text-slate-500">{formatMoneyWithCurrency(m.expenses)}</td>
+                    <td className={`px-4 py-3 tabular-nums font-semibold ${m.profit >= 0 ? "text-emerald-600" : "text-red-600"}`}>{formatMoneyWithCurrency(m.profit)}</td>
+                  </tr>
+                ))}
+              </TableState>
             </tbody>
           </table>
         </div>
@@ -284,7 +300,9 @@ const ProfitLossReport = () => {
 
       <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-6">
         <h4 className={sectionTitle}>Top Products by Quantity Sold</h4>
-        {!topProducts.length ? (
+        {topProductsLoading && !topProducts.length ? (
+          <SkeletonList rows={5} />
+        ) : !topProducts.length ? (
           <p className="text-slate-400 text-sm py-6 text-center">No sales in range.</p>
         ) : (
           <div className="space-y-3">
@@ -306,8 +324,8 @@ const ProfitLossReport = () => {
   );
 };
 
-// ── AR/AP Aging Report Tab ────────────────────────────────────────────────────
-// Aged from each invoice's own date — this app has no separate payment-terms
+// -- AR/AP Aging Report Tab ----------------------------------------------------
+// Aged from each invoice's own date � this app has no separate payment-terms
 // due-date field yet, so "days outstanding since invoice date" is the real
 // number available, rather than fabricating a due date that doesn't exist.
 const AgingReport = () => {
@@ -316,7 +334,7 @@ const AgingReport = () => {
   const receivablesLoading = useSelector(showReceivablesLoading);
   const payables = useSelector(showPayables);
   const payablesLoading = useSelector(showPayablesLoading);
-  const [typeFilter, setTypeFilter] = useState("AR");
+  const [typeFilter, setTypeFilter] = useState(agingReportTypeOptions[0].id);
 
   useEffect(() => {
     dispatch(fetchReceivables({ limit: 500 }));
@@ -336,8 +354,7 @@ const AgingReport = () => {
       });
   }, [rows]);
 
-  const buckets = agingBucketLabels;
-  const bucketTotals = buckets.map((b) => ({
+  const bucketTotals = agingBucketLabels.map((b) => ({
     label: b,
     total: ageRows.filter((r) => r.bucket === b).reduce((s, r) => s + (r.balanceDue || 0), 0),
     count: ageRows.filter((r) => r.bucket === b).length,
@@ -357,11 +374,15 @@ const AgingReport = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {bucketTotals.map(({ label, total, count }) => (
-          <SummaryCard key={label} label={label} value={formatMoneyWithCurrency(total)} sub={`${count} invoices`} color={label === "90+ days" ? "red" : label === "0–30 days" ? "teal" : "amber"} />
-        ))}
-      </div>
+      {loading && !rows.length ? (
+        <SkeletonCards count={agingBucketLabels.length} columns="grid-cols-2 md:grid-cols-4" />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {bucketTotals.map(({ label, total, count }) => (
+            <SummaryCard key={label} label={label} value={formatMoneyWithCurrency(total)} sub={`${count} invoices`} color={label === "90+ days" ? "red" : label === "0�30 days" ? "teal" : "amber"} />
+          ))}
+        </div>
+      )}
 
       <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-white/10 flex items-center justify-between">
@@ -376,11 +397,8 @@ const AgingReport = () => {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Loading…</td></tr>
-              ) : !ageRows.length ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-400">Nothing outstanding.</td></tr>
-              ) : ageRows.map((r) => (
+              <TableState loading={loading} data={ageRows} colSpan={6}>
+              {ageRows.map((r) => (
                 <tr key={r.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
                   <TD className="font-mono text-xs text-blue-600">{r.invoiceNumber}</TD>
                   <TD className="font-medium">{typeFilter === "AR" ? r.customerName : r.supplierName}</TD>
@@ -388,10 +406,11 @@ const AgingReport = () => {
                   <TD className="text-slate-400">{formatReportDate(r.date)}</TD>
                   <TD className={r.days > 60 ? "text-red-600 font-semibold" : "text-slate-500"}>{r.days} days</TD>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.bucket === "0–30 days" ? "bg-emerald-100 text-emerald-700" : r.bucket === "90+ days" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{r.bucket}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${r.bucket === "0�30 days" ? "bg-emerald-100 text-emerald-700" : r.bucket === "90+ days" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>{r.bucket}</span>
                   </td>
                 </tr>
               ))}
+              </TableState>
             </tbody>
           </table>
         </div>
@@ -400,9 +419,7 @@ const AgingReport = () => {
   );
 };
 
-// ── Stock Expiry Report Tab ────────────────────────────────────────────────────
-const EXPIRY_BUCKET_ORDER = expiryBucketOrder;
-
+// -- Stock Expiry Report Tab ----------------------------------------------------
 const ExpiryReport = ({ initialBucket }) => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -410,7 +427,7 @@ const ExpiryReport = ({ initialBucket }) => {
   const summary = useSelector(showExpiryBuckets);
 
   const [filters, setFilters] = useListFilters("reports-expiry", {
-    bucket: initialBucket && EXPIRY_BUCKET_ORDER.includes(initialBucket) ? initialBucket : "expired",
+    bucket: initialBucket && expiryBucketOrder.includes(initialBucket) ? initialBucket : "expired",
     page: 1,
     limitId: tableRows[0].id,
   });
@@ -453,24 +470,28 @@ const ExpiryReport = ({ initialBucket }) => {
   return (
     <div className="space-y-6">
       {summary?.asOf && <p className="text-xs text-slate-400">As of {summary.asOf}</p>}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {(summary?.buckets || []).map((b) => (
-          <button
-            key={b.key}
-            type="button"
-            onClick={() => setFilters({ bucket: b.key, page: 1 })}
-            className={`text-left rounded-2xl border p-4 transition-all ${filters.bucket === b.key ? "ring-2 ring-teal-500" : ""} ${
-              b.key === "expired" ? "bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/20" :
-              b.key === "within_1_month" ? "bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20" :
-              "bg-slate-50 border-slate-200 dark:bg-white/5 dark:border-white/10"
-            }`}
-          >
-            <p className="text-xs text-slate-500 dark:text-white/60 mb-1">{b.label}</p>
-            <p className="text-xl font-bold text-slate-900 dark:text-white">{summaryLoading ? "…" : b.count}</p>
-            <p className="text-xs text-slate-400 dark:text-white/40">{b.totalQty} units</p>
-          </button>
-        ))}
-      </div>
+      {summaryLoading && !summary ? (
+        <SkeletonCards count={expiryBucketOrder.length} columns="grid-cols-2 md:grid-cols-4" />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {(summary?.buckets || []).map((b) => (
+            <button
+              key={b.key}
+              type="button"
+              onClick={() => setFilters({ bucket: b.key, page: 1 })}
+              className={`text-left rounded-2xl border p-4 transition-all ${filters.bucket === b.key ? "ring-2 ring-teal-500" : ""} ${
+                b.key === "expired" ? "bg-red-50 border-red-200 dark:bg-red-500/10 dark:border-red-500/20" :
+                b.key === "within_1_month" ? "bg-amber-50 border-amber-200 dark:bg-amber-500/10 dark:border-amber-500/20" :
+                "bg-slate-50 border-slate-200 dark:bg-white/5 dark:border-white/10"
+              }`}
+            >
+              <p className="text-xs text-slate-500 dark:text-white/60 mb-1">{b.label}</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-white">{b.count}</p>
+              <p className="text-xs text-slate-400 dark:text-white/40">{b.totalQty} units</p>
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-white/10">
@@ -497,8 +518,8 @@ const ExpiryReport = ({ initialBucket }) => {
                     <tr key={r.batchId} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer" onClick={() => navigate(`/inventory/stock/detail/${r.variantId}`)}>
                       <td className="px-4 py-3 font-mono text-xs text-blue-600">{r.sku}</td>
                       <TD className="font-medium">{r.productName}</TD>
-                      <TD className="text-slate-400">{r.variantName || "—"}</TD>
-                      <TD className="text-slate-500">{r.warehouseName || "—"}</TD>
+                      <TD className="text-slate-400">{r.variantName || "�"}</TD>
+                      <TD className="text-slate-500">{r.warehouseName || "�"}</TD>
                       <TD>{r.expiryDate}</TD>
                       <td className={`px-4 py-3 font-semibold ${r.daysLeft < 0 ? "text-red-600" : r.daysLeft <= 30 ? "text-amber-600" : "text-slate-600"}`}>
                         {r.daysLeft < 0 ? `${Math.abs(r.daysLeft)}d overdue` : `${r.daysLeft}d`}
@@ -522,7 +543,7 @@ const ExpiryReport = ({ initialBucket }) => {
                 <span className="text-xs text-slate-500 dark:text-white/50 whitespace-nowrap">per page</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}
@@ -543,7 +564,7 @@ const ExpiryReport = ({ initialBucket }) => {
   );
 };
 
-// ── Main Reports Hub ──────────────────────────────────────────────────────────
+// -- Main Reports Hub ----------------------------------------------------------
 const TAB_KEYS = ["hr", "inventory", "pnl", "aging", "expiry"];
 
 const Reports = () => {
@@ -562,7 +583,7 @@ const Reports = () => {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Reports & Analytics</h1>
-          <p className="text-slate-500 dark:text-white/50 text-sm mt-1">HR, Inventory, Profit &amp; Loss, Expiry and AR/AP Aging — all live data</p>
+          <p className="text-slate-500 dark:text-white/50 text-sm mt-1">HR, Inventory, Profit &amp; Loss, Expiry and AR/AP Aging � all live data</p>
         </div>
         <button onClick={() => navigate("/finance/reports")} className="flex items-center gap-2 h-9 px-4 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-slate-700 dark:text-white text-sm font-medium hover:bg-slate-50">
           <FiDollarSign size={14} />Finance Reports

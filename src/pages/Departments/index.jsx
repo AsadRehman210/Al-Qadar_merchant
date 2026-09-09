@@ -8,7 +8,7 @@ import DepartmentsTable from "./DepartmentsTable";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows, statusFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
@@ -18,7 +18,7 @@ import {
   showDepartmentsLoading,
 } from "store/slices/departmentSlice";
 
-const { add_employee, view_employee } = rafeeqi_role_ids;
+const { add_department, view_department } = alqadar_role_ids;
 
 const Departments = () => {
   const { t } = useTranslation();
@@ -64,7 +64,7 @@ const Departments = () => {
               {t("department:module_desc")}
             </p>
           </div>
-          {checkRoleAuth(add_employee) && (
+          {checkRoleAuth(add_department) && (
             <div className="relative z-10 shrink-0">
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5 disabled:hover:translate-y-0"
@@ -83,7 +83,7 @@ const Departments = () => {
           )}
         </div>
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_employee) && (
+          {checkRoleAuth(view_department) && (
             <>
               <div className="flex flex-wrap items-center gap-3 mb-5">
                 <div className="flex-1 min-w-[220px] max-w-xs">

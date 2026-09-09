@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -13,7 +13,7 @@ import {
   showAssetsLoading,
 } from "store/slices/assetSlice";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { assetStatusBadge } from "global/constant";
 import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
@@ -22,7 +22,7 @@ const statusClass = (s) => {
   return assetStatusBadge[s] || assetStatusBadge["In use"];
 };
 
-const { edit_customer } = rafeeqi_role_ids;
+const { edit_asset_category } = alqadar_role_ids;
 
 const CategoryDetail = () => {
   const { t, i18n } = useTranslation();
@@ -82,7 +82,7 @@ const CategoryDetail = () => {
                 : t("asset:inactive")}
             </p>
           </div>
-          {checkRoleAuth(edit_customer) && (
+          {checkRoleAuth(edit_asset_category) && (
             <Button
               title={t("edit")}
               icon={FaRegEdit}

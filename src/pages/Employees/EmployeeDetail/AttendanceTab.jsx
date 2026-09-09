@@ -7,9 +7,10 @@ import { Calendar as CalendarIcon, Clock } from "lucide-react";
 import "react-calendar/dist/Calendar.css";
 import "./AttendanceTab.css";
 import { buildEmployeeAttendanceMap, getEmployeeSchedule } from "./attendanceResolver";
-import { fetchAttendance, showAttendanceList } from "store/slices/attendanceSlice";
-import { fetchLeavesByEmployee, showEmployeeLeaves } from "store/slices/leaveSlice";
-import { fetchHolidays, showHolidays } from "store/slices/holidaySlice";
+import { fetchAttendance, showAttendanceList, showAttendanceLoading } from "store/slices/attendanceSlice";
+import { fetchLeavesByEmployee, showEmployeeLeaves, showEmployeeLeavesLoading, clearEmployeeLeaves } from "store/slices/leaveSlice";
+import { fetchHolidays, showHolidays, showHolidaysLoading } from "store/slices/holidaySlice";
+import { SkeletonChart } from "components/Skeleton";
 
 const DAY_LABELS = {
   mon: "Mon",
@@ -60,6 +61,10 @@ const AttendanceTab = ({ data }) => {
   const attendanceRecords = useSelector(showAttendanceList);
   const leaves = useSelector(showEmployeeLeaves);
   const holidays = useSelector(showHolidays);
+  const attendanceLoading = useSelector(showAttendanceLoading);
+  const leavesLoading = useSelector(showEmployeeLeavesLoading);
+  const holidaysLoading = useSelector(showHolidaysLoading);
+  const isLoading = attendanceLoading || leavesLoading || holidaysLoading;
 
   const year = activeDate.getFullYear();
   useEffect(() => {
@@ -67,6 +72,7 @@ const AttendanceTab = ({ data }) => {
     dispatch(fetchAttendance({ employeeId: data.id, startDate: `${year}-01-01`, endDate: `${year}-12-31` }));
     dispatch(fetchLeavesByEmployee(data.id));
     dispatch(fetchHolidays());
+    return () => dispatch(clearEmployeeLeaves());
   }, [data?.id, year, dispatch]);
 
   const monthlyMap = useMemo(
@@ -183,7 +189,9 @@ const AttendanceTab = ({ data }) => {
       </div>
 
       {/* Calendar */}
-      {viewMode === "monthly" ? (
+      {isLoading ? (
+        <SkeletonChart height={380} />
+      ) : viewMode === "monthly" ? (
         <div className="attendance-calendar-wrapper">
           <Calendar
             locale={locale}

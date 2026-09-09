@@ -8,17 +8,19 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
 import { bankAccountTypeOptions } from "global/constant";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchBankAccounts,
   createBankAccount,
   updateBankAccount,
   showBankAccounts,
+  showBankAccountsLoading,
 } from "store/slices/financeSlice";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_finance_bank, edit_finance_bank } = alqadar_role_ids;
 
 // A bank/cash account's type and opening balance are fixed at creation — its
 // backing Chart-of-Account entry (and the opening-balance journal entry, if
@@ -30,6 +32,7 @@ const AddBankAccount = () => {
   const dispatch = useDispatch();
   const { id } = useParams();
   const accounts = useSelector(showBankAccounts);
+  const loading = useSelector(showBankAccountsLoading);
 
   useEffect(() => {
     if (!accounts.length) dispatch(fetchBankAccounts());
@@ -65,10 +68,10 @@ const AddBankAccount = () => {
   }, [existing, reset]);
 
   useEffect(() => {
-    if (id && !checkRoleAuth(edit_customer)) {
+    if (id && !checkRoleAuth(edit_finance_bank)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/bank-cash");
-    } else if (!id && !checkRoleAuth(add_customer)) {
+    } else if (!id && !checkRoleAuth(add_finance_bank)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/bank-cash");
     }
@@ -108,8 +111,16 @@ const AddBankAccount = () => {
     }
   };
 
-  if ((id && !checkRoleAuth(edit_customer)) || (!id && !checkRoleAuth(add_customer)))
+  if ((id && !checkRoleAuth(edit_finance_bank)) || (!id && !checkRoleAuth(add_finance_bank)))
     return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
 
@@ -134,7 +145,7 @@ const AddBankAccount = () => {
           className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-8 border-l-4 !border-l-[var(--color-teal-500)]"
         >
           <div className="grid md:grid-cols-2 gap-6">
-            <FormInput label={t("finance:account_name")} name="name" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={150} register={register} required />
+            <FormInput label={t("finance:account_name")} name="name" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={100} register={register} required />
             <SelectDropdown
               label={t("finance:acct_type")}
               data={bankAccountTypeOptions}
@@ -144,7 +155,7 @@ const AddBankAccount = () => {
               disabled={!!id}
               classes="!h-[46px] !rounded-lg"
             />
-            <FormInput label={t("finance:bank_name")} name="bankName" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={150} register={register} />
+            <FormInput label={t("finance:bank_name")} name="bankName" pattern={/[a-zA-Z0-9\s.'&,-]/} minLength={2} maxLength={100} register={register} />
             <FormInput label={t("finance:iban")} name="accountNumber" pattern={/[A-Za-z0-9]/} minLength={8} maxLength={24} register={register} />
             <FormInput label={t("finance:balance")} name="openingBalance" type="number" min={0} decimal decimalPlaces={3} maxLength={10} register={register} disabled={!!id} />
             <FormInput label={t("finance:currency")} name="currency" pattern={/[A-Za-z]/} minLength={3} maxLength={3} register={register} required disabled={!!id} />

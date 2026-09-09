@@ -6,7 +6,7 @@ import Button from "components/Button";
 import SearchInput from "components/SearchInput";
 import { IoAdd } from "react-icons/io5";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
@@ -17,7 +17,7 @@ import {
 } from "store/slices/roleSlice";
 import RolesTable from "./RolesTable";
 
-const { add_role, view_role } = rafeeqi_role_ids;
+const { add_role, view_role } = alqadar_role_ids;
 
 const Roles = () => {
   const { t } = useTranslation();
@@ -49,6 +49,8 @@ const Roles = () => {
     () => Math.ceil((totalRecords || 0) / selRows.id) || 1,
     [totalRecords, selRows],
   );
+
+  if (!checkRoleAuth(view_role)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

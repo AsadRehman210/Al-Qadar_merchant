@@ -51,11 +51,13 @@ const initialState = {
   vendorBillTotal: 0,
   vendorBillLoading: false,
   vendorBillCurrent: null,
+  vendorBillCurrentLoading: false,
 
   customerInvoiceList: [],
   customerInvoiceTotal: 0,
   customerInvoiceLoading: false,
   customerInvoiceCurrent: null,
+  customerInvoiceCurrentLoading: false,
 
   paymentList: [],
   paymentTotal: 0,
@@ -575,6 +577,18 @@ const financeSlice = createSlice({
       state.ledgerAccountLines = [];
       state.ledgerClosingBalance = 0;
     },
+    clearCurrentVendorBill: (state) => {
+      state.vendorBillCurrent = null;
+      state.vendorBillCurrentLoading = false;
+    },
+    clearCurrentCustomerInvoice: (state) => {
+      state.customerInvoiceCurrent = null;
+      state.customerInvoiceCurrentLoading = false;
+    },
+    clearCurrentJournalEntry: (state) => {
+      state.journalCurrent = null;
+      state.journalCurrentLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -940,7 +954,12 @@ const financeSlice = createSlice({
   },
 });
 
-export const { clearLedgerByAccount } = financeSlice.actions;
+export const {
+  clearLedgerByAccount,
+  clearCurrentVendorBill,
+  clearCurrentCustomerInvoice,
+  clearCurrentJournalEntry,
+} = financeSlice.actions;
 
 export const showChartOfAccounts = (state) => state.finance.coaList;
 export const showChartOfAccountsTotal = (state) => state.finance.coaTotal;

@@ -7,14 +7,12 @@ import { FiArrowLeft, FiEdit2, FiArchive, FiPackage, FiTruck, FiAlertCircle, FiP
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import { fetchWarehouseById, showCurrentWarehouse, showCurrentWarehouseLoading, clearCurrentWarehouse } from "store/slices/warehouseSlice";
-import { SkeletonDetail } from "components/Skeleton";
-import {
-  fetchStockTransfers,
-  approveStockTransfer,
-  showStockTransfers,
-} from "store/slices/stockTransferSlice";
-import { fetchStockIssues, showStockIssues } from "store/slices/stockIssueSlice";
-import { fetchStock, showStock, fetchAdjustmentHistory, showAdjustmentHistory } from "store/slices/stockSlice";
+import { SkeletonDetail, SkeletonCards } from "components/Skeleton";
+import { fetchStockTransfers, approveStockTransfer, showStockTransfers, showStockTransfersLoading, clearStockTransfersList } from "store/slices/stockTransferSlice";
+import { fetchStockIssues, showStockIssues, showStockIssuesLoading, clearStockIssuesList } from "store/slices/stockIssueSlice";
+import { fetchStock, showStock, showStockLoading, fetchAdjustmentHistory, showAdjustmentHistory, showAdjustmentHistoryLoading, clearStockList } from "store/slices/stockSlice";
+import TableState from "components/TableState";
+
 
 const statusBadge = (s) => {
   if (s === "Completed" || s === "Received") return "bg-emerald-100 text-emerald-700";
@@ -60,16 +58,28 @@ const SummaryCard = ({ label, value, color = "teal" }) => {
 
 const WarehouseDetail = () => {
   const { t } = useTranslation("warehouse");
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearStockList());
+      dispatch(clearStockTransfersList());
+      dispatch(clearStockIssuesList());
+    };
+  }, [dispatch]);
+
+  const navigate = useNavigate();
   const { id }   = useParams();
 
   const warehouse    = useSelector(showCurrentWarehouse);
   const warehouseLoading = useSelector(showCurrentWarehouseLoading);
   const stockRows    = useSelector(showStock);
+  const stockLoading = useSelector(showStockLoading);
   const allTransfers = useSelector(showStockTransfers);
+  const transfersLoading = useSelector(showStockTransfersLoading);
   const issues       = useSelector(showStockIssues);
+  const issuesLoading = useSelector(showStockIssuesLoading);
   const adjustments  = useSelector(showAdjustmentHistory);
+  const adjustmentsLoading = useSelector(showAdjustmentHistoryLoading);
 
   const refresh = () => {
     dispatch(fetchWarehouseById(id));
@@ -161,13 +171,17 @@ const WarehouseDetail = () => {
         <TabPanels>
           {/* Overview */}
           <TabPanel>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <SummaryCard label={t("total_sku")}      value={stock.length}                   color="teal" />
-              <SummaryCard label={t("total_qty")}      value={totalQty.toLocaleString()}        color="blue" />
-              <SummaryCard label={t("low_stock_items")} value={lowCount}                        color="amber" />
-              <SummaryCard label={t("out_of_stock")}   value={outCount}                         color={outCount > 0 ? "red" : "teal"} />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {stockLoading ? (
+              <SkeletonCards count={4} columns="grid-cols-2 md:grid-cols-4" />
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <SummaryCard label={t("total_sku")}      value={stock.length}                   color="teal" />
+                <SummaryCard label={t("total_qty")}      value={totalQty.toLocaleString()}        color="blue" />
+                <SummaryCard label={t("low_stock_items")} value={lowCount}                        color="amber" />
+                <SummaryCard label={t("out_of_stock")}   value={outCount}                         color={outCount > 0 ? "red" : "teal"} />
+              </div>
+            )}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
               <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-6">
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-4">{t("warehouse_info")}</h3>
                 <InfoRow label={t("code")}     value={warehouse.code} />
@@ -202,7 +216,15 @@ const WarehouseDetail = () => {
                 <h3 className="font-semibold text-slate-900 dark:text-white">{t("stock_in_warehouse")}</h3>
                 <button onClick={() => navigate("/inventory/stock")} className="text-sm text-teal-600 dark:text-teal-400 hover:underline">{t("full_stock_view")}</button>
               </div>
-              {stock.length === 0 ? (
+              {stockLoading ? (
+                <div className="overflow-x-auto p-2">
+                  <table className="w-full text-sm">
+                    <tbody>
+                      <TableState loading data={[]} colSpan={6} />
+                    </tbody>
+                  </table>
+                </div>
+              ) : stock.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-400"><FiPackage size={36} /><p className="text-sm">{t("no_stock")}</p></div>
               ) : (
                 <div className="overflow-x-auto">
@@ -261,10 +283,12 @@ const WarehouseDetail = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {transfers.length === 0 ? (
-                      <tr><td colSpan={7} className="text-center py-12 text-slate-400">{t("no_transfers")}</td></tr>
-                    ) : transfers.map((tr) => (
-                      <tr key={tr.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
+                    <TableState loading={transfersLoading} data={transfers} colSpan={7}>
+                      {transfers.map((tr) => (
+                      <tr
+                        key={tr.id}
+                        className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5"
+                      >
                         <td className="px-6 py-3 font-mono text-xs text-teal-700 dark:text-teal-300">{tr.transferNo}</td>
                         <td className="px-4 py-3 text-slate-500">{tr.date?.slice(0, 10)}</td>
                         <td className="px-4 py-3 text-slate-700 dark:text-white/80">{tr.fromWarehouseName}</td>
@@ -272,12 +296,37 @@ const WarehouseDetail = () => {
                         <td className="px-4 py-3 text-slate-500">{tr.items?.length} {t("items_count")}</td>
                         <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge(tr.status)}`}>{tr.status}</span></td>
                         <td className="px-4 py-3">
-                          {tr.status === "Pending" && (
-                            <button onClick={() => handleApprove(tr.id)} className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium">{t("approve")}</button>
-                          )}
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/warehouse_transfers/detail/${tr.id}`)}
+                              className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium"
+                            >
+                              {t("view", { ns: "translation", defaultValue: "View" })}
+                            </button>
+                            {tr.status === "Pending" && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate(`/warehouse_transfers/edit/${tr.id}`)}
+                                  className="text-xs text-slate-600 dark:text-white/70 hover:underline font-medium"
+                                >
+                                  {t("edit")}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApprove(tr.id)}
+                                  className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium"
+                                >
+                                  {t("approve")}
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
+                    </TableState>
                   </tbody>
                 </table>
               </div>
@@ -305,9 +354,8 @@ const WarehouseDetail = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {issues.length === 0 ? (
-                      <tr><td colSpan={6} className="text-center py-12 text-slate-400">{t("no_issues")}</td></tr>
-                    ) : issues.map((i) => (
+                    <TableState loading={issuesLoading} data={issues} colSpan={6}>
+                      {issues.map((i) => (
                       <tr key={i.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
                         <td className="px-6 py-3 font-mono text-xs text-rose-700 dark:text-rose-300">{i.issueNo}</td>
                         <td className="px-4 py-3 text-slate-500">{i.date?.slice(0, 10)}</td>
@@ -317,6 +365,7 @@ const WarehouseDetail = () => {
                         <td className="px-4 py-3 text-slate-500">{i.issuedBy || "—"}</td>
                       </tr>
                     ))}
+                    </TableState>
                   </tbody>
                 </table>
               </div>
@@ -342,9 +391,8 @@ const WarehouseDetail = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {adjustments.length === 0 ? (
-                      <tr><td colSpan={6} className="text-center py-12 text-slate-400">{t("no_adjustments")}</td></tr>
-                    ) : adjustments.map((a) => (
+                    <TableState loading={adjustmentsLoading} data={adjustments} colSpan={6}>
+                      {adjustments.map((a) => (
                       <tr key={a.id} className="border-b border-slate-50 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5">
                         <td className="px-6 py-3 text-slate-500">{a.createdAt?.slice(0, 10)}</td>
                         <td className="px-4 py-3">
@@ -361,6 +409,7 @@ const WarehouseDetail = () => {
                         <td className="px-4 py-3 text-slate-500 max-w-[200px] truncate" title={a.reason}>{a.reason}</td>
                       </tr>
                     ))}
+                    </TableState>
                   </tbody>
                 </table>
               </div>

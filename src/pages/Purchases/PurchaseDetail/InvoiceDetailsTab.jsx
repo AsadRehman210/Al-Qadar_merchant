@@ -165,7 +165,7 @@ const InvoiceDetailsTab = ({
                   <td className="p-3 text-center tabular-nums text-slate-600 dark:text-white/70 font-medium">
                     {idx + 1}
                   </td>
-                  <td className="p-3">{line.productName}</td>
+                  <td className="p-3">{line.productName || line.variantName || "—"}</td>
                   <td className="p-3">{line.qty}</td>
                   <td className="p-3">
                     {hasReturn ? (

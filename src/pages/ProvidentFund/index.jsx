@@ -4,14 +4,15 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { FiEye, FiSettings } from "react-icons/fi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import Button from "components/Button";
 import TableState from "components/TableState";
+import { SkeletonCards } from "components/Skeleton";
 import { tableRows, pfStatusFilterOptions } from "global/constant";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { useListFilters } from "hooks/useListFilters";
 import {
   fetchPfPolicy,
@@ -27,7 +28,7 @@ import {
   setSearch,
 } from "store/slices/providentFundSlice";
 
-const { view_employee, add_employee } = rafeeqi_role_ids;
+const { view_provident_fund, add_provident_fund } = alqadar_role_ids;
 
 const ProvidentFund = () => {
   const { t } = useTranslation();
@@ -74,7 +75,7 @@ const ProvidentFund = () => {
   const handleStatusChange = (v) => { dispatch(setCurrentPage(1)); dispatch(setFilterStatus(v.id === "all" ? null : v.id)); };
   const handleSearch = (value) => { dispatch(setCurrentPage(1)); dispatch(setSearch(value)); };
 
-  if (!checkRoleAuth(view_employee)) return null;
+  if (!checkRoleAuth(view_provident_fund)) return null;
 
   return (
     <div className="relative min-h-[60vh]">
@@ -85,7 +86,7 @@ const ProvidentFund = () => {
             <h1 className="text-3xl font-bold tracking-tight">{t("pf:provident_fund")}</h1>
             <p className="text-mutedForeground mt-1">{t("pf:module_desc")}</p>
           </div>
-          {checkRoleAuth(add_employee) && (
+          {checkRoleAuth(add_provident_fund) && (
             <div className="flex flex-wrap gap-2 shrink-0">
               <Button
                 type="button"
@@ -99,15 +100,21 @@ const ProvidentFund = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {STAT_CARDS.map((c) => (
-            <div key={c.label} className={`p-5 rounded-2xl bg-gradient-to-br ${c.color} text-white`}>
-              <p className="text-xs font-medium opacity-75 mb-0.5">{c.label}</p>
-              <p className="text-xl font-bold">{c.value}</p>
-              <p className="text-xs opacity-70 mt-0.5">{c.sub}</p>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="mb-6">
+            <SkeletonCards count={4} columns="grid-cols-2 lg:grid-cols-4" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {STAT_CARDS.map((c) => (
+              <div key={c.label} className={`p-5 rounded-2xl bg-gradient-to-br ${c.color} text-white`}>
+                <p className="text-xs font-medium opacity-75 mb-0.5">{c.label}</p>
+                <p className="text-xl font-bold">{c.value}</p>
+                <p className="text-xs opacity-70 mt-0.5">{c.sub}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-7">
           <div className="mb-6 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
@@ -180,7 +187,7 @@ const ProvidentFund = () => {
               <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
             </div>
             <div className="pagination ltr:ml-auto rtl:mr-auto">
-              <ReactPaginate
+              <Pagination
                 breakLabel="..." nextLabel={<FaAngleRight />} previousLabel={<FaAngleLeft />}
                 onPageChange={(e) => handlePageChange(e.selected + 1)}
                 pageRangeDisplayed={3} marginPagesDisplayed={1} pageCount={totalPages}

@@ -1,30 +1,54 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { SkeletonDetail } from "components/Skeleton";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { checkRoleAuth } from "global/helper";
 import { toast } from "react-toastify";
-import { DEFAULT_ADD_CUSTOMER_VALUES } from "../customerFakeData";
-import { createSalesCustomer, updateSalesCustomer, fetchSalesCustomerById } from "store/slices/salesCustomerSlice";
+import {
+  customerSegmentOptions,
+  customerTypeOptions,
+  customerStatusOptions,
+} from "global/constant";
+import {
+  createSalesCustomer,
+  updateSalesCustomer,
+  fetchSalesCustomerById,
+  clearCurrentSalesCustomer,
+  resetSalesCustomerDropdown,
+  showCurrentSalesCustomerLoading,
+} from "store/slices/salesCustomerSlice";
 import BasicInfoTab from "./BasicInfoTab";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_customer, edit_customer } = alqadar_role_ids;
 
 const AddCustomer = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentSalesCustomer());
+      dispatch(resetSalesCustomerDropdown());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const { id } = useParams();
 
   const [existing, setExisting] = useState(null);
+  const loading = useSelector(showCurrentSalesCustomerLoading);
 
   const methods = useForm({
     mode: "onChange",
-    defaultValues: DEFAULT_ADD_CUSTOMER_VALUES,
+    defaultValues: {
+      customerType: customerTypeOptions[0]?.id,
+      customerSegment: customerSegmentOptions[0]?.id,
+      status: customerStatusOptions[0]?.id,
+    },
   });
   const {
     handleSubmit,
@@ -84,6 +108,14 @@ const AddCustomer = () => {
 
   if (id && !checkRoleAuth(edit_customer)) return null;
   if (!id && !checkRoleAuth(add_customer)) return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
 

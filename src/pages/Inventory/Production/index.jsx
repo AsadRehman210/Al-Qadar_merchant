@@ -6,24 +6,25 @@ import ProductionTable from "./ProductionTable";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows, productionStatusFilterOptions } from "global/constant";
-import {
-  fetchProductionOrders,
-  showProductionOrders,
-  showProductionOrdersTotal,
-  showProductionOrdersLoading,
-} from "store/slices/productionSlice";
+import { fetchProductionOrders, showProductionOrders, showProductionOrdersTotal, showProductionOrdersLoading, clearProductionOrdersList } from "store/slices/productionSlice";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { useListFilters } from "hooks/useListFilters";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_inventory_production, add_inventory_production } = alqadar_role_ids;
 
 const Production = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearProductionOrdersList());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useListFilters("inventory-production", {
     page: 1,
     limitId: tableRows[0].id,
@@ -72,7 +73,7 @@ const Production = () => {
               {t("production:module_desc")}
             </p>
           </div>
-          {checkRoleAuth(add_customer) && (
+          {checkRoleAuth(add_inventory_production) && (
             <div className="relative z-10 shrink-0">
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5 disabled:hover:translate-y-0"
@@ -91,7 +92,7 @@ const Production = () => {
           )}
         </div>
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_inventory_production) && (
             <div className="mb-6 flex flex-col sm:flex-row gap-4 flex-wrap">
               <div className="min-w-[200px] w-full sm:w-[220px]">
                 <SelectDropdown
@@ -111,7 +112,7 @@ const Production = () => {
               </div>
             </div>
           )}
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_inventory_production) && (
             <ProductionTable
               data={orders}
               loading={loading}

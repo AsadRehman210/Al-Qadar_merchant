@@ -1,5 +1,4 @@
 import { useEffect, useMemo } from "react";
-import { formatAmount } from "global/helper";
 import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,12 +8,16 @@ import {
   fetchPayrollRunById,
   showCurrentRun,
   showCurrentRunLoading,
+  clearCurrentRun,
 } from "store/slices/payrollBatchSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { fetchDesignations, showDesignations } from "store/slices/designationSlice";
 import { SkeletonDetail } from "components/Skeleton";
+import { checkRoleAuth, formatAmount } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 
+const { view_payroll_run } = alqadar_role_ids;
 
 const Row = ({ label, value, bold, positive, negative, separator }) => (
   <>
@@ -46,6 +49,7 @@ const Payslip = () => {
     dispatch(fetchEmployees());
     dispatch(fetchDepartments());
     dispatch(fetchDesignations());
+    return () => dispatch(clearCurrentRun());
   }, [dispatch, runId]);
 
   const emp = useMemo(() => {
@@ -62,6 +66,8 @@ const Payslip = () => {
       designation,
     };
   }, [run, empId, employees, departments, designations]);
+
+  if (!checkRoleAuth(view_payroll_run)) return null;
 
   if (loading && !run) return <SkeletonDetail fields={8} />;
 

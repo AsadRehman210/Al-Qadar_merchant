@@ -5,14 +5,15 @@ import { useDispatch, useSelector } from "react-redux";
 import { IoAdd } from "react-icons/io5";
 import { FiEye, FiSettings } from "react-icons/fi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import Button from "components/Button";
 import TableState from "components/TableState";
+import { SkeletonCards } from "components/Skeleton";
 import { tableRows, specialPaymentStatusFilterOptions } from "global/constant";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { SP_STATUS_BADGE } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
@@ -27,7 +28,7 @@ import {
   showLastUpdated,
 } from "store/slices/payrollBatchSlice";
 
-const { view_employee, add_employee } = rafeeqi_role_ids;
+const { view_special_payment, add_special_payment, view_special_payment_type } = alqadar_role_ids;
 
 const SpecialPayments = () => {
   const { t } = useTranslation();
@@ -72,7 +73,7 @@ const SpecialPayments = () => {
     ...p,
     employeeCount: p.employees?.length || 0,
     amountPerEmployee: p.employees?.length ? Math.round((p.totalAmount || 0) / p.employees.length) : 0,
-    createdAtLabel: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "—",
+    createdAtLabel: p.createdAt ? new Date(p.createdAt).toLocaleDateString() : "ï¿½",
   })), [payments]);
 
   const typeOpts = [
@@ -91,7 +92,7 @@ const SpecialPayments = () => {
     { label: t("payroll:sp_total_count"), value: summary.totalCount, sub: t("payroll:sp_all_time"), color: "from-purple-500 to-purple-600" },
   ];
 
-  if (!checkRoleAuth(view_employee)) return null;
+  if (!checkRoleAuth(view_special_payment)) return null;
 
   return (
     <div className="relative min-h-[60vh]">
@@ -103,28 +104,36 @@ const SpecialPayments = () => {
             <h1 className="text-3xl font-bold tracking-tight">{t("payroll:special_payments")}</h1>
             <p className="text-mutedForeground mt-1">{t("payroll:special_payments_desc")}</p>
           </div>
-          {checkRoleAuth(add_employee) && (
-            <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
+            {checkRoleAuth(view_special_payment_type) && (
               <Button type="button" title={t("payroll:sp_manage_types")} icon={FiSettings} iconClass="h-4 w-4"
                 onClick={() => navigate("/special-payments/types")}
                 className="!w-auto !rounded-md !h-11 !px-5 !border border-slate-200 dark:!border-white/20 !text-slate-700 dark:!text-white !bg-white dark:!bg-white/10 hover:!bg-slate-50" />
+            )}
+            {checkRoleAuth(add_special_payment) && (
               <Button type="button" title={t("payroll:create_sp")} icon={IoAdd} iconClass="h-5 w-5 text-white"
                 onClick={() => navigate("/special-payments/create")}
                 className="!w-auto !rounded-lg !h-11 !px-5 !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700" />
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {STAT_CARDS.map((c) => (
-            <div key={c.label} className={`p-5 rounded-2xl bg-gradient-to-br ${c.color} text-white`}>
-              <p className="text-xs font-medium opacity-75 mb-0.5">{c.label}</p>
-              <p className="text-xl font-bold">{c.value}</p>
-              <p className="text-xs opacity-70 mt-0.5">{c.sub}</p>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="mb-6">
+            <SkeletonCards count={4} columns="grid-cols-2 lg:grid-cols-4" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {STAT_CARDS.map((c) => (
+              <div key={c.label} className={`p-5 rounded-2xl bg-gradient-to-br ${c.color} text-white`}>
+                <p className="text-xs font-medium opacity-75 mb-0.5">{c.label}</p>
+                <p className="text-xl font-bold">{c.value}</p>
+                <p className="text-xs opacity-70 mt-0.5">{c.sub}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Payment Type quick-access cards (dynamic) */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
@@ -137,7 +146,7 @@ const SpecialPayments = () => {
             </button>
           ))}
           {/* Manage types shortcut */}
-          {checkRoleAuth(add_employee) && (
+          {checkRoleAuth(view_special_payment_type) && (
             <button type="button" onClick={() => navigate("/special-payments/types")}
               className="flex flex-col items-center gap-1.5 p-3 rounded-2xl border-2 border-dashed border-teal-300 dark:border-teal-500/40 text-center transition-all cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-500/10">
               <span className="text-2xl">??</span>
@@ -221,7 +230,7 @@ const SpecialPayments = () => {
               <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
             </div>
             <div className="pagination ltr:ml-auto rtl:mr-auto">
-              <ReactPaginate breakLabel="..." nextLabel={<FaAngleRight />} previousLabel={<FaAngleLeft />}
+              <Pagination breakLabel="..." nextLabel={<FaAngleRight />} previousLabel={<FaAngleLeft />}
                 onPageChange={(e) => setFilters({ page: e.selected + 1 })} pageRangeDisplayed={3} marginPagesDisplayed={1}
                 pageCount={totalPages} forcePage={page - 1} renderOnZeroPageCount={null}
                 containerClassName="custom-pagination flex flex-row rtl:flex-row-reverse flex-wrap items-center gap-1 text-sm" />

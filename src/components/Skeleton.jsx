@@ -2,8 +2,8 @@
 // cards, list, detail) is composed from this one pulsing block, matching
 // the app's own rounded/border/dark-mode conventions instead of a separate
 // design system.
-const Block = ({ className = "" }) => (
-  <div className={`animate-pulse rounded-md bg-slate-200 dark:bg-white/10 ${className}`} />
+const Block = ({ className = "", style }) => (
+  <div className={`animate-pulse rounded-md bg-slate-200 dark:bg-white/10 ${className}`} style={style} />
 );
 
 // Table rows matching this app's own `<table>` list-page shape (checkbox +

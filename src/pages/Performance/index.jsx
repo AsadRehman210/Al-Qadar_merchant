@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FiPlus, FiSearch, FiEye, FiEdit2, FiStar, FiBarChart2, FiClock, FiUserCheck } from "react-icons/fi";
@@ -6,12 +6,12 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { useListFilters } from "hooks/useListFilters";
 import { getAppraisals, APPRAISAL_STATUS_OPTS, CYCLE_OPTS } from "./performanceFakeData";
 import { statusColor, ratingLabelKey, weightedScore } from "./performanceHelpers";
 
-const { view_employee, add_employee } = rafeeqi_role_ids;
+const { view_performance, add_performance } = alqadar_role_ids;
 
 const EDITABLE_STATUSES = ["Draft"];
 
@@ -59,7 +59,7 @@ const Performance = () => {
   const awaitingReview = appraisals.filter((a) => a.status === "Submitted").length;
   const inReview = appraisals.filter((a) => a.status === "Under Review").length;
 
-  if (!checkRoleAuth(view_employee)) return null;
+  if (!checkRoleAuth(view_performance)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -70,7 +70,7 @@ const Performance = () => {
             <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{t("performance:title")}</h1>
             <p className="text-slate-500 dark:text-white/50 text-sm mt-1">{t("performance:module_desc")}</p>
           </div>
-          {checkRoleAuth(add_employee) && (
+          {checkRoleAuth(add_performance) && (
             <Button
               type="button"
               title={t("performance:new_appraisal")}
@@ -147,7 +147,7 @@ const Performance = () => {
                       <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(a.status)}`}>{a.status}</span></td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          {checkRoleAuth(add_employee) && EDITABLE_STATUSES.includes(a.status) && (
+                          {checkRoleAuth(add_performance) && EDITABLE_STATUSES.includes(a.status) && (
                             <button onClick={() => navigate(`/performance/edit/${a.id}`)} className="text-slate-400 hover:text-teal-500" title={t("edit")}><FiEdit2 size={14} /></button>
                           )}
                           <button onClick={() => navigate(`/performance/detail/${a.id}`)} className="text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium flex items-center gap-1"><FiEye size={13} />{t("view")}</button>

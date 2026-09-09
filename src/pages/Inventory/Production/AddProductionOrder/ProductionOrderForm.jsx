@@ -9,7 +9,7 @@ import Button from "components/Button";
 import { HiOutlinePlusCircle, HiOutlineTrash } from "react-icons/hi2";
 import { fetchVariantsDropdown } from "store/slices/variantSlice";
 import { fetchWarehousesDropdown } from "store/slices/warehouseSlice";
-import { defaultRawLine, defaultOtherCostLine, computeProductionCost } from "../productionHelpers";
+import { defaultRawLine, defaultOutputLine, defaultOtherCostLine, computeProductionCost } from "../productionHelpers";
 
 const fmtNum = (n) =>
   Number(n || 0).toLocaleString(undefined, {
@@ -19,9 +19,7 @@ const fmtNum = (n) =>
 const variantOptionLabel = (v) => `${v.sku} — ${v.variantName || v.productName || ""}`.trim();
 
 // One product-type-filtered, server-paginated/searched variant picker.
-// Used twice on this page (raw materials, finished output) with different
-// productType — a single global Redux dropdown slot can't hold two
-// independent filtered lists at once, so state lives here instead.
+// Used per raw line (scoped to that line's warehouse) and once for finished output.
 const useVariantPicker = (productType, warehouseId) => {
   const dispatch = useDispatch();
   const [options, setOptions] = useState([]);
@@ -29,7 +27,7 @@ const useVariantPicker = (productType, warehouseId) => {
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const detailsRef = useRef({}); // accumulates every variant ever seen, for cost lookups regardless of current search
+  const detailsRef = useRef({});
 
   const load = useCallback(
     async (nextPage, nextSearch) => {
@@ -58,38 +56,8 @@ const useVariantPicker = (productType, warehouseId) => {
   return { options, hasMore, loading: loading && page === 1, paginationLoading: loading, onApiSearch, onLoadMore, detailsRef };
 };
 
-const ProductionOrderForm = () => {
-  const { t } = useTranslation();
+const useWarehouseOptions = () => {
   const dispatch = useDispatch();
-  const {
-    register,
-    control,
-    watch,
-    setValue,
-    trigger,
-    getValues,
-    formState: { errors },
-  } = useFormContext();
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "rawLines",
-  });
-
-  const {
-    fields: otherCostFields,
-    append: appendOtherCost,
-    remove: removeOtherCost,
-  } = useFieldArray({
-    control,
-    name: "otherCostLines",
-  });
-
-  const warehouseId = watch("warehouseId");
-  const outputWarehouseId = watch("outputWarehouseId");
-  const outputPicker = useVariantPicker("Finished Product");
-  const rawPicker = useVariantPicker("Raw Material", warehouseId || undefined);
-
   const [warehouseOptions, setWarehouseOptions] = useState([]);
   const [warehousePage, setWarehousePage] = useState(1);
   const [warehouseHasMore, setWarehouseHasMore] = useState(false);
@@ -113,59 +81,87 @@ const ProductionOrderForm = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  return {
+    warehouseOptions,
+    warehouseHasMore,
+    warehouseLoading,
+    warehousePage,
+    loadWarehouses,
+  };
+};
+
+const ProductionOrderForm = () => {
+  const { t } = useTranslation();
+  const {
+    register,
+    control,
+    watch,
+    setValue,
+    getValues,
+    formState: { errors },
+  } = useFormContext();
+
+  const { fields, append, remove } = useFieldArray({ control, name: "rawLines" });
+  const {
+    fields: outputFields,
+    append: appendOutput,
+    remove: removeOutput,
+  } = useFieldArray({ control, name: "outputLines" });
+  const {
+    fields: otherCostFields,
+    append: appendOtherCost,
+    remove: removeOtherCost,
+  } = useFieldArray({ control, name: "otherCostLines" });
+
+  const warehouses = useWarehouseOptions();
+  const outputPicker = useVariantPicker("Finished Product");
+
   const variantId = watch("outputVariantId");
   const quarantineLotId = watch("quarantineLotId");
   const quarantineLotNumber = watch("quarantineLotNumber");
   const isRenew = Boolean(quarantineLotId);
 
   const selVariant = useMemo(
-    () => outputPicker.detailsRef.current[variantId] || outputPicker.options.find((o) => o.id === variantId) || {},
+    () => outputPicker.detailsRef.current[variantId] || outputPicker.options.find((o) => o.id === variantId) || null,
     [outputPicker.options, variantId],
   );
 
-  const selWarehouse = useMemo(
-    () => warehouseOptions.find((o) => o.id === warehouseId) || null,
-    [warehouseOptions, warehouseId],
-  );
-
-  const selOutputWarehouse = useMemo(
-    () => warehouseOptions.find((o) => o.id === outputWarehouseId) || null,
-    [warehouseOptions, outputWarehouseId],
-  );
-
   const watchedRawLines = useWatch({ control, name: "rawLines" });
+  const watchedOutputLines = useWatch({ control, name: "outputLines" });
   const watchedOtherCostLines = useWatch({ control, name: "otherCostLines" });
-  const watchedOutputQuantity = useWatch({ control, name: "outputQuantity" });
-
-  useEffect(() => {
-    (watchedRawLines || []).forEach((line) => {
-      if (!line?.variantId) return;
-      const prev = rawPicker.detailsRef.current[line.variantId] || {};
-      rawPicker.detailsRef.current[line.variantId] = {
-        ...prev,
-        id: line.variantId,
-        sku: prev.sku || line.sku || "",
-        variantName: prev.variantName || line.variantName || "",
-        costPrice: prev.costPrice ?? line.costPrice,
-        title:
-          prev.title ||
-          variantOptionLabel({
-            sku: prev.sku || line.sku || "",
-            variantName: prev.variantName || line.variantName || "",
-          }),
-      };
-    });
-  }, [watchedRawLines]);
+  const quarantineQty = watch("quarantineQty");
+  const quarantineCostPrice = watch("quarantineCostPrice");
 
   const variantCostById = useMemo(() => {
     const map = new Map();
-    Object.values(rawPicker.detailsRef.current).forEach((v) => map.set(v.id, v.costPrice));
+    (watchedRawLines || []).forEach((l) => {
+      if (l?.variantId && l.costPrice != null && l.costPrice !== "") {
+        map.set(l.variantId, Number(l.costPrice) || 0);
+      }
+    });
     return map;
-  }, [watchedRawLines]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [watchedRawLines]);
+
+  const quarantineCost = useMemo(
+    () => (Number(quarantineQty) || 0) * (Number(quarantineCostPrice) || 0),
+    [quarantineQty, quarantineCostPrice],
+  );
 
   const costPreview = useMemo(
-    () => computeProductionCost(watchedRawLines, watchedOtherCostLines, watchedOutputQuantity, variantCostById),
-    [watchedRawLines, watchedOtherCostLines, watchedOutputQuantity, variantCostById],
+    () =>
+      computeProductionCost(
+        watchedRawLines,
+        watchedOtherCostLines,
+        watchedOutputLines,
+        variantCostById,
+        quarantineCost,
+      ),
+    [watchedRawLines, watchedOtherCostLines, watchedOutputLines, variantCostById, quarantineCost],
+  );
+
+  const totalOutputQty = useMemo(
+    () => (watchedOutputLines || []).reduce((s, l) => s + (Number(l?.quantity) || 0), 0),
+    [watchedOutputLines],
   );
 
   return (
@@ -180,25 +176,26 @@ const ProductionOrderForm = () => {
           </p>
         </div>
       )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormInput
-          label={t("production:scheduled_date")}
-          name="scheduledDate"
+          label={t("production:completed_date")}
+          name="completedDate"
           type="date"
           register={register}
           errors={errors}
           required
         />
         {isRenew ? (
-            <div>
-              <label className="text-sm font-medium text-linkText mb-1 block">
-                {t("production:finished_output")}
-              </label>
-              <div className="h-11 px-3 flex items-center rounded-xl border border-slate-200 dark:border-white/20 bg-slate-50 dark:bg-white/5 text-sm">
-                {watch("outputVariantName") || selVariant.title || "—"}
-              </div>
+          <div>
+            <label className="text-sm font-medium text-linkText mb-1 block">
+              {t("production:finished_output")}
+            </label>
+            <div className="h-11 px-3 flex items-center rounded-xl border border-slate-200 dark:border-white/20 bg-slate-50 dark:bg-white/5 text-sm">
+              {watch("outputVariantName") || selVariant?.title || "—"}
             </div>
-          ) : (
+          </div>
+        ) : (
           <SearchablePaginatedDropdown
             label={t("production:finished_output")}
             data={outputPicker.options}
@@ -215,96 +212,51 @@ const ProductionOrderForm = () => {
             classes="!h-[46px] !rounded-lg"
             name="outputVariantId"
             register={register}
-            setValue={setValue}
-            trigger={trigger}
             errors={errors}
             required
           />
+        )}
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <h3 className="text-lg font-semibold text-slate-800 dark:text-white/95">
+            {t("production:output_destinations")}
+          </h3>
+          {!isRenew && (
+            <Button
+              type="button"
+              title={t("production:add_output_line")}
+              icon={HiOutlinePlusCircle}
+              onClick={() => appendOutput(defaultOutputLine())}
+              className="!w-auto !rounded-lg !h-10 !px-4 !border border-teal-600 !text-teal-700 !bg-teal-50 hover:!bg-teal-100 dark:!border-teal-500/50 dark:!text-teal-200 dark:!bg-teal-500/10"
+              iconClass="h-5 w-5"
+            />
           )}
-        <FormInput
-          label={t("production:output_quantity")}
-          name="outputQuantity"
-          type="number"
-          register={register}
-          errors={errors}
-          placeholder="0"
-          min={0.01}
-          decimal
-          decimalPlaces={2}
-          required
-        />
-        <FormInput
-          label={t("production:output_expiry_date")}
-          name="outputExpiryDate"
-          type="date"
-          register={register}
-          errors={errors}
-          min={watch("scheduledDate") || undefined}
-          validate={(v) => {
-            const sched = getValues("scheduledDate");
-            if (!v || !sched) return true;
-            return v >= sched || t("production:expiry_after_scheduled", { defaultValue: "Must be on or after scheduled date" });
-          }}
-        />
-        <div>
-          {isRenew ? (
-            <>
-              <label className="text-sm font-medium text-linkText mb-1 block">
-                {t("production:raw_warehouse")}
-              </label>
-              <div className="h-11 px-3 flex items-center rounded-xl border border-slate-200 dark:border-white/20 bg-slate-50 dark:bg-white/5 text-sm">
-                {watch("warehouseName") || selWarehouse?.title || "—"}
-              </div>
-            </>
-          ) : (
-          <SearchablePaginatedDropdown
-            key="raw-warehouse"
-            label={t("production:raw_warehouse")}
-            data={warehouseOptions}
-            selected={selWarehouse || (warehouseId ? { id: warehouseId, title: watch("warehouseName") || "" } : null)}
-            setSelected={(opt) => setValue("warehouseId", opt?.id ?? "")}
-            enableApiSearch
-            onApiSearch={(v) => loadWarehouses(1, v)}
-            hasMore={warehouseHasMore}
-            onLoadMore={() => { if (warehouseHasMore && !warehouseLoading) loadWarehouses(warehousePage + 1, ""); }}
-            paginationLoading={warehouseLoading}
-            loading={warehouseLoading && warehousePage === 1}
-            hideClear
-            classes="!h-[46px] !rounded-lg"
-            name="warehouseId"
-            register={register}
-            setValue={setValue}
-            trigger={trigger}
-            errors={errors}
-            required
-          />
-          )}
-          <p className="text-xs text-slate-400 mt-1">{t("production:raw_warehouse_hint")}</p>
         </div>
-        <div>
-          <SearchablePaginatedDropdown
-            key="output-warehouse"
-            label={t("production:output_warehouse")}
-            data={warehouseOptions}
-            selected={selOutputWarehouse || (outputWarehouseId ? { id: outputWarehouseId, title: watch("outputWarehouseName") || "" } : null)}
-            setSelected={(opt) => setValue("outputWarehouseId", opt?.id ?? "")}
-            enableApiSearch
-            onApiSearch={(v) => loadWarehouses(1, v)}
-            hasMore={warehouseHasMore}
-            onLoadMore={() => { if (warehouseHasMore && !warehouseLoading) loadWarehouses(warehousePage + 1, ""); }}
-            paginationLoading={warehouseLoading}
-            loading={warehouseLoading && warehousePage === 1}
-            hideClear
-            classes="!h-[46px] !rounded-lg"
-            name="outputWarehouseId"
-            register={register}
-            setValue={setValue}
-            trigger={trigger}
-            errors={errors}
-            required
-          />
-          <p className="text-xs text-slate-400 mt-1">{t("production:output_warehouse_hint")}</p>
+        <p className="text-xs text-slate-400 dark:text-white/40 -mt-2 mb-3">{t("production:output_destinations_hint")}</p>
+        <div className="space-y-4">
+          {outputFields.map((field, index) => (
+            <OutputLineRow
+              key={field.id}
+              index={index}
+              warehouses={warehouses}
+              register={register}
+              setValue={setValue}
+              watch={watch}
+              getValues={getValues}
+              errors={errors}
+              showLabels={index === 0}
+              canRemove={!isRenew && outputFields.length > 1}
+              onRemove={() => removeOutput(index)}
+              locked={isRenew}
+              t={t}
+            />
+          ))}
         </div>
+        <p className="text-xs text-slate-500 mt-2">
+          {t("production:total_output_qty")}: <span className="font-semibold tabular-nums">{fmtNum(totalOutputQty)}</span>
+        </p>
       </div>
 
       <div>
@@ -321,14 +273,13 @@ const ProductionOrderForm = () => {
             iconClass="h-5 w-5"
           />
         </div>
-
         <p className="text-xs text-slate-400 dark:text-white/40 -mt-2 mb-3">{t("production:raw_materials_hint")}</p>
         <div className="space-y-4">
           {fields.map((field, index) => (
             <RawLineRow
               key={field.id}
               index={index}
-              picker={rawPicker}
+              warehouses={warehouses}
               watch={watch}
               setValue={setValue}
               register={register}
@@ -336,7 +287,6 @@ const ProductionOrderForm = () => {
               showLabels={index === 0}
               canRemove={fields.length > 1}
               onRemove={() => remove(index)}
-              warehouseSelected={!!warehouseId}
               allLines={watchedRawLines}
               t={t}
             />
@@ -358,7 +308,6 @@ const ProductionOrderForm = () => {
             iconClass="h-5 w-5"
           />
         </div>
-
         <p className="text-xs text-slate-400 dark:text-white/40 -mt-2 mb-3">{t("production:other_costs_hint")}</p>
         <div className="space-y-4">
           {otherCostFields.map((field, index) => (
@@ -400,6 +349,15 @@ const ProductionOrderForm = () => {
             </div>
           ))}
         </div>
+        {isRenew && quarantineCost > 0 && (
+          <p className="text-xs text-slate-500 dark:text-white/50 mt-3">
+            {t("production:quarantine_cost_included", {
+              amount: fmtNum(quarantineCost),
+              unit: fmtNum(quarantineCostPrice),
+              qty: quarantineQty,
+            })}
+          </p>
+        )}
         <p className="text-xs text-slate-400 mt-3">{t("production:cost_calculation_preview_note")}</p>
       </div>
 
@@ -416,14 +374,130 @@ const ProductionOrderForm = () => {
   );
 };
 
-function RawLineRow({ index, picker, watch, setValue, register, errors, showLabels, canRemove, onRemove, warehouseSelected, allLines, t }) {
+function OutputLineRow({
+  index,
+  warehouses,
+  register,
+  setValue,
+  watch,
+  getValues,
+  errors,
+  showLabels,
+  canRemove,
+  onRemove,
+  locked,
+  t,
+}) {
+  const warehouseId = watch(`outputLines.${index}.warehouseId`);
+  const selWarehouse = useMemo(
+    () =>
+      warehouses.warehouseOptions.find((o) => o.id === warehouseId) ||
+      (warehouseId ? { id: warehouseId, title: watch(`outputLines.${index}.warehouseName`) || "" } : null),
+    [warehouses.warehouseOptions, warehouseId, watch, index],
+  );
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 rounded-xl border border-slate-200 dark:border-white/15 bg-slate-50/80 dark:bg-white/5">
+      <div className="sm:col-span-5">
+        {locked ? (
+          <>
+            {showLabels && (
+              <label className="text-sm font-medium text-linkText mb-1 block">{t("production:output_warehouse")}</label>
+            )}
+            <div className="h-[46px] px-3 flex items-center rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/5 text-sm">
+              {selWarehouse?.title || watch("outputWarehouseName") || "—"}
+            </div>
+          </>
+        ) : (
+          <SearchablePaginatedDropdown
+            label={showLabels ? t("production:output_warehouse") : undefined}
+            data={warehouses.warehouseOptions}
+            selected={selWarehouse}
+            setSelected={(opt) => setValue(`outputLines.${index}.warehouseId`, opt?.id ?? "", { shouldValidate: true })}
+            enableApiSearch
+            onApiSearch={(v) => warehouses.loadWarehouses(1, v)}
+            hasMore={warehouses.warehouseHasMore}
+            onLoadMore={() => {
+              if (warehouses.warehouseHasMore && !warehouses.warehouseLoading) {
+                warehouses.loadWarehouses(warehouses.warehousePage + 1, "");
+              }
+            }}
+            paginationLoading={warehouses.warehouseLoading}
+            loading={warehouses.warehouseLoading && warehouses.warehousePage === 1}
+            hideClear
+            classes="!h-[46px] !rounded-lg"
+            name={`outputLines.${index}.warehouseId`}
+            register={register}
+            errors={errors}
+            required
+          />
+        )}
+      </div>
+      <div className="sm:col-span-3">
+        <FormInput
+          label={showLabels ? t("production:output_quantity") : ""}
+          name={`outputLines.${index}.quantity`}
+          type="number"
+          register={register}
+          errors={errors}
+          placeholder="0"
+          min={1}
+          required
+          inputClass="!h-[46px] !rounded-lg"
+        />
+      </div>
+      <div className="sm:col-span-3">
+        <FormInput
+          label={showLabels ? t("production:output_expiry_date") : ""}
+          name={`outputLines.${index}.expiryDate`}
+          type="date"
+          register={register}
+          errors={errors}
+          min={watch("completedDate") || undefined}
+          validate={(v) => {
+            const sched = getValues("completedDate");
+            if (!v || !sched) return true;
+            return v >= sched || t("production:expiry_after_scheduled", { defaultValue: "Must be on or after scheduled date" });
+          }}
+          inputClass="!h-[46px] !rounded-lg"
+        />
+      </div>
+      <div className="sm:col-span-1 flex items-end justify-end pb-1">
+        {canRemove && (
+          <button
+            type="button"
+            onClick={onRemove}
+            className="p-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+            title={t("production:remove_line")}
+          >
+            <HiOutlineTrash className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RawLineRow({ index, warehouses, watch, setValue, register, errors, showLabels, canRemove, onRemove, allLines, t }) {
+  const warehouseId = watch(`rawLines.${index}.warehouseId`);
   const variantId = watch(`rawLines.${index}.variantId`);
+  const picker = useVariantPicker("Raw Material", warehouseId || undefined);
+
+  const selWarehouse = useMemo(
+    () =>
+      warehouses.warehouseOptions.find((o) => o.id === warehouseId) ||
+      (warehouseId ? { id: warehouseId, title: "" } : null),
+    [warehouses.warehouseOptions, warehouseId],
+  );
+
   const selVariant = useMemo(
     () => picker.detailsRef.current[variantId] || picker.options.find((o) => o.id === variantId) || null,
     [picker.options, variantId],
   );
+
   const siblingQty = (allLines || []).reduce((s, l, i) => {
     if (i === index || !l?.variantId || l.variantId !== variantId) return s;
+    if (String(l.warehouseId || "") !== String(warehouseId || "")) return s;
     return s + (Number(l.quantity) || 0);
   }, 0);
   const leftover =
@@ -431,6 +505,34 @@ function RawLineRow({ index, picker, watch, setValue, register, errors, showLabe
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 p-4 rounded-xl border border-slate-200 dark:border-white/15 bg-slate-50/80 dark:bg-white/5">
+      <div className="sm:col-span-3">
+        <SearchablePaginatedDropdown
+          label={showLabels ? t("production:raw_warehouse") : undefined}
+          data={warehouses.warehouseOptions}
+          selected={selWarehouse}
+          setSelected={(opt) => {
+            setValue(`rawLines.${index}.warehouseId`, opt?.id ?? "", { shouldValidate: true });
+            setValue(`rawLines.${index}.variantId`, "");
+            setValue(`rawLines.${index}.costPrice`, "");
+          }}
+          enableApiSearch
+          onApiSearch={(v) => warehouses.loadWarehouses(1, v)}
+          hasMore={warehouses.warehouseHasMore}
+          onLoadMore={() => {
+            if (warehouses.warehouseHasMore && !warehouses.warehouseLoading) {
+              warehouses.loadWarehouses(warehouses.warehousePage + 1, "");
+            }
+          }}
+          paginationLoading={warehouses.warehouseLoading}
+          loading={warehouses.warehouseLoading && warehouses.warehousePage === 1}
+          hideClear
+          classes="!h-[46px] !rounded-lg"
+          name={`rawLines.${index}.warehouseId`}
+          register={register}
+          errors={errors}
+          required
+        />
+      </div>
       <div className="sm:col-span-4">
         <SearchablePaginatedDropdown
           label={showLabels ? t("production:raw_material") : undefined}
@@ -446,15 +548,13 @@ function RawLineRow({ index, picker, watch, setValue, register, errors, showLabe
           onLoadMore={picker.onLoadMore}
           paginationLoading={picker.paginationLoading}
           loading={picker.loading}
-          placeholder={warehouseSelected ? t("production:select_raw_material") : t("production:select_raw_warehouse_first")}
+          placeholder={warehouseId ? t("production:select_raw_material") : t("production:select_raw_warehouse_first")}
           emptyMessage={t("production:no_raw_materials")}
           hideClear
-          disabled={!warehouseSelected}
+          disabled={!warehouseId}
           classes="!h-[46px] !rounded-lg"
           name={`rawLines.${index}.variantId`}
           register={register}
-          setValue={setValue}
-          trigger={trigger}
           errors={errors}
           required
         />
@@ -464,7 +564,7 @@ function RawLineRow({ index, picker, watch, setValue, register, errors, showLabe
           </p>
         )}
       </div>
-      <div className="sm:col-span-3">
+      <div className="sm:col-span-2">
         <FormInput
           label={showLabels ? t("production:per_unit_cost") : undefined}
           name={`rawLines.${index}.costPrice`}
@@ -476,7 +576,7 @@ function RawLineRow({ index, picker, watch, setValue, register, errors, showLabe
           inputClass="!h-[46px] !rounded-lg disabled:opacity-70 disabled:cursor-not-allowed"
         />
       </div>
-      <div className="sm:col-span-4">
+      <div className="sm:col-span-2">
         <FormInput
           label={showLabels ? t("production:actual_qty") : ""}
           name={`rawLines.${index}.quantity`}
@@ -484,10 +584,9 @@ function RawLineRow({ index, picker, watch, setValue, register, errors, showLabe
           register={register}
           errors={errors}
           placeholder="0"
-          min={0.01}
+          min={1}
           max={leftover != null ? leftover : undefined}
-          decimal
-          decimalPlaces={2}
+          inputClass="!h-[46px] !rounded-lg"
         />
       </div>
       <div className="sm:col-span-1 flex items-end justify-end pb-1">
@@ -517,7 +616,7 @@ function OtherCostRow({ index, register, errors, getValues, showLabels, canRemov
           errors={errors}
           placeholder={t("production:other_cost_label_placeholder")}
           pattern={/[a-zA-Z0-9\s.'-]/}
-          maxLength={150}
+          maxLength={100}
           validate={(v) => {
             const hasA = String(getValues(`otherCostLines.${index}.amount`) ?? "").trim() !== "";
             const hasL = String(v ?? "").trim() !== "";

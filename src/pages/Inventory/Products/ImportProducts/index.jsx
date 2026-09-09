@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -8,11 +8,12 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import ExportButton from "components/ExportButton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { createProductsBulk } from "store/slices/productSlice";
-import { fetchCategories, showCategories } from "store/slices/categorySlice";
+import { fetchCategories, showCategories, resetCategoryDropdown } from "store/slices/categorySlice";
 
-const { add_customer } = rafeeqi_role_ids;
+
+const { import_inventory_product } = alqadar_role_ids;
 
 const TEMPLATE_COLUMNS = [
   { label: "productName", key: "productName" },
@@ -22,8 +23,14 @@ const TEMPLATE_COLUMNS = [
 
 const ImportProducts = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(resetCategoryDropdown());
+    };
+  }, [dispatch]);
+
+  const navigate = useNavigate();
   const isRTL = i18n.language === "ar";
 
   const [rows, setRows] = useState([]);
@@ -36,7 +43,7 @@ const ImportProducts = () => {
     dispatch(fetchCategories({}));
   }, [dispatch]);
 
-  if (!checkRoleAuth(add_customer)) {
+  if (!checkRoleAuth(import_inventory_product)) {
     toast.error(t("product:not_authorized"));
     navigate("/inventory/products");
     return null;

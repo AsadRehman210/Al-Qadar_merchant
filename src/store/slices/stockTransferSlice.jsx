@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { erpUrls } from "global/config";
-import { erpGet, erpPost, isEmptyListResponse, buildQuery } from "api/erpClient";
+import { erpGet, erpPost, erpPut, erpDelete, isEmptyListResponse, buildQuery } from "api/erpClient";
 
 const initialState = {
   list: [],
@@ -39,6 +39,24 @@ export const createStockTransfer = createAsyncThunk(
   },
 );
 
+export const updateStockTransfer = createAsyncThunk(
+  "stockTransfer/update",
+  async ({ id, data }, { rejectWithValue }) => {
+    const response = await erpPut(`${erpUrls.stockTransfers}/${id}`, data);
+    if (!response?.success) return rejectWithValue(response?.message);
+    return response.result;
+  },
+);
+
+export const deleteStockTransfer = createAsyncThunk(
+  "stockTransfer/delete",
+  async (id, { rejectWithValue }) => {
+    const response = await erpDelete(`${erpUrls.stockTransfers}/${id}`);
+    if (!response?.success) return rejectWithValue(response?.message);
+    return { id, message: response.message };
+  },
+);
+
 // Moves the actual stock (subtract source / add destination) — server-side
 // guarded to only ever apply once per transfer.
 export const approveStockTransfer = createAsyncThunk(
@@ -63,6 +81,13 @@ const stockTransferSlice = createSlice({
   reducers: {
     clearCurrentStockTransfer: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearStockTransfersList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -81,19 +106,36 @@ const stockTransferSlice = createSlice({
         state.list = [];
         state.error = action.payload;
       })
+      .addCase(fetchStockTransferById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(fetchStockTransferById.fulfilled, (state, action) => {
+        state.loading = false;
         state.current = action.payload;
+      })
+      .addCase(fetchStockTransferById.rejected, (state, action) => {
+        state.loading = false;
+        state.current = null;
+        state.error = action.payload;
       })
       .addCase(createStockTransfer.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
+      })
+      .addCase(updateStockTransfer.fulfilled, (state, action) => upsertList(state, action.payload))
+      .addCase(deleteStockTransfer.fulfilled, (state, action) => {
+        state.list = state.list.filter((t) => t.id !== action.payload.id);
+        state.totalRecords = Math.max(0, (state.totalRecords || 0) - 1);
+        if (state.current?.id === action.payload.id) state.current = null;
       })
       .addCase(approveStockTransfer.fulfilled, (state, action) => upsertList(state, action.payload));
   },
 });
 
-export const { clearCurrentStockTransfer } = stockTransferSlice.actions;
+export const { clearCurrentStockTransfer, clearStockTransfersList } = stockTransferSlice.actions;
 export const showStockTransfers = (state) => state.stockTransfer.list;
 export const showStockTransfersTotal = (state) => state.stockTransfer.totalRecords;
 export const showStockTransfersLoading = (state) => state.stockTransfer.loading;
 export const showCurrentStockTransfer = (state) => state.stockTransfer.current;
+export const showCurrentStockTransferLoading = (state) => state.stockTransfer.loading;
 export default stockTransferSlice.reducer;

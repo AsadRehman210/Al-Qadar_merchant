@@ -7,10 +7,15 @@ import Calendar from "react-calendar";
 import dayjs from "dayjs";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
-import { fetchAttendance, showAttendanceList } from "store/slices/attendanceSlice";
-import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
+import { fetchAttendance, showAttendanceList, showAttendanceLoading } from "store/slices/attendanceSlice";
+import { fetchEmployees, showEmployees, showEmployeesLoading } from "store/slices/employeeSlice";
+import { SkeletonChart, SkeletonDetail } from "components/Skeleton";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import "react-calendar/dist/Calendar.css";
 import "./AttendanceDetail.css";
+
+const { view_attendance } = alqadar_role_ids;
 
 const STATUS_CONFIG = {
   Present: {
@@ -54,7 +59,9 @@ const AttendanceDetail = () => {
   const dateParam = searchParams.get("date");
 
   const employees = useSelector(showEmployees);
+  const employeesLoading = useSelector(showEmployeesLoading);
   const attendanceList = useSelector(showAttendanceList);
+  const attendanceLoading = useSelector(showAttendanceLoading);
 
   useEffect(() => {
     dispatch(fetchEmployees());
@@ -182,6 +189,9 @@ const AttendanceDetail = () => {
 
   const locale = i18n.language === "ar" ? "ar" : "en";
   const isRTL = i18n.language === "ar";
+  const pageLoading = (employeesLoading && !employees.length) || (attendanceLoading && !attendanceList.length);
+
+  if (!checkRoleAuth(view_attendance)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -205,6 +215,12 @@ const AttendanceDetail = () => {
           </div>
         </div>
 
+        {pageLoading ? (
+          <div className="space-y-6">
+            <SkeletonDetail fields={3} />
+            <SkeletonChart height={360} />
+          </div>
+        ) : (
         <div className="bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-8">
           {/* Filters */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6 flex-wrap">
@@ -274,6 +290,7 @@ const AttendanceDetail = () => {
             />
           </div>
         </div>
+        )}
       </div>
     </div>
   );

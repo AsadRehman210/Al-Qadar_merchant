@@ -13,7 +13,6 @@ const initialState = {
   dropdownOptions: [],
   dropdownPage: 1,
   dropdownHasMore: false,
-  dropdownLoading: false,
 };
 
 export const fetchVariants = createAsyncThunk(
@@ -84,6 +83,19 @@ const variantSlice = createSlice({
   reducers: {
     clearCurrentVariant: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearVariantsList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
+    },
+    resetVariantDropdown: (state) => {
+      state.dropdownOptions = [];
+      state.dropdownPage = 1;
+      state.dropdownHasMore = false;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
@@ -103,27 +115,27 @@ const variantSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchVariantById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchVariantById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchVariantById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(fetchVariantsDropdown.pending, (state) => {
-        state.dropdownLoading = true;
+        state.loading = true;
       })
       .addCase(fetchVariantsDropdown.fulfilled, (state, action) => {
-        state.dropdownLoading = false;
+        state.loading = false;
         const { result, page, total_pages } = action.payload;
         state.dropdownOptions = page === 1 ? result : [...state.dropdownOptions, ...result];
         state.dropdownPage = page;
         state.dropdownHasMore = page < total_pages;
       })
       .addCase(fetchVariantsDropdown.rejected, (state) => {
-        state.dropdownLoading = false;
+        state.loading = false;
       })
       .addCase(createVariant.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -139,14 +151,14 @@ const variantSlice = createSlice({
   },
 });
 
-export const { clearCurrentVariant } = variantSlice.actions;
+export const { clearCurrentVariant, clearVariantsList, resetVariantDropdown } = variantSlice.actions;
 export const showVariants = (state) => state.variant.list;
 export const showVariantsTotal = (state) => state.variant.totalRecords;
 export const showVariantsLoading = (state) => state.variant.loading;
 export const showCurrentVariant = (state) => state.variant.current;
-export const showCurrentVariantLoading = (state) => state.variant.currentLoading;
+export const showCurrentVariantLoading = (state) => state.variant.loading;
 export const showVariantDropdownOptions = (state) => state.variant.dropdownOptions;
 export const showVariantDropdownPage = (state) => state.variant.dropdownPage;
 export const showVariantDropdownHasMore = (state) => state.variant.dropdownHasMore;
-export const showVariantDropdownLoading = (state) => state.variant.dropdownLoading;
+export const showVariantDropdownLoading = (state) => state.variant.loading;
 export default variantSlice.reducer;

@@ -2,14 +2,14 @@ import { useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { fetchBankAccounts, showBankAccounts, showBankAccountsTotal, showBankAccountsLoading } from "store/slices/financeSlice";
 import FinancePage from "../FinancePage";
@@ -19,7 +19,7 @@ import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 import { useListFilters } from "hooks/useListFilters";
 
-const { view_customer, add_customer, edit_customer } = rafeeqi_role_ids;
+const { view_finance_bank, add_finance_bank, edit_finance_bank } = alqadar_role_ids;
 
 
 const BankCash = () => {
@@ -44,7 +44,7 @@ const BankCash = () => {
       title={t("finance:bank_title")}
       description={t("finance:bank_desc")}
       action={
-        checkRoleAuth(add_customer) ? (
+        checkRoleAuth(add_finance_bank) ? (
           <Button
             className="!w-auto !rounded-lg !h-11 !px-5 !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600"
             onClick={() => navigate("/finance/bank-cash/add")}
@@ -56,7 +56,7 @@ const BankCash = () => {
         ) : null
       }
     >
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_bank) && (
         <>
           <div className="mb-6 max-w-md">
             <SearchInput
@@ -109,7 +109,7 @@ const BankCash = () => {
                       </td>
                       <td className="px-4 py-4 align-middle pr-6">
                         <div className="flex items-center justify-end gap-3">
-                          {checkRoleAuth(view_customer) && (
+                          {checkRoleAuth(view_finance_bank) && (
                             <Link
                               to={`/finance/bank-cash/account/${row.id}`}
                               className="text-slate-500 hover:text-teal-600 inline-flex"
@@ -118,7 +118,7 @@ const BankCash = () => {
                               <IoEyeOutline className="h-4 w-4" />
                             </Link>
                           )}
-                          {checkRoleAuth(edit_customer) && (
+                          {checkRoleAuth(edit_finance_bank) && (
                             <Link
                               to={`/finance/bank-cash/edit/${row.id}`}
                               className="text-slate-500 hover:text-teal-600 inline-flex"
@@ -147,7 +147,7 @@ const BankCash = () => {
                 <span className="whitespace-nowrap">{t("per_page")}</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}

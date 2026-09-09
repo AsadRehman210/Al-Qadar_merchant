@@ -1,30 +1,54 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { SkeletonDetail } from "components/Skeleton";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { checkRoleAuth } from "global/helper";
 import { toast } from "react-toastify";
-import { DEFAULT_ADD_SUPPLIER_VALUES } from "../supplierFakeData";
-import { createSupplier, updateSupplier, fetchSupplierById } from "store/slices/supplierSlice";
+import {
+  supplierTypeOptions,
+  supplierStatusOptions,
+} from "global/constant";
+import {
+  createSupplier,
+  updateSupplier,
+  fetchSupplierById,
+  clearCurrentSupplier,
+  resetSupplierDropdown,
+  showCurrentSupplierLoading,
+} from "store/slices/supplierSlice";
 import SupplierForm from "./SupplierForm";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_purchase_supplier, edit_purchase_supplier } = alqadar_role_ids;
+
+const SKIP_EDIT_KEYS = ["id", "currentBalance", "openingBalanceLocked", "openingBalancePaid", "remainingOpeningBalance", "createdAt", "updatedAt"];
 
 const AddSupplier = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentSupplier());
+      dispatch(resetSupplierDropdown());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const { id } = useParams();
 
   const [existing, setExisting] = useState(null);
+  const loading = useSelector(showCurrentSupplierLoading);
 
   const methods = useForm({
     mode: "onChange",
-    defaultValues: DEFAULT_ADD_SUPPLIER_VALUES,
+    defaultValues: {
+      supplierType: supplierTypeOptions[0]?.id,
+      status: supplierStatusOptions[0]?.id,
+    },
   });
   const {
     handleSubmit,
@@ -39,7 +63,8 @@ const AddSupplier = () => {
         .then((row) => {
           if (!row) return;
           setExisting(row);
-          Object.keys(DEFAULT_ADD_SUPPLIER_VALUES).forEach((key) => {
+          Object.keys(row).forEach((key) => {
+            if (SKIP_EDIT_KEYS.includes(key)) return;
             if (row[key] != null && row[key] !== "") {
               // Native <input type="date"> only accepts "YYYY-MM-DD" — the
               // API returns a full ISO datetime for licenseExpiryDate.
@@ -53,22 +78,29 @@ const AddSupplier = () => {
   }, [id, setValue, dispatch]);
 
   useEffect(() => {
-    if (id && !checkRoleAuth(edit_customer)) {
+    if (id && !checkRoleAuth(edit_purchase_supplier)) {
       toast.error(t("suppliers:not_authorized"));
       navigate("/suppliers");
-    } else if (!id && !checkRoleAuth(add_customer)) {
+    } else if (!id && !checkRoleAuth(add_purchase_supplier)) {
       toast.error(t("suppliers:not_authorized"));
       navigate("/suppliers");
     }
   }, [id, navigate, t]);
 
   const onSubmit = async (data) => {
+    const payload = { ...data };
+    if (existing?.openingBalanceLocked) {
+      delete payload.openingBalance;
+    } else {
+      payload.openingBalance =
+        data.openingBalance === "" || data.openingBalance == null ? 0 : Number(data.openingBalance);
+    }
     try {
       if (id) {
-        const updated = await dispatch(updateSupplier({ id, data })).unwrap();
+        const updated = await dispatch(updateSupplier({ id, data: payload })).unwrap();
         toast.success(updated.message);
       } else {
-        const created = await dispatch(createSupplier(data)).unwrap();
+        const created = await dispatch(createSupplier(payload)).unwrap();
         toast.success(created.message);
       }
       navigate("/suppliers");
@@ -77,8 +109,16 @@ const AddSupplier = () => {
     }
   };
 
-  if (id && !checkRoleAuth(edit_customer)) return null;
-  if (!id && !checkRoleAuth(add_customer)) return null;
+  if (id && !checkRoleAuth(edit_purchase_supplier)) return null;
+  if (!id && !checkRoleAuth(add_purchase_supplier)) return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
 

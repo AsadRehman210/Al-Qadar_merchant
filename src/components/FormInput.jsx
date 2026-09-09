@@ -454,7 +454,15 @@ export default function FormInput({
           onPaste={handlePaste}
           max={max ?? null}
           min={min ?? null}
-          step={step || (decimal ? `0.${"0".repeat(Math.max(decimalPlaces - 1, 0))}1` : null)}
+          step={
+            step != null
+              ? step
+              : type === "number"
+                ? decimal
+                  ? `0.${"0".repeat(Math.max(decimalPlaces - 1, 0))}1`
+                  : 1
+                : undefined
+          }
           maxLength={maxLength || null}
           defaultValue={isControlled ? undefined : defaultValue || ""}
           value={

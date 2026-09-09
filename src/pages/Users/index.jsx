@@ -7,7 +7,7 @@ import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { IoAdd } from "react-icons/io5";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows, statusFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
@@ -18,7 +18,7 @@ import {
 } from "store/slices/userSlice";
 import UsersTable from "./UsersTable";
 
-const { add_user, view_user } = rafeeqi_role_ids;
+const { add_user, view_user } = alqadar_role_ids;
 
 const Users = () => {
   const { t } = useTranslation();
@@ -57,6 +57,8 @@ const Users = () => {
     () => Math.ceil((totalRecords || 0) / selRows.id) || 1,
     [totalRecords, selRows],
   );
+
+  if (!checkRoleAuth(view_user)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

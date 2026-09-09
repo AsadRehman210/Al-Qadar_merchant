@@ -11,20 +11,22 @@ import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
 import Datepicker from "components/Datepicker";
 import SelectDropdown from "components/SelectDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import Calender from "images/icons/calender.png";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchDepartmentById,
   createDepartment,
   updateDepartment,
   showCurrentDepartment,
+  showCurrentDepartmentLoading,
   clearCurrentDepartment,
 } from "store/slices/departmentSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { departmentStatusOptions } from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { add_department, edit_department } = alqadar_role_ids;
 
 const AddDepartment = () => {
   const { t, i18n } = useTranslation();
@@ -36,6 +38,7 @@ const AddDepartment = () => {
   const [selHod, setSelHod] = useState(null);
 
   const existing = useSelector(showCurrentDepartment);
+  const loading = useSelector(showCurrentDepartmentLoading);
   const employees = useSelector(showEmployees);
 
   // Only an active employee can be Head of Department — matches the
@@ -118,7 +121,15 @@ const AddDepartment = () => {
     }
   };
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (id ? !checkRoleAuth(edit_department) : !checkRoleAuth(add_department)) return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={7} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
   const maxEstablished = moment().format("DD-MM-YYYY");
@@ -171,7 +182,7 @@ const AddDepartment = () => {
               required
               pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
-              maxLength={150}
+              maxLength={100}
             />
             <SelectDropdown
               label={t("department:hod_name")}

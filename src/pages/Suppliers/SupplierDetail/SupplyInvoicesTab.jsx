@@ -2,15 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { FiX } from "react-icons/fi";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import Table from "components/Table";
 import { tableRows } from "global/constant";
-import { fetchSupplierInvoices, showSupplierInvoices, showSupplierInvoicesTotal } from "store/slices/supplierSlice";
+import { fetchSupplierInvoices, showSupplierInvoices, showSupplierInvoicesTotal, showSupplierTabLoading } from "store/slices/supplierSlice";
 import { DateRangePicker } from "components/DateRangePicker";
+import TableState from "components/TableState";
 
 const toIsoDate = (d) => (d ? new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0, 10) : undefined);
 
@@ -20,6 +21,7 @@ const SupplyInvoicesTab = ({ supplier }) => {
   const dispatch = useDispatch();
   const invoices = useSelector(showSupplierInvoices);
   const total = useSelector(showSupplierInvoicesTotal);
+  const loading = useSelector(showSupplierTabLoading);
   const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
   const [page, setPage] = useState(1);
@@ -121,8 +123,8 @@ const SupplyInvoicesTab = ({ supplier }) => {
             </tr>
           </thead>
           <tbody>
-            {invoices.length > 0 ? (
-              invoices.map((inv) => {
+            <TableState loading={loading} data={invoices} colSpan={6}>
+              {invoices.map((inv) => {
                 const status = inv.paymentStatus === "Cleared" ? "Paid" : inv.paymentStatus || "Pending";
                 const returned = Number(inv.debitedAmount) || 0;
                 const net = (Number(inv.total) || 0) - returned;
@@ -160,17 +162,8 @@ const SupplyInvoicesTab = ({ supplier }) => {
                     </td>
                   </tr>
                 );
-              })
-            ) : (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-4 py-8 text-center text-slate-500 dark:text-white/60"
-                >
-                  {t("no_record_found")}
-                </td>
-              </tr>
-            )}
+              })}
+            </TableState>
           </tbody>
         </table>
       </Table>
@@ -187,7 +180,7 @@ const SupplyInvoicesTab = ({ supplier }) => {
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

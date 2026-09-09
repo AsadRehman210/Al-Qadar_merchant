@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useNavigate, useSearchParams } from "react-router";
@@ -11,38 +11,18 @@ import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
-import {
-  fetchSalesCustomersDropdown,
-  showSalesCustomerDropdownOptions,
-  showSalesCustomerDropdownPage,
-  showSalesCustomerDropdownHasMore,
-  showSalesCustomerDropdownLoading,
-} from "store/slices/salesCustomerSlice";
-import {
-  fetchSaleInvoicesDropdown,
-  showSaleInvoiceDropdownOptions,
-  showSaleInvoiceDropdownPage,
-  showSaleInvoiceDropdownHasMore,
-  showSaleInvoiceDropdownLoading,
-} from "store/slices/saleInvoiceSlice";
-import {
-  createCreditNote,
-  fetchReturnableLines,
-  clearReturnableLines,
-  showReturnableInvoice,
-  showReturnableLines,
-  showReturnableLoading,
-} from "store/slices/creditNoteSlice";
+import { fetchSalesCustomersDropdown, showSalesCustomerDropdownOptions, showSalesCustomerDropdownPage, showSalesCustomerDropdownHasMore, showSalesCustomerDropdownLoading, resetSalesCustomerDropdown } from "store/slices/salesCustomerSlice";
+import { fetchSaleInvoicesDropdown, showSaleInvoiceDropdownOptions, showSaleInvoiceDropdownPage, showSaleInvoiceDropdownHasMore, showSaleInvoiceDropdownLoading, resetSaleInvoiceDropdown } from "store/slices/saleInvoiceSlice";
+import { createCreditNote, fetchReturnableLines, clearReturnableLines, showReturnableInvoice, showReturnableLines, showReturnableLoading, clearCurrentCreditNote } from "store/slices/creditNoteSlice";
 import { SkeletonTable } from "components/Skeleton";
 import {
   creditNoteReasonOptions,
   salesReturnTypeOptions,
 } from "global/constant";
-import { effectiveLineTaxPercent } from "global/helper";
+import { effectiveLineTaxPercent, checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 
-const CN_REASONS = creditNoteReasonOptions.map((o) => o.id);
-
-// Only these reasons put the returned goods back on the shelf — mirrors
+const { add_sales_credit_note } = alqadar_role_ids;
 // RESTOCK_REASONS in credit-note-service.ts exactly, so the hint shown here
 // never disagrees with what Applying the credit note will actually do.
 // "Wrong entry" is billing-only (nothing physical moved); Damaged/Expired/Other
@@ -86,6 +66,15 @@ const AddCreditNote = () => {
   const [searchParams]  = useSearchParams();
   const isRTL           = i18n.language === "ar";
 
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentCreditNote());
+      dispatch(clearReturnableLines());
+      dispatch(resetSaleInvoiceDropdown());
+      dispatch(resetSalesCustomerDropdown());
+    };
+  }, [dispatch]);
+
   const prefillInvoiceId = searchParams.get("invoiceId") || "";
 
   const { register, handleSubmit, control, watch, setValue, getValues, formState: { errors } } = useForm({
@@ -95,7 +84,7 @@ const AddCreditNote = () => {
       customerId: "",
       originalInvoiceId: prefillInvoiceId,
       warehouseId: "",
-      reason: CN_REASONS[0],
+      reason: creditNoteReasonOptions[0].id,
       returnType: salesReturnTypeOptions[0].id,
       taxPercent: 0,
       discount: 0,
@@ -197,7 +186,7 @@ const AddCreditNote = () => {
     }
   };
 
-  const selReason = { id: watch("reason"), title: watch("reason") };
+  const selReason = creditNoteReasonOptions.find((o) => o.id === watch("reason")) || creditNoteReasonOptions[0];
   const reasonOpts = creditNoteReasonOptions;
   const selReturnType =
     salesReturnTypeOptions.find((o) => o.id === returnType) || salesReturnTypeOptions[0];
@@ -252,6 +241,8 @@ const AddCreditNote = () => {
 
   const panelCls = "bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-rose-400";
 
+  if (!checkRoleAuth(add_sales_credit_note)) return null;
+
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
       <div className="hidden dark:block absolute inset-0 bg-slate-900 z-0 overflow-hidden" />
@@ -299,7 +290,7 @@ const AddCreditNote = () => {
                 />
               </div>
               <div>
-                <SelectDropdown label={t("sales:reason")} data={reasonOpts} selected={selReason} setSelected={(o) => setValue("reason", o?.id || CN_REASONS[0])} hideClear />
+                <SelectDropdown label={t("sales:reason")} data={reasonOpts} selected={selReason} setSelected={(o) => setValue("reason", o?.id || creditNoteReasonOptions[0].id)} hideClear />
                 <p className={`mt-1 text-xs ${willRestock ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
                   {willRestock
                     ? t("sales:restock_hint_yes")
@@ -387,8 +378,6 @@ const AddCreditNote = () => {
                               type="number"
                               min={0}
                               max={maxQty}
-                              decimal
-                              decimalPlaces={3}
                               disabled={returnType === "Full return" || maxQty === 0}
                               register={register}
                               errors={errors}

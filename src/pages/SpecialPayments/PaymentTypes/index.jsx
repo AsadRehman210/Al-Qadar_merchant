@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -9,25 +9,26 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import { useForm } from "react-hook-form";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchSpTypes,
   showSpTypes,
+  showSpTypesLoading,
   createSpType,
   updateSpType,
   deleteSpType,
   fetchSpecialPayments,
   showSpecialPayments,
 } from "store/slices/payrollBatchSlice";
-import { specialPaymentModeOptions } from "global/constant";
+import { SkeletonList } from "components/Skeleton";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_special_payment_type, add_special_payment_type, edit_special_payment_type, delete_special_payment_type } = alqadar_role_ids;
 
-const MODE_HINTS = {
-  fixed: "Every employee gets the same fixed SAR amount",
-  pct_basic: "Calculated as percentage of each employee's basic salary",
-  pct_gross: "Calculated as percentage of each employee's total gross earnings",
-};
+const AMOUNT_MODES = [
+  { id: "fixed",     label: "Fixed Amount (SAR)",       hint: "Every employee gets the same fixed SAR amount" },
+  { id: "pct_basic", label: "% of Basic Salary",        hint: "Calculated as percentage of each employee's basic salary" },
+  { id: "pct_gross", label: "% of Gross Salary",        hint: "Calculated as percentage of each employee's total gross earnings" },
+];
 
 const EMOJI_PRESETS = ["🌙", "🐑", "✨", "🏆", "🎯", "🤝", "💰", "🎁", "⭐", "🎉", "💎", "🙌"];
 
@@ -107,13 +108,13 @@ const TypeForm = ({ initial, onSave, onCancel, t }) => {
       <div>
         <label className="text-sm font-medium text-linkText mb-2 block">{t("payroll:sp_amount_mode")} *</label>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {specialPaymentModeOptions.map((m) => (
+          {AMOUNT_MODES.map((m) => (
             <label key={m.id}
               className={`flex items-start gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all ${watchedMode === m.id ? "border-teal-400 bg-teal-50 dark:bg-teal-500/10" : "border-slate-200 dark:border-white/10 hover:border-teal-200"}`}>
               <input type="radio" value={m.id} {...register("amountMode", { required: true })} className="mt-0.5 accent-teal-500" />
               <div>
-                <p className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">{m.title}</p>
-                <p className="text-xs text-slate-500 dark:text-white/60 mt-0.5">{MODE_HINTS[m.id]}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">{m.label}</p>
+                <p className="text-xs text-slate-500 dark:text-white/60 mt-0.5">{m.hint}</p>
               </div>
             </label>
           ))}
@@ -157,6 +158,7 @@ const PaymentTypes = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const types = useSelector(showSpTypes);
+  const typesLoading = useSelector(showSpTypesLoading);
   const allPayments = useSelector(showSpecialPayments);
 
   useEffect(() => {
@@ -194,7 +196,7 @@ const PaymentTypes = () => {
     }
   };
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (!checkRoleAuth(view_special_payment_type)) return null;
 
   return (
     <div className="relative min-h-[60vh]">
@@ -210,7 +212,7 @@ const PaymentTypes = () => {
             <h1 className="text-3xl font-bold">{t("payroll:sp_manage_types")}</h1>
             <p className="text-mutedForeground mt-0.5">{t("payroll:sp_manage_types_desc")}</p>
           </div>
-          {!showAdd && (
+          {!showAdd && checkRoleAuth(add_special_payment_type) && (
             <Button type="button" title={t("payroll:sp_add_type")} icon={IoAdd} iconClass="h-5 w-5 text-white"
               onClick={() => { setShowAdd(true); setEditId(null); }}
               className="!w-auto !rounded-md !h-11 !px-5 !border-0 !text-white !bg-teal-500 hover:!bg-teal-600" />
@@ -224,7 +226,7 @@ const PaymentTypes = () => {
         </div>
 
         {/* Add form */}
-        {showAdd && (
+        {showAdd && checkRoleAuth(add_special_payment_type) && (
           <TypeForm t={t} onSave={handleAdd} onCancel={() => setShowAdd(false)} />
         )}
 
@@ -234,14 +236,15 @@ const PaymentTypes = () => {
             {t("payroll:sp_type_list")} <span className="text-sm font-normal text-slate-400">({types.length})</span>
           </h2>
 
-          {types.length === 0 && (
+          {typesLoading ? (
+            <SkeletonList rows={4} />
+          ) : types.length === 0 ? (
             <div className="text-center py-12 text-slate-400">
               <p className="text-4xl mb-2">💰</p>
               <p className="font-medium">{t("payroll:sp_no_types")}</p>
               <p className="text-sm mt-1">{t("payroll:sp_no_types_hint")}</p>
             </div>
-          )}
-
+          ) : (
           <div className="space-y-3">
             {types.map((type) => {
               const usage = usageCount(type.id);
@@ -249,11 +252,11 @@ const PaymentTypes = () => {
               const isDeleteConfirm = deleteConfirmId === type.id;
 
               if (isEditing) {
-                return (
+                return checkRoleAuth(edit_special_payment_type) ? (
                   <TypeForm key={type.id} t={t} initial={type}
                     onSave={(data) => handleEdit(type.id, data)}
                     onCancel={() => setEditId(null)} />
-                );
+                ) : null;
               }
 
               return (
@@ -278,7 +281,7 @@ const PaymentTypes = () => {
                       {modeLabel(type.amountMode, type.amountValue)}
                     </span>
                     <p className="text-xs text-slate-400 mt-1">
-                      {specialPaymentModeOptions.find((m) => m.id === type.amountMode)?.title}
+                      {AMOUNT_MODES.find((m) => m.id === type.amountMode)?.label}
                     </p>
                   </div>
 
@@ -304,18 +307,22 @@ const PaymentTypes = () => {
                       </div>
                     ) : (
                       <>
-                        <button type="button"
-                          onClick={() => { setEditId(type.id); setShowAdd(false); }}
-                          className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-teal-100 dark:hover:bg-teal-500/20 text-slate-500 hover:text-teal-600 transition-colors">
-                          <FiEdit2 className="h-3.5 w-3.5" />
-                        </button>
-                        <button type="button"
-                          disabled={usage > 0}
-                          onClick={() => setDeleteConfirmId(type.id)}
-                          title={usage > 0 ? t("payroll:sp_type_in_use_warning") : t("payroll:sp_delete_type")}
-                          className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 text-slate-500 hover:text-rose-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                          <FiTrash2 className="h-3.5 w-3.5" />
-                        </button>
+                        {checkRoleAuth(edit_special_payment_type) && (
+                          <button type="button"
+                            onClick={() => { setEditId(type.id); setShowAdd(false); }}
+                            className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-teal-100 dark:hover:bg-teal-500/20 text-slate-500 hover:text-teal-600 transition-colors">
+                            <FiEdit2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {checkRoleAuth(delete_special_payment_type) && (
+                          <button type="button"
+                            disabled={usage > 0}
+                            onClick={() => setDeleteConfirmId(type.id)}
+                            title={usage > 0 ? t("payroll:sp_type_in_use_warning") : t("payroll:sp_delete_type")}
+                            className="h-8 w-8 flex items-center justify-center rounded-xl hover:bg-rose-100 dark:hover:bg-rose-500/20 text-slate-500 hover:text-rose-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                            <FiTrash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
@@ -323,6 +330,7 @@ const PaymentTypes = () => {
               );
             })}
           </div>
+          )}
         </div>
       </div>
     </div>

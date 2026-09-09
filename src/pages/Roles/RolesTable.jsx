@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
 import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { toast } from "react-toastify";
 import SelectDropdown from "components/SelectDropdown";
@@ -12,10 +12,10 @@ import Table from "components/Table";
 import ActionPopup from "components/ActionPopup";
 import { tableRows } from "global/constant";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { deleteRole } from "store/slices/roleSlice";
 
-const { edit_role, delete_role } = rafeeqi_role_ids;
+const { edit_role, delete_role } = alqadar_role_ids;
 
 const RolesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, totalPages, onChanged }) => {
   const { t } = useTranslation();
@@ -124,7 +124,7 @@ const RolesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

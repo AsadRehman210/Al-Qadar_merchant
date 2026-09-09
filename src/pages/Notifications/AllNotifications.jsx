@@ -9,7 +9,7 @@ import {
 import { showUserData } from "store/slices/uniqueSlice";
 import Card from "components/Card";
 import moment from "moment";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleRight, FaAngleLeft } from "react-icons/fa";
 import Button from "components/Button";
 import DataState from "components/DataState";
@@ -83,7 +83,7 @@ const AllNotifications = () => {
 
       <div className="flex items-center">
         <div className="pagination mt-7 mr-6 ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

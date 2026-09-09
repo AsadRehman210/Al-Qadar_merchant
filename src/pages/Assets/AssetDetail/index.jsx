@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -12,13 +12,12 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth, toDateInput } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   assetMaintenanceTypeOptions,
   assetMaintenanceStatusOptions,
   assetDisposalMethodOptions,
   assetDocumentTypeOptions,
-  assetStatusBadge,
 } from "global/constant";
 import {
   fetchAssetById,
@@ -32,20 +31,24 @@ import {
   disposeAsset,
   showCurrentAsset,
   showCurrentAssetLoading,
+  clearCurrentAsset,
 } from "store/slices/assetSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
-import { fetchJournalEntryById, showCurrentJournalEntry } from "store/slices/financeSlice";
+import { fetchJournalEntryById, showCurrentJournalEntry, clearCurrentJournalEntry } from "store/slices/financeSlice";
 import { SkeletonDetail, SkeletonTable } from "components/Skeleton";
 
-const { edit_customer } = rafeeqi_role_ids;
+const { edit_asset } = alqadar_role_ids;
 
 const TAB_CLASS = "whitespace-nowrap cursor-pointer py-3 px-5 rounded-lg h-11 flex items-center gap-1.5 font-medium text-sm text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:text-white hover:text-teal-700 hover:bg-teal-500/10 dark:hover:text-white dark:hover:bg-teal-500/20";
 
 const fmt = (n, currency = "SAR") => `${currency} ${(parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtN = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const fmtDate = (v) => (v ? String(v).slice(0, 10) : "—");
+const fmtDate = (v) => (v ? String(v).slice(0, 10) : "�");
 
-const statusClass = (s) => assetStatusBadge[s] || assetStatusBadge["In use"];
+const statusClass = (s) => {
+  const m = { "In use": "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300", "In storage": "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300", Maintenance: "bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200", Disposed: "bg-slate-200 text-slate-700 dark:bg-white/15 dark:text-white/70" };
+  return m[s] || m["In use"];
+};
 
 const isExpiringSoon = (dateStr) => {
   if (!dateStr) return false;
@@ -53,7 +56,7 @@ const isExpiringSoon = (dateStr) => {
   return days <= 60;
 };
 
-// Mirrors the server's calcBookValueAt (asset-service.ts) exactly — a pure
+// Mirrors the server's calcBookValueAt (asset-service.ts) exactly � a pure
 // display computation, no backend round-trip needed for the schedule view.
 const calcDepreciationSchedule = (asset) => {
   const cost = parseFloat(asset.purchaseCost) || parseFloat(asset.currentValue) || 0;
@@ -104,7 +107,10 @@ const calcCurrentBookValue = (asset) => {
   return lastRow ? lastRow.bookValue : (schedule[schedule.length - 1]?.bookValue ?? 0);
 };
 
-const DOC_TYPES = assetDocumentTypeOptions.map((o) => o.id);
+const MAINT_TYPE_OPTS = assetMaintenanceTypeOptions;
+const MAINT_STATUS_OPTS = assetMaintenanceStatusOptions;
+const DISPOSAL_METHOD_OPTS = assetDisposalMethodOptions;
+const DOC_TYPE_OPTS = assetDocumentTypeOptions;
 
 const AssetDetail = () => {
   const { t, i18n } = useTranslation();
@@ -125,6 +131,10 @@ const AssetDetail = () => {
 
   useEffect(() => {
     if (id) dispatch(fetchAssetById(id));
+    return () => {
+      dispatch(clearCurrentAsset());
+      dispatch(clearCurrentJournalEntry());
+    };
   }, [dispatch, id]);
   useEffect(() => {
     dispatch(fetchEmployees({ limit: 500 }));
@@ -158,9 +168,9 @@ const AssetDetail = () => {
   const [showTransferForm, setShowTransferForm] = useState(false);
   const [transfer, setTransfer] = useState({ location: "", date: new Date().toISOString().slice(0, 10), notes: "" });
 
-  // Document form state (URL-based — no file-storage backend exists yet)
+  // Document form state (URL-based � no file-storage backend exists yet)
   const [showDocForm, setShowDocForm] = useState(false);
-  const [docType, setDocType] = useState(DOC_TYPES[0]);
+  const [docType, setDocType] = useState(DOC_TYPE_OPTS[0].id);
   const [docName, setDocName] = useState("");
   const [docUrl, setDocUrl] = useState("");
 
@@ -307,7 +317,7 @@ const AssetDetail = () => {
     try {
       await dispatch(addAssetDocument({ id, data: { name, docType, url: url || undefined } })).unwrap();
       toast.success(t("asset:document_added"));
-      setShowDocForm(false); setDocName(""); setDocUrl(""); setDocType(DOC_TYPES[0]);
+      setShowDocForm(false); setDocName(""); setDocUrl(""); setDocType(DOC_TYPE_OPTS[0].id);
     } catch (message) { toast.error(message || t("asset:action_failed")); }
   };
   const handleRemoveDocument = async (docId) => {
@@ -354,11 +364,11 @@ const AssetDetail = () => {
               <h1 className="text-3xl font-bold">{asset.name}</h1>
               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClass(asset.status)}`}>{asset.status}</span>
             </div>
-            <p className="text-mutedForeground text-sm mt-1 font-mono">{asset.assetTag} · {asset.categoryName || "—"}</p>
+            <p className="text-mutedForeground text-sm mt-1 font-mono">{asset.assetTag} � {asset.categoryName || "�"}</p>
           </div>
           <Button title={t("asset:print_tag")} icon={FiPrinter} type="button" onClick={openTagModal}
             className="!w-auto !rounded-md !h-11 !px-5 !bg-white dark:!bg-white/10 !text-slate-700 dark:!text-white !border !border-slate-200 dark:!border-white/20" />
-          {checkRoleAuth(edit_customer) && asset.status !== "Disposed" && (
+          {checkRoleAuth(edit_asset) && asset.status !== "Disposed" && (
             <Button title={t("edit")} icon={FaRegEdit} type="button" onClick={() => navigate(`/assets/edit/${asset.id}`)}
               className="!w-auto !rounded-md !h-11 !px-5 !border-0 !text-white !bg-teal-500" />
           )}
@@ -370,7 +380,7 @@ const AssetDetail = () => {
               {qrDataUrl ? (
                 <img src={qrDataUrl} alt="QR" className="mx-auto h-[200px] w-[200px]" />
               ) : (
-                <div className="h-[200px] w-[200px] mx-auto flex items-center justify-center text-slate-400 text-sm">…</div>
+                <div className="h-[200px] w-[200px] mx-auto flex items-center justify-center text-slate-400 text-sm">�</div>
               )}
               <h3 className="font-bold text-slate-800 dark:text-white mt-4">{asset.name}</h3>
               <p className="font-mono text-sm text-slate-500 dark:text-white/60">{asset.assetTag}</p>
@@ -413,22 +423,22 @@ const AssetDetail = () => {
           </div>
 
           <TabPanels>
-            {/* ── OVERVIEW ── */}
+            {/* -- OVERVIEW -- */}
             <TabPanel>
               <div className={panelCls}>
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-6">{t("asset:asset_detail")}</h2>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-5 text-sm">
                   {[
-                    { label: t("asset:category"),        value: asset.categoryName || "—" },
-                    { label: t("asset:serial_number"),   value: asset.serialNumber || "—" },
-                    { label: t("asset:location"),        value: asset.location || "—" },
+                    { label: t("asset:category"),        value: asset.categoryName || "�" },
+                    { label: t("asset:serial_number"),   value: asset.serialNumber || "�" },
+                    { label: t("asset:location"),        value: asset.location || "�" },
                     { label: t("asset:purchase_date"),   value: fmtDate(asset.purchaseDate) },
                     { label: t("asset:purchase_cost"),   value: fmt(purchaseCost, asset.currency) },
                     { label: t("asset:current_value"),   value: fmt(asset.currentValue, asset.currency) },
                     { label: t("asset:book_value"),      value: fmt(bookValue, asset.currency) },
                     { label: t("asset:warranty_until"),  value: fmtDate(asset.warrantyUntil) },
                     { label: t("asset:depr_method"),     value: asset.depreciationMethod === "straight_line" ? t("asset:straight_line") : t("asset:declining_balance") },
-                    { label: t("asset:useful_life"),     value: asset.usefulLifeYears ? `${asset.usefulLifeYears} ${t("asset:years")}` : "—" },
+                    { label: t("asset:useful_life"),     value: asset.usefulLifeYears ? `${asset.usefulLifeYears} ${t("asset:years")}` : "�" },
                     { label: t("asset:salvage_value"),   value: fmt(asset.salvageValue, asset.currency) },
                     { label: t("asset:currency"),        value: asset.currency || "SAR" },
                   ].map((f) => (
@@ -451,7 +461,7 @@ const AssetDetail = () => {
                     <h3 className="flex items-center gap-2 font-semibold text-slate-700 dark:text-white/90">
                       <FiMapPin className="h-4 w-4" /> {t("asset:location_history")}
                     </h3>
-                    {asset.status !== "Disposed" && checkRoleAuth(edit_customer) && !showTransferForm && (
+                    {asset.status !== "Disposed" && checkRoleAuth(edit_asset) && !showTransferForm && (
                       <button type="button" onClick={openTransferForm}
                         className="px-4 py-2 rounded-xl bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600">
                         {t("asset:transfer_location")}
@@ -471,7 +481,7 @@ const AssetDetail = () => {
                           onValueChange={(v) => setTransfer((p) => ({ ...p, location: v }))}
                           inputClass="!h-9 !rounded-lg"
                           pattern={/[a-zA-Z0-9\s.'-]/}
-                          maxLength={150}
+                          maxLength={100}
                         />
                         <FormInput
                           label={t("asset:transfer_date")}
@@ -512,7 +522,7 @@ const AssetDetail = () => {
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-slate-800 dark:text-white/90">{h.location}</p>
                             <p className="text-xs text-slate-400 dark:text-white/40">
-                              {fmtDate(h.date)}{h.notes ? ` · ${h.notes}` : ""}
+                              {fmtDate(h.date)}{h.notes ? ` � ${h.notes}` : ""}
                             </p>
                           </div>
                         </div>
@@ -523,7 +533,7 @@ const AssetDetail = () => {
               </div>
             </TabPanel>
 
-            {/* ── DEPRECIATION ── */}
+            {/* -- DEPRECIATION -- */}
             <TabPanel>
               <div className={panelCls}>
                 <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
@@ -531,7 +541,7 @@ const AssetDetail = () => {
                     <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t("asset:depreciation_schedule")}</h2>
                     <p className="text-sm text-slate-500 dark:text-white/60 mt-0.5">
                       {asset.depreciationMethod === "straight_line" ? t("asset:straight_line") : t("asset:declining_balance")}
-                      {" · "}{asset.usefulLifeYears} {t("asset:years")}{" · "}
+                      {" � "}{asset.usefulLifeYears} {t("asset:years")}{" � "}
                       {t("asset:salvage_value")}: {fmt(asset.salvageValue, asset.currency)}
                     </p>
                   </div>
@@ -592,7 +602,7 @@ const AssetDetail = () => {
               </div>
             </TabPanel>
 
-            {/* ── ASSIGNMENTS ── */}
+            {/* -- ASSIGNMENTS -- */}
             <TabPanel>
               <div className={panelCls}>
                 <div className="flex items-center justify-between mb-5">
@@ -715,7 +725,7 @@ const AssetDetail = () => {
                       <tbody>
                         {asset.assignmentHistory.map((h) => (
                           <tr key={h.id} className="border-t border-slate-100 dark:border-white/5">
-                            <td className="px-4 py-2.5 font-medium">{h.employeeName || "—"}</td>
+                            <td className="px-4 py-2.5 font-medium">{h.employeeName || "�"}</td>
                             <td className="px-4 py-2.5 text-xs">{fmtDate(h.assignedDate)}</td>
                             <td className="px-4 py-2.5 text-xs">{h.returnDate ? fmtDate(h.returnDate) : <span className="text-teal-500 font-medium">Active</span>}</td>
                             <td className="px-4 py-2.5 text-xs text-slate-500">{h.notes || "-"}</td>
@@ -728,7 +738,7 @@ const AssetDetail = () => {
               </div>
             </TabPanel>
 
-            {/* ── MAINTENANCE ── */}
+            {/* -- MAINTENANCE -- */}
             <TabPanel>
               <div className={panelCls}>
                 <div className="flex items-center justify-between mb-5">
@@ -766,18 +776,18 @@ const AssetDetail = () => {
                       <SelectDropdown
                         label={t("asset:maint_type")}
                         labelClass="!text-xs"
-                        data={assetMaintenanceTypeOptions}
-                        selected={assetMaintenanceTypeOptions.find((o) => o.id === maint.type) || assetMaintenanceTypeOptions[0]}
-                        setSelected={(opt) => setMaint((p) => ({ ...p, type: opt?.id ?? assetMaintenanceTypeOptions[0].id }))}
+                        data={MAINT_TYPE_OPTS}
+                        selected={{ id: maint.type, title: maint.type }}
+                        setSelected={(opt) => setMaint((p) => ({ ...p, type: opt?.id ?? MAINT_TYPE_OPTS[0].id }))}
                         hideClear
                         classes="!h-9 !rounded-lg"
                       />
                       <SelectDropdown
                         label={t("asset:maint_status")}
                         labelClass="!text-xs"
-                        data={assetMaintenanceStatusOptions}
-                        selected={assetMaintenanceStatusOptions.find((o) => o.id === maint.status) || assetMaintenanceStatusOptions[0]}
-                        setSelected={(opt) => setMaint((p) => ({ ...p, status: opt?.id ?? assetMaintenanceStatusOptions[0].id }))}
+                        data={MAINT_STATUS_OPTS}
+                        selected={{ id: maint.status, title: maint.status }}
+                        setSelected={(opt) => setMaint((p) => ({ ...p, status: opt?.id ?? MAINT_STATUS_OPTS[0].id }))}
                         hideClear
                         classes="!h-9 !rounded-lg"
                       />
@@ -813,7 +823,7 @@ const AssetDetail = () => {
                         <div className="flex flex-wrap items-start justify-between gap-2">
                           <div>
                             <p className="font-semibold text-slate-800 dark:text-white">{r.description}</p>
-                            <p className="text-xs text-slate-500 mt-0.5">{fmtDate(r.date)} · {r.vendor || "-"}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">{fmtDate(r.date)} � {r.vendor || "-"}</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${r.type === "Breakdown" ? "bg-rose-100 text-rose-700" : r.type === "Scheduled" ? "bg-teal-100 text-teal-700" : "bg-blue-100 text-blue-700"}`}>{r.type}</span>
@@ -831,7 +841,7 @@ const AssetDetail = () => {
               </div>
             </TabPanel>
 
-            {/* ── INSURANCE ── */}
+            {/* -- INSURANCE -- */}
             <TabPanel>
               <div className={panelCls}>
                 <div className="flex items-center justify-between mb-5">
@@ -906,7 +916,7 @@ const AssetDetail = () => {
                       return (
                         <div key={f.label} className={`p-4 rounded-xl border ${expiring ? "border-amber-300 bg-amber-50 dark:bg-amber-500/10" : "border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5"}`}>
                           <p className="text-xs text-slate-500 dark:text-white/60">{f.label}</p>
-                          <p className="font-semibold text-slate-800 dark:text-white mt-0.5">{f.value || "—"}</p>
+                          <p className="font-semibold text-slate-800 dark:text-white mt-0.5">{f.value || "�"}</p>
                           {expiring && <p className="text-xs text-amber-600 font-medium mt-0.5 flex items-center gap-1"><FiAlertTriangle className="h-3 w-3" /> {t("asset:expiring_soon")}</p>}
                         </div>
                       );
@@ -922,7 +932,7 @@ const AssetDetail = () => {
               </div>
             </TabPanel>
 
-            {/* ── DOCUMENTS ── */}
+            {/* -- DOCUMENTS -- */}
             <TabPanel>
               <div className={panelCls}>
                 <div className="flex items-center justify-between mb-1">
@@ -940,9 +950,9 @@ const AssetDetail = () => {
                       <SelectDropdown
                         label={t("asset:document_type")}
                         labelClass="!text-xs"
-                        data={assetDocumentTypeOptions}
-                        selected={assetDocumentTypeOptions.find((o) => o.id === docType) || assetDocumentTypeOptions[0]}
-                        setSelected={(opt) => setDocType(opt?.id ?? DOC_TYPES[0])}
+                        data={DOC_TYPE_OPTS}
+                        selected={{ id: docType, title: docType }}
+                        setSelected={(opt) => setDocType(opt?.id ?? DOC_TYPE_OPTS[0].id)}
                         hideClear
                         classes="!h-9 !rounded-lg"
                       />
@@ -954,7 +964,7 @@ const AssetDetail = () => {
                         onValueChange={setDocName}
                         inputClass="!h-9 !rounded-lg"
                         pattern={/[a-zA-Z0-9\s.'-]/}
-                        maxLength={150}
+                        maxLength={100}
                       />
                       <FormInput
                         wrapperClass="sm:col-span-2"
@@ -992,7 +1002,7 @@ const AssetDetail = () => {
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-slate-800 dark:text-white/90 truncate">{d.name}</p>
                             <p className="text-xs text-slate-400 dark:text-white/40">
-                              {d.docType} · {t("asset:uploaded_on")} {fmtDate(d.uploadedAt)}
+                              {d.docType} � {t("asset:uploaded_on")} {fmtDate(d.uploadedAt)}
                             </p>
                           </div>
                         </div>
@@ -1015,7 +1025,7 @@ const AssetDetail = () => {
               </div>
             </TabPanel>
 
-            {/* ── DISPOSAL ── */}
+            {/* -- DISPOSAL -- */}
             <TabPanel>
               <div className={panelCls}>
                 <div className="flex items-center justify-between mb-5">
@@ -1054,9 +1064,9 @@ const AssetDetail = () => {
                       <SelectDropdown
                         label={t("asset:disposal_method")}
                         labelClass="!text-xs"
-                        data={assetDisposalMethodOptions}
-                        selected={assetDisposalMethodOptions.find((o) => o.id === disp.method) || assetDisposalMethodOptions[0]}
-                        setSelected={(opt) => setDisp((p) => ({ ...p, method: opt?.id ?? assetDisposalMethodOptions[0].id }))}
+                        data={DISPOSAL_METHOD_OPTS}
+                        selected={{ id: disp.method, title: disp.method }}
+                        setSelected={(opt) => setDisp((p) => ({ ...p, method: opt?.id ?? DISPOSAL_METHOD_OPTS[0].id }))}
                         hideClear
                         classes="!h-9 !rounded-lg"
                       />
@@ -1090,7 +1100,7 @@ const AssetDetail = () => {
                       ].map((f) => (
                         <div key={f.label} className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
                           <p className="text-xs text-slate-500">{f.label}</p>
-                          <p className="font-semibold text-slate-800 dark:text-white mt-0.5">{f.value || "—"}</p>
+                          <p className="font-semibold text-slate-800 dark:text-white mt-0.5">{f.value || "�"}</p>
                         </div>
                       ))}
                     </div>
@@ -1098,7 +1108,7 @@ const AssetDetail = () => {
                       <p className="text-xs text-slate-500 mb-1">{t("asset:disposal_reason")}</p>
                       <p className="text-sm text-slate-700 dark:text-white">{asset.disposal.reason}</p>
                     </div>
-                    {/* Real posted Journal Entry — see asset-service.ts::dispose */}
+                    {/* Real posted Journal Entry � see asset-service.ts::dispose */}
                     {asset.disposal.journalEntryId && (
                       <div>
                         <h4 className="font-semibold text-slate-700 dark:text-white mb-3">{t("asset:journal_entry")}</h4>
@@ -1118,15 +1128,15 @@ const AssetDetail = () => {
                                 <tbody>
                                   {journalEntry.lines.map((line, idx) => (
                                     <tr key={idx} className="border-t border-slate-100 dark:border-white/5">
-                                      <td className="px-4 py-2.5 text-slate-700 dark:text-white">{line.accountCode} — {line.accountName}</td>
-                                      <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-white">{line.debit > 0 ? fmtN(line.debit) : "—"}</td>
-                                      <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-white">{line.credit > 0 ? fmtN(line.credit) : "—"}</td>
+                                      <td className="px-4 py-2.5 text-slate-700 dark:text-white">{line.accountCode} � {line.accountName}</td>
+                                      <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-white">{line.debit > 0 ? fmtN(line.debit) : "�"}</td>
+                                      <td className="px-4 py-2.5 font-semibold text-slate-800 dark:text-white">{line.credit > 0 ? fmtN(line.credit) : "�"}</td>
                                     </tr>
                                   ))}
                                 </tbody>
                               </table>
                             </div>
-                            <p className="text-xs text-slate-400 mt-2">{journalEntry.journalNo} · {journalEntry.memo}</p>
+                            <p className="text-xs text-slate-400 mt-2">{journalEntry.journalNo} � {journalEntry.memo}</p>
                           </>
                         )}
                       </div>

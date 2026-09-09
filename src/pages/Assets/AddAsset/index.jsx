@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -9,8 +9,9 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth, toDateInput } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { assetDepreciationMethodOptions } from "global/constant";
 import {
   fetchAssetCategories,
@@ -20,9 +21,11 @@ import {
   updateAssetInsurance,
   showAssetCategories,
   showCurrentAsset,
+  showCurrentAssetLoading,
+  clearCurrentAsset,
 } from "store/slices/assetSlice";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_asset, edit_asset } = alqadar_role_ids;
 
 const AddAsset = () => {
   const { t, i18n } = useTranslation();
@@ -34,6 +37,7 @@ const AddAsset = () => {
 
   const categories = useSelector(showAssetCategories);
   const existing = useSelector(showCurrentAsset);
+  const loading = useSelector(showCurrentAssetLoading);
 
   useEffect(() => {
     dispatch(fetchAssetCategories());
@@ -41,10 +45,11 @@ const AddAsset = () => {
 
   useEffect(() => {
     if (id) dispatch(fetchAssetById(id));
+    return () => dispatch(clearCurrentAsset());
   }, [dispatch, id]);
 
   const categoryOpts = useMemo(
-    () => categories.filter((c) => c.status === "Active").map((c) => ({ id: c.id, title: `${c.code} — ${c.name}` })),
+    () => categories.filter((c) => c.status === "Active").map((c) => ({ id: c.id, title: `${c.code} � ${c.name}` })),
     [categories],
   );
 
@@ -92,8 +97,8 @@ const AddAsset = () => {
   }, [id, existing, reset, categoryOpts]);
 
   useEffect(() => {
-    if (id && !checkRoleAuth(edit_customer)) { toast.error(t("asset:not_authorized")); navigate("/assets"); }
-    else if (!id && !checkRoleAuth(add_customer)) { toast.error(t("asset:not_authorized")); navigate("/assets"); }
+    if (id && !checkRoleAuth(edit_asset)) { toast.error(t("asset:not_authorized")); navigate("/assets"); }
+    else if (!id && !checkRoleAuth(add_asset)) { toast.error(t("asset:not_authorized")); navigate("/assets"); }
   }, [id, navigate, t]);
 
   const insuranceTouched = (d) =>
@@ -142,7 +147,7 @@ const AddAsset = () => {
         const created = await dispatch(createAsset(payload)).unwrap();
         assetId = created?.id;
       }
-      // Insurance is set through its own endpoint (updateAssetInsurance) —
+      // Insurance is set through its own endpoint (updateAssetInsurance) �
       // only call it if the user actually filled something in, so a bare
       // create doesn't post an empty insurance object.
       const hasInsurance = data.insPolicyNo || data.insProvider || data.insExpiryDate || data.insPremium || data.insCoverage;
@@ -168,8 +173,19 @@ const AddAsset = () => {
     }
   };
 
-  if (id && !checkRoleAuth(edit_customer)) return null;
-  if (!id && !checkRoleAuth(add_customer)) return null;
+  if (id && !checkRoleAuth(edit_asset)) return null;
+  if (!id && !checkRoleAuth(add_asset)) return null;
+
+  // Edit mode renders an empty form until fetchAssetById lands and reset()
+  // hydrates it — show the skeleton instead of that blank flash.
+  if (id && loading && existing?.id !== id) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={8} />
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
 
   const sectionCls = "bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-[var(--color-teal-500)]";
 
@@ -192,7 +208,7 @@ const AddAsset = () => {
             <h3 className="text-base font-bold text-slate-800 dark:text-white mb-5">{t("asset:basic_info")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <FormInput label={t("asset:asset_name")} name="name" register={register} errors={errors} required
-                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
+                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={100} />
               <SelectDropdown
                 label={t("asset:category")}
                 data={categoryOpts}
@@ -212,7 +228,7 @@ const AddAsset = () => {
               <FormInput label={t("asset:serial_number")} name="serialNumber" register={register} errors={errors}
                 pattern={/[A-Za-z0-9\-_/]/} minLength={2} maxLength={100} />
               <FormInput label={t("asset:location")} name="location" register={register} errors={errors}
-                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
+                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={100} />
               <FormInput label={t("asset:purchase_date")} name="purchaseDate" type="date" register={register} errors={errors}
                 required max={todayStr} />
               <FormInput label={t("asset:warranty_until")} name="warrantyUntil" type="date" register={register} errors={errors}
@@ -283,7 +299,7 @@ const AddAsset = () => {
               <FormInput label={t("asset:policy_no")}      name="insPolicyNo"  register={register} errors={errors}
                 pattern={/[A-Za-z0-9\-_/]/} minLength={2} maxLength={100} validate={requireIfInsurance} />
               <FormInput label={t("asset:insurer")}         name="insProvider"  register={register} errors={errors}
-                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} validate={requireIfInsurance} />
+                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={100} validate={requireIfInsurance} />
               <FormInput label={t("asset:policy_start")}    name="insStartDate" type="date" register={register} errors={errors}
                 validate={requireIfInsurance} />
               <FormInput label={t("asset:policy_expiry")}   name="insExpiryDate" type="date" register={register} errors={errors}

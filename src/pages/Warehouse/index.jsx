@@ -1,8 +1,8 @@
-﻿import { useRef, useEffect, useMemo } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { FiPlus, FiEye, FiEdit2, FiArchive, FiPackage, FiTruck, FiRefreshCw, FiTrash2 } from "react-icons/fi";
 import { toast } from "react-toastify";
@@ -10,16 +10,13 @@ import ActionPopup from "components/ActionPopup";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { tableRows, statusFilterOptions } from "global/constant";
-import {
-  fetchWarehouses,
-  deleteWarehouse,
-  showWarehouses,
-  showWarehousesTotal,
-  showWarehousesLoading,
-  showWarehousesSummary,
-} from "store/slices/warehouseSlice";
+import { fetchWarehouses, deleteWarehouse, showWarehouses, showWarehousesTotal, showWarehousesLoading, showWarehousesSummary, clearWarehousesList } from "store/slices/warehouseSlice";
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonCards } from "components/Skeleton";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_warehouse, add_warehouse, edit_warehouse, delete_warehouse, view_warehouse_transfer } = alqadar_role_ids;
 
 const statusBadge = (s) =>
   s === "Active"
@@ -40,8 +37,14 @@ const SummaryCard = ({ icon: Icon, label, value, color }) => (
 
 const Warehouse = () => {
   const { t } = useTranslation("warehouse");
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearWarehousesList());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useListFilters("warehouse-list", {
     page: 1,
     limitId: tableRows[0].id,
@@ -105,22 +108,30 @@ const Warehouse = () => {
           <p className="text-slate-500 dark:text-white/50 text-sm mt-1">{t("module_desc")}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={() => navigate("/warehouse_transfers")} className="flex items-center gap-2 h-10 px-4 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-slate-700 dark:text-white text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/15 transition-colors">
-            <FiTruck size={15} />{t("stock_transfers")}
-          </button>
-          <button onClick={() => navigate("/warehouse/add")} className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--color-teal-500)] hover:bg-[var(--color-teal-600)] text-white text-sm font-medium transition-colors">
-            <FiPlus size={15} />{t("add_warehouse")}
-          </button>
+          {checkRoleAuth(view_warehouse_transfer) && (
+            <button onClick={() => navigate("/warehouse_transfers")} className="flex items-center gap-2 h-10 px-4 rounded-xl border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 text-slate-700 dark:text-white text-sm font-medium hover:bg-slate-50 dark:hover:bg-white/15 transition-colors">
+              <FiTruck size={15} />{t("stock_transfers")}
+            </button>
+          )}
+          {checkRoleAuth(add_warehouse) && (
+            <button onClick={() => navigate("/warehouse/add")} className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--color-teal-500)] hover:bg-[var(--color-teal-600)] text-white text-sm font-medium transition-colors">
+              <FiPlus size={15} />{t("add_warehouse")}
+            </button>
+          )}
         </div>
       </div>
 
       {/* Summary Cards — server-computed tenant-wide totals, not just the current page */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard icon={FiArchive}   label={t("total_warehouses")} value={summary.totalWarehouses || 0}  color="bg-teal-500" />
-        <SummaryCard icon={FiRefreshCw} label={t("active")}           value={summary.activeWarehouses || 0} color="bg-emerald-500" />
-        <SummaryCard icon={FiPackage}   label={t("total_capacity")}   value={`${(summary.totalCapacity || 0).toLocaleString()} sqm`} color="bg-blue-500" />
-        <SummaryCard icon={FiTruck}     label={t("total_stock_items")} value={summary.totalStockItems || 0} color="bg-purple-500" />
-      </div>
+      {loading ? (
+        <SkeletonCards count={4} columns="grid-cols-2 md:grid-cols-4" />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <SummaryCard icon={FiArchive}   label={t("total_warehouses")} value={summary.totalWarehouses || 0}  color="bg-teal-500" />
+          <SummaryCard icon={FiRefreshCw} label={t("active")}           value={summary.activeWarehouses || 0} color="bg-emerald-500" />
+          <SummaryCard icon={FiPackage}   label={t("total_capacity")}   value={`${(summary.totalCapacity || 0).toLocaleString()} sqm`} color="bg-blue-500" />
+          <SummaryCard icon={FiTruck}     label={t("total_stock_items")} value={summary.totalStockItems || 0} color="bg-purple-500" />
+        </div>
+      )}
 
       {/* Search + status filter — both re-query the backend */}
       <div className="flex flex-wrap items-center gap-3">
@@ -162,11 +173,17 @@ const Warehouse = () => {
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between">
               <span className="text-xs text-slate-400">{wh.capacity?.toLocaleString()} {wh.unit} capacity</span>
               <div className="flex items-center gap-2">
-                <button onClick={() => handleDeleteClick(wh)} className="text-slate-400 hover:text-red-500 transition-colors"><FiTrash2 size={15} /></button>
-                <button onClick={() => navigate(`/warehouse/edit/${wh.id}`)} className="text-slate-400 hover:text-teal-500 transition-colors"><FiEdit2 size={15} /></button>
-                <button onClick={() => navigate(`/warehouse/detail/${wh.id}`)} className="flex items-center gap-1 text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium">
-                  <FiEye size={13} />View
-                </button>
+                {checkRoleAuth(delete_warehouse) && (
+                  <button onClick={() => handleDeleteClick(wh)} className="text-slate-400 hover:text-red-500 transition-colors"><FiTrash2 size={15} /></button>
+                )}
+                {checkRoleAuth(edit_warehouse) && (
+                  <button onClick={() => navigate(`/warehouse/edit/${wh.id}`)} className="text-slate-400 hover:text-teal-500 transition-colors"><FiEdit2 size={15} /></button>
+                )}
+                {checkRoleAuth(view_warehouse) && (
+                  <button onClick={() => navigate(`/warehouse/detail/${wh.id}`)} className="flex items-center gap-1 text-xs text-teal-600 dark:text-teal-400 hover:underline font-medium">
+                    <FiEye size={13} />View
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -187,7 +204,7 @@ const Warehouse = () => {
           <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page", { ns: "translation" })}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

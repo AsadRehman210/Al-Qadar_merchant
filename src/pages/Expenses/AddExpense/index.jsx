@@ -15,10 +15,10 @@ import { fetchDepartments, showDepartments } from "store/slices/departmentSlice"
 import { EXPENSE_TYPE_IDS } from "global/constant";
 import { applyExpense } from "store/slices/expenseSlice";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { showUserData } from "store/slices/uniqueSlice";
 
-const { add_employee } = rafeeqi_role_ids;
+const { add_expense, approve_expense } = alqadar_role_ids;
 
 const PAYMENT_METHODS = [
   { title: "expenses:cash", id: "Cash" },
@@ -33,7 +33,7 @@ const EXPENSE_TYPE_OPTIONS = EXPENSE_TYPE_IDS.map((id) => ({
 }));
 
 // Expense claims have no backend update/delete endpoint (only apply + the
-// approval-workflow PATCH actions) — this form is create-only. approvalStatus
+// approval-workflow PATCH actions) ï¿½ this form is create-only. approvalStatus
 // / paymentStatus / approvedBy are always server-computed by that workflow,
 // never client-set, so they're not present as fields here.
 const AddExpense = ({ selfService = false }) => {
@@ -118,7 +118,7 @@ const AddExpense = ({ selfService = false }) => {
     trigger("employee_id");
   };
 
-  if (!selfService && !checkRoleAuth(add_employee)) return null;
+  if (!selfService && !checkRoleAuth(add_expense)) return null;
 
   const isRTL = i18n.language === "ar";
 

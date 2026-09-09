@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -13,8 +13,12 @@ import Datepicker from "components/Datepicker";
 import Calender from "images/icons/calender.png";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { exitTypeOptions } from "global/constant";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { initiateExit, fetchActiveExitForEmployee } from "store/slices/offboardingSlice";
 import { toast } from "react-toastify";
+
+const { add_offboarding } = alqadar_role_ids;
 
 const InitiateExit = () => {
   const { t, i18n } = useTranslation();
@@ -66,7 +70,7 @@ const InitiateExit = () => {
   // Auto-suggest the last working day from resignation date + notice period
   // (Datepicker's own effect syncs `selected` into the form once set below).
   // Datepicker stores/expects DD-MM-YYYY (see its own `changeDate`/`pickerValue`
-  // logic) � parsing/formatting with that same format here, not the default
+  // logic) — parsing/formatting with that same format here, not the default
   // ISO-ish parse, is what keeps this suggestion (and the calendar it feeds)
   // actually valid instead of silently producing "Invalid Date".
   useEffect(() => {
@@ -111,6 +115,8 @@ const InitiateExit = () => {
       setSubmitting(false);
     }
   };
+
+  if (!checkRoleAuth(add_offboarding)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

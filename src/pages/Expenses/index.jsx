@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import ExpensesFilter from "./ExpensesFilter";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
@@ -18,7 +18,7 @@ import {
   showExpensesLoading,
 } from "store/slices/expenseSlice";
 
-const { view_employee, add_employee } = rafeeqi_role_ids;
+const { view_expense, add_expense, approve_expense } = alqadar_role_ids;
 
 const Expenses = () => {
   const { t } = useTranslation();
@@ -68,7 +68,7 @@ const Expenses = () => {
               icon={LuReceipt}
               iconClass="h-4 w-4 text-white"
             />
-            {checkRoleAuth(add_employee) && (
+            {checkRoleAuth(add_expense) && (
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5 disabled:hover:translate-y-0"
                 onClick={() => navigate("/expenses/add")}
@@ -82,12 +82,12 @@ const Expenses = () => {
           </div>
         </div>
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_employee) && (
+          {checkRoleAuth(view_expense) && (
             <div className="mb-6">
               <ExpensesFilter filters={filters} setFilters={setFilters} />
             </div>
           )}
-          {checkRoleAuth(view_employee) && (
+          {checkRoleAuth(view_expense) && (
             <ExpensesTable
               data={expenses}
               loading={loading}

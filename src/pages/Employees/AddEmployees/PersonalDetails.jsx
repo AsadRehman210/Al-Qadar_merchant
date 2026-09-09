@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
@@ -130,7 +130,7 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
           required
           pattern={/[a-zA-Z\s.'-]/}
           minLength={2}
-          maxLength={150}
+          maxLength={100}
         />
         <FormInput
           label={t("employees:last_name")}
@@ -140,7 +140,7 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
           required
           pattern={/[a-zA-Z\s.'-]/}
           minLength={2}
-          maxLength={150}
+          maxLength={100}
         />
         <SelectDropdown
           label={t("employees:gender")}
@@ -250,7 +250,7 @@ const PersonalDetails = ({ setSelectedIndex, setValidValues, existing }) => {
           minLength={10}
           maxLength={10}
         />
-        {/* ── Identity Expiry & Work Permit section ── */}
+        {/* -- Identity Expiry & Work Permit section -- */}
         <div className="relative">
           <Datepicker
             label={t("employees:national_id_expiry")}

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import { IoAdd } from "react-icons/io5";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { LuPin, LuTrash2 } from "react-icons/lu";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
@@ -17,7 +17,7 @@ import { useListFilters } from "hooks/useListFilters";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchAnnouncements,
   showAnnouncements,
@@ -28,12 +28,11 @@ import {
 } from "store/slices/announcementSlice";
 import { ANN_CATEGORY_BADGE } from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_announcement, add_announcement, delete_announcement } = alqadar_role_ids;
 
 const Announcements = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const isHR = checkRoleAuth(add_employee);
   const [showForm, setShowForm] = useState(false);
   const [selCat, setSelCat] = useState(announcementCategoryOptions[0]);
   const [pinned, setPinned] = useState(false);
@@ -74,7 +73,7 @@ const Announcements = () => {
     announcementCategoryOptions.find((o) => o.id === c)?.title || c;
 
   const onSubmit = async (data) => {
-    if (!selCat?.id) {
+    if (!selCat) {
       toast.error(t("hrhub:category_required", "Category is required"));
       return;
     }
@@ -96,6 +95,8 @@ const Announcements = () => {
     refreshList();
   };
 
+  if (!checkRoleAuth(view_announcement)) return null;
+
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
       <div className="hidden dark:block absolute inset-0 bg-slate-900 z-0 overflow-hidden" />
@@ -106,7 +107,7 @@ const Announcements = () => {
             <h1 className="text-3xl font-bold tracking-tight">{t("hrhub:ann_title")}</h1>
             <p className="text-mutedForeground mt-1">{t("hrhub:ann_desc")}</p>
           </div>
-          {isHR && (
+          {checkRoleAuth(add_announcement) && (
             <Button
               className="!w-auto !rounded-lg !h-10 !px-4 !border-0 !text-white !bg-gradient-to-br !from-purple-500 !to-purple-600 hover:!from-purple-600 hover:!to-purple-700"
               onClick={() => setShowForm((s) => !s)}
@@ -119,14 +120,14 @@ const Announcements = () => {
         </div>
 
         {/* Post form */}
-        {showForm && isHR && (
+        {showForm && checkRoleAuth(add_announcement) && (
           <form
             onSubmit={handleSubmit(onSubmit)}
             className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-6 mb-6"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <FormInput label={t("hrhub:ann_headline")} name="title" register={register} errors={errors} required
-                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={150} />
+                pattern={/[a-zA-Z0-9\s.'-]/} minLength={2} maxLength={100} />
               <SelectDropdown
                 label={t("hrhub:ann_category")}
                 data={announcementCategoryOptions}
@@ -197,7 +198,7 @@ const Announcements = () => {
                       )}
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${ANN_CATEGORY_BADGE[a.category]}`}>{catLabel(a.category)}</span>
                     </div>
-                    {isHR && (
+                    {checkRoleAuth(delete_announcement) && (
                       <button
                         type="button"
                         onClick={() => handleDelete(a.id)}
@@ -210,7 +211,7 @@ const Announcements = () => {
                   <h3 className="text-lg font-bold text-slate-800 dark:text-white mt-2">{a.title}</h3>
                   <p className="text-sm text-slate-600 dark:text-white/70 mt-1.5 leading-relaxed">{a.body}</p>
                   <p className="text-xs text-slate-400 dark:text-white/40 mt-3">
-                    {t("hrhub:posted_by")} <span className="font-medium text-slate-500 dark:text-white/60">{t("hrhub:hr_department", "HR Department")}</span> · {a.createdAt ? dayjs(a.createdAt).format("DD MMM YYYY") : ""}
+                    {t("hrhub:posted_by")} <span className="font-medium text-slate-500 dark:text-white/60">{t("hrhub:hr_department", "HR Department")}</span> ï¿½ {a.createdAt ? dayjs(a.createdAt).format("DD MMM YYYY") : ""}
                   </p>
                 </div>
               ))}
@@ -224,7 +225,7 @@ const Announcements = () => {
                 <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}

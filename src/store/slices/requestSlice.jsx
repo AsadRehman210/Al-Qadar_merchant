@@ -16,6 +16,7 @@ const initialState = {
   currentRequest: null,
   currentRequestLoading: false,
   requestsByEmployee: [],
+  requestsByEmployeeLoading: false,
 };
 
 export const fetchRequests = createAsyncThunk(
@@ -95,6 +96,10 @@ const requestSlice = createSlice({
     setCurrentPage: (state, action) => { state.currentPage = action.payload; },
     triggerRefresh: (state) => { state.lastUpdated = Date.now(); },
     clearCurrentRequest: (state) => { state.currentRequest = null; },
+    clearRequestsByEmployee: (state) => {
+      state.requestsByEmployee = [];
+      state.requestsByEmployeeLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -118,10 +123,15 @@ const requestSlice = createSlice({
         state.currentRequest = action.payload;
       })
       .addCase(fetchRequestById.rejected, (state) => { state.currentRequestLoading = false; })
+      .addCase(fetchRequestsByEmployee.pending, (state) => { state.requestsByEmployeeLoading = true; })
       .addCase(fetchRequestsByEmployee.fulfilled, (state, action) => {
+        state.requestsByEmployeeLoading = false;
         state.requestsByEmployee = action.payload || [];
       })
-      .addCase(fetchRequestsByEmployee.rejected, (state) => { state.requestsByEmployee = []; })
+      .addCase(fetchRequestsByEmployee.rejected, (state) => {
+        state.requestsByEmployeeLoading = false;
+        state.requestsByEmployee = [];
+      })
       .addCase(applyRequest.fulfilled, (state, action) => {
         if (action.payload) state.requests.unshift(action.payload);
         state.lastUpdated = Date.now();
@@ -147,6 +157,7 @@ export const {
   setCurrentPage,
   triggerRefresh,
   clearCurrentRequest,
+  clearRequestsByEmployee,
 } = requestSlice.actions;
 
 export const showSearch = (s) => s.request.search;
@@ -162,5 +173,6 @@ export const showRequestsSummary = (s) => s.request.requestsSummary;
 export const showCurrentRequest = (s) => s.request.currentRequest;
 export const showCurrentRequestLoading = (s) => s.request.currentRequestLoading;
 export const showRequestsByEmployee = (s) => s.request.requestsByEmployee;
+export const showRequestsByEmployeeLoading = (s) => s.request.requestsByEmployeeLoading;
 
 export default requestSlice.reducer;

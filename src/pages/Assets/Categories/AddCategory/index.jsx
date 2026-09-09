@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -9,16 +9,18 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { assetActiveInactiveOptions } from "global/constant";
 import {
   fetchAssetCategories,
   createAssetCategory,
   updateAssetCategory,
   showAssetCategories,
+  showAssetCategoriesLoading,
 } from "store/slices/assetSlice";
+import { SkeletonDetail } from "components/Skeleton";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_asset_category, edit_asset_category } = alqadar_role_ids;
 
 const AddAssetCategory = () => {
   const { t, i18n } = useTranslation();
@@ -27,6 +29,7 @@ const AddAssetCategory = () => {
   const { id } = useParams();
 
   const categories = useSelector(showAssetCategories);
+  const categoryLoading = useSelector(showAssetCategoriesLoading);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -62,10 +65,10 @@ const AddAssetCategory = () => {
   }, [existing, reset]);
 
   useEffect(() => {
-    if (id && !checkRoleAuth(edit_customer)) {
+    if (id && !checkRoleAuth(edit_asset_category)) {
       toast.error(t("asset:not_authorized"));
       navigate("/assets-categories");
-    } else if (!id && !checkRoleAuth(add_customer)) {
+    } else if (!id && !checkRoleAuth(add_asset_category)) {
       toast.error(t("asset:not_authorized"));
       navigate("/assets-categories");
     }
@@ -97,10 +100,12 @@ const AddAssetCategory = () => {
     }
   };
 
-  if (id && !checkRoleAuth(edit_customer)) return null;
-  if (!id && !checkRoleAuth(add_customer)) return null;
+  if (id && !checkRoleAuth(edit_asset_category)) return null;
+  if (!id && !checkRoleAuth(add_asset_category)) return null;
 
   const isRTL = i18n.language === "ar";
+
+  const categoryPending = !!id && categoryLoading && !existing;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -122,6 +127,9 @@ const AddAssetCategory = () => {
           </div>
         </div>
 
+        {categoryPending ? (
+          <SkeletonDetail fields={4} />
+        ) : (
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-8 border-l-4 !border-l-[var(--color-teal-500)] dark:border-l-teal-500/60"
@@ -146,7 +154,7 @@ const AddAssetCategory = () => {
               required
               pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
-              maxLength={150}
+              maxLength={100}
             />
             <div className="md:col-span-2">
               <FormInput
@@ -184,6 +192,7 @@ const AddAssetCategory = () => {
             />
           </div>
         </form>
+        )}
       </div>
     </div>
   );

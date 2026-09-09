@@ -1,16 +1,18 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate, useSearchParams } from "react-router";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { SkeletonDetail } from "components/Skeleton";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { checkRoleAuth } from "global/helper";
 import { toast } from "react-toastify";
 import {
   DEFAULT_PRODUCTION_ORDER,
   defaultRawLine,
+  defaultOutputLine,
   defaultOtherCostLine,
 } from "../productionHelpers";
 import {
@@ -18,22 +20,41 @@ import {
   updateProductionOrder,
   fetchProductionOrderById,
   showCurrentProductionOrder,
+  showCurrentProductionOrderLoading,
   clearCurrentProductionOrder,
 } from "store/slices/productionSlice";
-import { fetchQuarantineLotById } from "store/slices/quarantineLotSlice";
+import {
+  fetchQuarantineLotById,
+  clearCurrentQuarantineLot,
+  showCurrentQuarantineLot,
+  showCurrentQuarantineLotLoading,
+} from "store/slices/quarantineLotSlice";
 import ProductionOrderForm from "./ProductionOrderForm";
+import { resetVariantDropdown } from "store/slices/variantSlice";
+import { resetWarehouseDropdown } from "store/slices/warehouseSlice";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_inventory_production, edit_inventory_production } = alqadar_role_ids;
 
 const AddProductionOrder = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(resetVariantDropdown());
+      dispatch(resetWarehouseDropdown());
+      dispatch(clearCurrentQuarantineLot());
+    };
+  }, [dispatch]);
+
+  const navigate = useNavigate();
   const { id } = useParams();
   const [searchParams] = useSearchParams();
   const lotId = !id ? searchParams.get("lotId") : null;
 
   const existing = useSelector(showCurrentProductionOrder);
+  const loading = useSelector(showCurrentProductionOrderLoading);
+  const currentLot = useSelector(showCurrentQuarantineLot);
+  const lotLoading = useSelector(showCurrentQuarantineLotLoading);
 
   const methods = useForm({
     mode: "onChange",
@@ -70,9 +91,19 @@ const AddProductionOrder = () => {
           outputWarehouseId: lot.warehouseId || "",
           outputWarehouseName: lot.warehouseName || "",
           outputExpiryDate: lot.expiryDate ? String(lot.expiryDate).slice(0, 10) : "",
+          outputLines: [
+            {
+              ...defaultOutputLine(),
+              warehouseId: lot.warehouseId || "",
+              warehouseName: lot.warehouseName || "",
+              quantity: lot.remainingQty || "",
+              expiryDate: lot.expiryDate ? String(lot.expiryDate).slice(0, 10) : "",
+            },
+          ],
           quarantineLotId: lot.id,
           quarantineLotNumber: lot.lotNumber || "",
           quarantineQty: lot.remainingQty || "",
+          quarantineCostPrice: lot.costPrice ?? 0,
           notes: lot.lotNumber
             ? t("production:renew_notes", { lot: lot.lotNumber, reason: lot.reason || "" })
             : "",
@@ -86,17 +117,24 @@ const AddProductionOrder = () => {
 
   useEffect(() => {
     if (!id || !existing) return;
+    const legacyOutWh = existing.outputWarehouseId || existing.warehouseId || "";
     reset({
       ...DEFAULT_PRODUCTION_ORDER,
       ...existing,
-      scheduledDate: existing.scheduledDate ? existing.scheduledDate.slice(0, 10) : "",
+      completedDate: existing.completedDate
+        ? String(existing.completedDate).slice(0, 10)
+        : existing.scheduledDate
+          ? String(existing.scheduledDate).slice(0, 10)
+          : "",
       outputExpiryDate: existing.outputExpiryDate ? String(existing.outputExpiryDate).slice(0, 10) : "",
-      outputWarehouseId: existing.outputWarehouseId || existing.warehouseId || "",
+      outputWarehouseId: legacyOutWh,
       outputWarehouseName: existing.outputWarehouseName || existing.warehouseName || "",
       rawLines:
         existing.rawLines?.length > 0
           ? existing.rawLines.map((l) => ({
               ...defaultRawLine(),
+              warehouseId: l.warehouseId || existing.warehouseId || "",
+              warehouseName: l.warehouseName || existing.warehouseName || "",
               variantId: l.variantId || "",
               variantName: l.variantName || "",
               sku: l.sku || "",
@@ -104,6 +142,24 @@ const AddProductionOrder = () => {
               costPrice: l.costPrice ?? "",
             }))
           : [defaultRawLine()],
+      outputLines:
+        existing.outputLines?.length > 0
+          ? existing.outputLines.map((l) => ({
+              ...defaultOutputLine(),
+              warehouseId: l.warehouseId || legacyOutWh,
+              warehouseName: l.warehouseName || existing.outputWarehouseName || "",
+              quantity: l.quantity ?? "",
+              expiryDate: l.expiryDate ? String(l.expiryDate).slice(0, 10) : "",
+            }))
+          : [
+              {
+                ...defaultOutputLine(),
+                warehouseId: legacyOutWh,
+                warehouseName: existing.outputWarehouseName || existing.warehouseName || "",
+                quantity: existing.outputQuantity ?? "",
+                expiryDate: existing.outputExpiryDate ? String(existing.outputExpiryDate).slice(0, 10) : "",
+              },
+            ],
       otherCostLines:
         existing.otherCostLines?.length > 0
           ? existing.otherCostLines.map((l) => ({ ...defaultOtherCostLine(), ...l }))
@@ -111,14 +167,15 @@ const AddProductionOrder = () => {
       quarantineLotId: existing.quarantineLotId || "",
       quarantineLotNumber: existing.quarantineLotNumber || "",
       quarantineQty: existing.quarantineQty || existing.outputQuantity || "",
+      quarantineCostPrice: existing.quarantineCostPrice ?? "",
     });
   }, [id, existing, reset]);
 
   useEffect(() => {
-    if (id && !checkRoleAuth(edit_customer)) {
+    if (id && !checkRoleAuth(edit_inventory_production)) {
       toast.error(t("production:not_authorized"));
       navigate("/inventory/production");
-    } else if (!id && !checkRoleAuth(add_customer)) {
+    } else if (!id && !checkRoleAuth(add_inventory_production)) {
       toast.error(t("production:not_authorized"));
       navigate("/inventory/production");
     }
@@ -129,12 +186,30 @@ const AddProductionOrder = () => {
       toast.error(t("production:output_required"));
       return;
     }
-    if (!data.warehouseId || !data.outputWarehouseId) {
-      toast.error(t("production:warehouse_required"));
+    const outputLines = (data.outputLines || [])
+      .filter((l) => l.warehouseId && Number(l.quantity) > 0)
+      .map((l) => ({
+        warehouseId: l.warehouseId,
+        quantity: Number(l.quantity) || 0,
+        expiryDate: l.expiryDate || undefined,
+      }));
+    if (!outputLines.length) {
+      toast.error(t("production:output_lines_required"));
       return;
     }
-    if (!(Number(data.outputQuantity) > 0)) {
-      toast.error(t("production:output_qty_required", { defaultValue: "Output quantity must be greater than 0" }));
+    const rawLines = (data.rawLines || [])
+      .filter((l) => l.variantId && l.warehouseId)
+      .map((l) => ({
+        variantId: l.variantId,
+        warehouseId: l.warehouseId,
+        quantity: Number(l.quantity) || 0,
+        costPrice: l.costPrice != null && l.costPrice !== "" ? Number(l.costPrice) : undefined,
+      }));
+    const rawMissing = (data.rawLines || []).some(
+      (l) => l.variantId && (!l.warehouseId || !(Number(l.quantity) > 0)),
+    );
+    if (rawMissing) {
+      toast.error(t("production:warehouse_required"));
       return;
     }
     const mismatchedOther = (data.otherCostLines || []).some((l) => {
@@ -146,35 +221,22 @@ const AddProductionOrder = () => {
       toast.error(t("production:other_cost_pair", { defaultValue: "Label and amount must both be filled" }));
       return;
     }
-    const rawMissingQty = (data.rawLines || []).some(
-      (l) => l.variantId && !(Number(l.quantity) > 0),
-    );
-    if (rawMissingQty) {
-      toast.error(t("production:output_qty_required", { defaultValue: "Output quantity must be greater than 0" }));
-      return;
-    }
+    const outputQuantity = outputLines.reduce((s, l) => s + l.quantity, 0);
     const payload = {
-      scheduledDate: data.scheduledDate || undefined,
+      completedDate: data.completedDate || data.scheduledDate || undefined,
       outputVariantId: data.outputVariantId,
-      outputQuantity: Number(data.outputQuantity) || 0,
-      warehouseId: data.warehouseId,
-      outputWarehouseId: data.outputWarehouseId,
-      outputExpiryDate: data.outputExpiryDate || undefined,
+      outputQuantity,
+      warehouseId: rawLines[0]?.warehouseId || outputLines[0].warehouseId,
+      outputWarehouseId: outputLines[0].warehouseId,
+      outputExpiryDate: outputLines[0].expiryDate || undefined,
       notes: data.notes || undefined,
-      rawLines: (data.rawLines || [])
-        .filter((l) => l.variantId)
-        .map((l) => ({
-          variantId: l.variantId,
-          quantity: Number(l.quantity) || 0,
-          costPrice: l.costPrice != null && l.costPrice !== "" ? Number(l.costPrice) : undefined,
-        })),
+      rawLines,
+      outputLines,
       otherCostLines: (data.otherCostLines || [])
         .filter((l) => l.label)
         .map((l) => ({ label: l.label, amount: Number(l.amount) || 0 })),
       quarantineLotId: data.quarantineLotId || undefined,
-      quarantineQty: data.quarantineLotId
-        ? Number(data.outputQuantity) || undefined
-        : undefined,
+      quarantineQty: data.quarantineLotId ? outputQuantity || undefined : undefined,
     };
     if (!payload.rawLines.length && !payload.quarantineLotId) {
       toast.error(t("production:output_required"));
@@ -200,8 +262,16 @@ const AddProductionOrder = () => {
     }
   };
 
-  if (id && !checkRoleAuth(edit_customer)) return null;
-  if (!id && !checkRoleAuth(add_customer)) return null;
+  if (id && !checkRoleAuth(edit_inventory_production)) return null;
+  if (!id && !checkRoleAuth(add_inventory_production)) return null;
+
+  if ((id && loading && !existing) || (lotId && lotLoading && !currentLot)) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
 

@@ -14,6 +14,7 @@ const initialState = {
   totalRecords: 0,
   current: null,
   employeeExpenses: [],
+  employeeExpensesLoading: false,
   loading: false,
   error: null,
 };
@@ -102,6 +103,10 @@ const expenseSlice = createSlice({
     clearCurrentExpense: (state) => {
       state.current = null;
     },
+    clearEmployeeExpenses: (state) => {
+      state.employeeExpenses = [];
+      state.employeeExpensesLoading = false;
+    },
   },
   extraReducers: (builder) => {
     const upsertCurrent = (state, action) => {
@@ -134,8 +139,16 @@ const expenseSlice = createSlice({
       .addCase(fetchExpenseById.rejected, (state) => {
         state.currentLoading = false;
       })
+      .addCase(fetchExpensesByEmployee.pending, (state) => {
+        state.employeeExpensesLoading = true;
+      })
       .addCase(fetchExpensesByEmployee.fulfilled, (state, action) => {
+        state.employeeExpensesLoading = false;
         state.employeeExpenses = action.payload;
+      })
+      .addCase(fetchExpensesByEmployee.rejected, (state) => {
+        state.employeeExpensesLoading = false;
+        state.employeeExpenses = [];
       })
       .addCase(applyExpense.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -156,6 +169,7 @@ export const {
   setCurrentPage,
   triggerRefresh,
   clearCurrentExpense,
+  clearEmployeeExpenses,
 } = expenseSlice.actions;
 export const showSearch = (state) => state.expense.search;
 export const showFilterStatus = (state) => state.expense.filterStatus;
@@ -169,4 +183,5 @@ export const showExpensesLoading = (state) => state.expense.loading;
 export const showCurrentExpense = (state) => state.expense.current;
 export const showCurrentExpenseLoading = (state) => state.expense.currentLoading;
 export const showEmployeeExpenses = (state) => state.expense.employeeExpenses;
+export const showEmployeeExpensesLoading = (state) => state.expense.employeeExpensesLoading;
 export default expenseSlice.reducer;

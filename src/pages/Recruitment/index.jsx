@@ -3,10 +3,11 @@ import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FiPlus, FiEye, FiEdit2, FiBriefcase, FiUsers, FiCheckCircle } from "react-icons/fi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import DataState from "components/DataState";
+import { SkeletonCards } from "components/Skeleton";
 import { cardRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { jobStatusOptions } from "global/constant";
@@ -20,6 +21,10 @@ import {
 } from "store/slices/recruitmentSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import JobStatusMenu from "./JobStatusMenu";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_recruitment, add_recruitment, edit_recruitment } = alqadar_role_ids;
 
 const SummaryCard = ({ icon: Icon, label, value, color }) => (
   <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-5 flex items-center gap-4">
@@ -77,6 +82,8 @@ const Recruitment = () => {
   const totalPages = Math.ceil((totalRecords || 0) / selRows.id) || 1;
   const handleRowsChange = (v) => setFilters({ limitId: v.id, page: 1 });
 
+  if (!checkRoleAuth(view_recruitment)) return null;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -84,17 +91,23 @@ const Recruitment = () => {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Recruitment</h1>
           <p className="text-slate-500 dark:text-white/50 text-sm mt-1">Job postings, candidates and hiring pipeline</p>
         </div>
+        {checkRoleAuth(add_recruitment) && (
         <button onClick={() => navigate("/recruitment/add")} className="flex items-center gap-2 h-10 px-4 rounded-xl bg-[var(--color-teal-500)] hover:bg-[var(--color-teal-600)] text-white text-sm font-medium transition-colors">
           <FiPlus size={15} />Post New Job
         </button>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <SummaryCard icon={FiBriefcase} label="Total Jobs" value={summary.totalJobs} color="bg-teal-500" />
-        <SummaryCard icon={FiCheckCircle} label="Open" value={summary.openJobs} color="bg-emerald-500" />
-        <SummaryCard icon={FiUsers} label="In Process" value={summary.inProcessCandidates} color="bg-blue-500" />
-        <SummaryCard icon={FiCheckCircle} label="Hired" value={summary.hiredCandidates} color="bg-purple-500" />
-      </div>
+      {loading ? (
+        <SkeletonCards count={4} columns="grid-cols-2 md:grid-cols-4" />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <SummaryCard icon={FiBriefcase} label="Total Jobs" value={summary.totalJobs} color="bg-teal-500" />
+          <SummaryCard icon={FiCheckCircle} label="Open" value={summary.openJobs} color="bg-emerald-500" />
+          <SummaryCard icon={FiUsers} label="In Process" value={summary.inProcessCandidates} color="bg-blue-500" />
+          <SummaryCard icon={FiCheckCircle} label="Hired" value={summary.hiredCandidates} color="bg-purple-500" />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex-1 min-w-[220px] sm:max-w-xs">
@@ -121,18 +134,20 @@ const Recruitment = () => {
                 <span className="text-xs text-slate-400 font-mono">{job.jobCode}</span>
               </div>
               <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{job.title}</h3>
-              <p className="text-sm text-slate-500 mb-1">{job.departmentName} ∑ {job.experience}</p>
-              <p className="text-xs text-slate-400 mb-3">Deadline: {job.deadline ? job.deadline.slice(0, 10) : "ó"}</p>
+              <p className="text-sm text-slate-500 mb-1">{job.departmentName} ù {job.experience}</p>
+              <p className="text-xs text-slate-400 mb-3">Deadline: {job.deadline ? job.deadline.slice(0, 10) : "ù"}</p>
 
               <div className="flex items-center justify-between py-2 border-t border-slate-100 dark:border-white/10 mb-3">
                 <div className="text-center"><p className="text-xs text-slate-400">Openings</p><p className="font-bold text-slate-900 dark:text-white">{job.openings}</p></div>
                 <div className="text-center"><p className="text-xs text-slate-400">Applied</p><p className="font-bold text-slate-900 dark:text-white">{job.candidateCount}</p></div>
                 <div className="text-center"><p className="text-xs text-slate-400">Hired</p><p className="font-bold text-emerald-600">{job.hiredCount}</p></div>
-                <div className="text-center"><p className="text-xs text-slate-400">Salary</p><p className="text-xs font-medium text-teal-600">{job.salaryMin?.toLocaleString()}ñ{job.salaryMax?.toLocaleString()} {job.currency}</p></div>
+                <div className="text-center"><p className="text-xs text-slate-400">Salary</p><p className="text-xs font-medium text-teal-600">{job.salaryMin?.toLocaleString()}ù{job.salaryMax?.toLocaleString()} {job.currency}</p></div>
               </div>
 
               <div className="flex gap-2">
+                {checkRoleAuth(edit_recruitment) && (
                 <button onClick={() => navigate(`/recruitment/edit/${job.id}`)} className="flex-1 h-8 rounded-lg border border-slate-200 dark:border-white/20 text-xs text-slate-600 dark:text-white/70 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center justify-center gap-1"><FiEdit2 size={12} />Edit</button>
+                )}
                 <button onClick={() => navigate(`/recruitment/detail/${job.id}`)} className="flex-1 h-8 rounded-lg bg-teal-50 dark:bg-teal-500/10 text-xs text-teal-700 dark:text-teal-300 hover:bg-teal-100 flex items-center justify-center gap-1"><FiEye size={12} />View Pipeline</button>
               </div>
             </div>
@@ -147,7 +162,7 @@ const Recruitment = () => {
             <span className="text-sm text-slate-600 dark:text-white/70">per page</span>
           </div>
           <div className="pagination ltr:ml-auto rtl:mr-auto">
-            <ReactPaginate
+            <Pagination
               breakLabel="..."
               nextLabel={<FaAngleRight />}
               previousLabel={<FaAngleLeft />}

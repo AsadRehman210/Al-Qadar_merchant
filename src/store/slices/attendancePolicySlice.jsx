@@ -6,6 +6,7 @@ const initialState = {
   list: [],
   current: null,
   loading: false,
+  currentLoading: false,
   error: null,
 };
 
@@ -81,8 +82,15 @@ const attendancePolicySlice = createSlice({
         state.list = [];
         state.error = action.payload;
       })
+      .addCase(fetchCurrentAttendancePolicy.pending, (state) => {
+        state.currentLoading = true;
+      })
       .addCase(fetchCurrentAttendancePolicy.fulfilled, (state, action) => {
+        state.currentLoading = false;
         state.current = action.payload;
+      })
+      .addCase(fetchCurrentAttendancePolicy.rejected, (state) => {
+        state.currentLoading = false;
       })
       .addCase(fetchAttendancePolicyById.pending, (state) => {
         state.currentLoading = true;

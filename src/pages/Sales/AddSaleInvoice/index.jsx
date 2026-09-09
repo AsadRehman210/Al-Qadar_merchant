@@ -1,29 +1,22 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate, useLocation } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { SkeletonDetail } from "components/Skeleton";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { checkRoleAuth } from "global/helper";
 import { toast } from "react-toastify";
-import {
-  createSaleInvoice,
-  updateSaleInvoice,
-  updateSaleDeliveryStatus,
-  fetchSaleInvoiceById,
-  showCurrentSaleInvoice,
-} from "store/slices/saleInvoiceSlice";
-import {
-  fetchQuotationById,
-  markQuotationConverted,
-  showCurrentQuotation,
-  clearCurrentQuotation,
-} from "store/slices/quotationSlice";
+import { createSaleInvoice, updateSaleInvoice, updateSaleDeliveryStatus, fetchSaleInvoiceById, showCurrentSaleInvoice, showCurrentSaleInvoiceLoading, clearCurrentSaleInvoice, resetSaleInvoiceDropdown } from "store/slices/saleInvoiceSlice";
+import { fetchQuotationById, markQuotationConverted, showCurrentQuotation, clearCurrentQuotation } from "store/slices/quotationSlice";
 import SaleInvoiceForm from "./SaleInvoiceForm";
+import { resetSalesCustomerDropdown } from "store/slices/salesCustomerSlice";
+import { resetWarehouseDropdown } from "store/slices/warehouseSlice";
+import { resetVariantDropdown } from "store/slices/variantSlice";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_sales_invoice, edit_sales_invoice } = alqadar_role_ids;
 
 const defaultLine = () => ({ variantId: "", productName: "", qty: 1, price: 0, costPrice: 0, unit: "" });
 
@@ -41,9 +34,20 @@ const DEFAULT_SALE_FORM = {
 
 const AddSaleInvoice = () => {
   const { t, i18n } = useTranslation();
+  const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentSaleInvoice());
+      dispatch(resetSaleInvoiceDropdown());
+      dispatch(resetSalesCustomerDropdown());
+      dispatch(resetWarehouseDropdown());
+      dispatch(resetVariantDropdown());
+      dispatch(clearCurrentQuotation());
+    };
+  }, [dispatch]);
   const navigate = useNavigate();
   const location = useLocation();
-  const dispatch = useDispatch();
+
   const { id } = useParams();
 
   // Set only when we arrived here via Quotation's "Continue to Sale Invoice"
@@ -63,6 +67,7 @@ const AddSaleInvoice = () => {
   } = methods;
 
   const current = useSelector(showCurrentSaleInvoice);
+  const loading = useSelector(showCurrentSaleInvoiceLoading);
   const fromQuotation = useSelector(showCurrentQuotation);
 
   useEffect(() => {
@@ -119,10 +124,10 @@ const AddSaleInvoice = () => {
   }, [fromQuotation, fromQuotationId, reset]);
 
   useEffect(() => {
-    if (id && !checkRoleAuth(edit_customer)) {
+    if (id && !checkRoleAuth(edit_sales_invoice)) {
       toast.error(t("sales:not_authorized"));
       navigate("/sales");
-    } else if (!id && !checkRoleAuth(add_customer)) {
+    } else if (!id && !checkRoleAuth(add_sales_invoice)) {
       toast.error(t("sales:not_authorized"));
       navigate("/sales");
     }
@@ -180,8 +185,18 @@ const AddSaleInvoice = () => {
     }
   };
 
-  if (id && !checkRoleAuth(edit_customer)) return null;
-  if (!id && !checkRoleAuth(add_customer)) return null;
+  if (id && !checkRoleAuth(edit_sales_invoice)) return null;
+  if (!id && !checkRoleAuth(add_sales_invoice)) return null;
+
+  // Edit mode renders an empty form until fetchSaleInvoiceById lands and
+  // reset() hydrates it — show the skeleton instead of that blank flash.
+  if (id && loading && current?.id !== id) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={8} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
 

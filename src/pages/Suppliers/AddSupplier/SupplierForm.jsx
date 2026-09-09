@@ -7,7 +7,6 @@ import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import PhoneNumberInput from "components/PhoneNumberInput";
 import PaginatedSelectBox from "components/PaginatedSelectBox";
-import { DEFAULT_ADD_SUPPLIER_VALUES } from "../supplierFakeData";
 import {
   supplierTypeOptions,
   supplierStatusOptions,
@@ -22,17 +21,8 @@ const SupplierForm = ({ existing }) => {
   const { t } = useTranslation();
   const supplierType = watch("supplierType");
 
-  const [selSupplierType, setSelSupplierType] = useState(
-    () =>
-      supplierTypeOptions.find(
-        (o) => o.id === DEFAULT_ADD_SUPPLIER_VALUES.supplierType,
-      ) || supplierTypeOptions[0],
-  );
-  const [selStatus, setSelStatus] = useState(
-    () =>
-      supplierStatusOptions.find((o) => o.id === DEFAULT_ADD_SUPPLIER_VALUES.status) ||
-      supplierStatusOptions[0],
-  );
+  const [selSupplierType, setSelSupplierType] = useState(() => supplierTypeOptions[0]);
+  const [selStatus, setSelStatus] = useState(() => supplierStatusOptions[0]);
 
   const supplierTypeVal = watch("supplierType");
   const statusVal = watch("status");
@@ -154,7 +144,7 @@ const SupplierForm = ({ existing }) => {
           errors={errors}
           pattern={/[a-zA-Z0-9\s.'&,-]/}
           minLength={2}
-          maxLength={150}
+          maxLength={100}
         />
         <FormInput
           label={t("suppliers:email")}
@@ -195,7 +185,7 @@ const SupplierForm = ({ existing }) => {
           name="address"
           register={register}
           errors={errors}
-          maxLength={250}
+          maxLength={100}
         />
         <div>
           <PaginatedSelectBox
@@ -296,6 +286,32 @@ const SupplierForm = ({ existing }) => {
           register={register}
           errors={errors}
         />
+        <div>
+          <FormInput
+            label={t("suppliers:opening_balance")}
+            labelClass="text-sm text-linkText font-medium"
+            placeholder={t("suppliers:opening_balance")}
+            type="number"
+            name="openingBalance"
+            register={register}
+            errors={errors}
+            min={0}
+            decimal
+            decimalPlaces={3}
+            maxLength={10}
+            disabled={Boolean(existing?.openingBalanceLocked)}
+            inputClass={
+              existing?.openingBalanceLocked
+                ? "disabled:bg-slate-100 dark:disabled:bg-white/5 disabled:text-slate-500"
+                : undefined
+            }
+          />
+          <p className="text-xs text-slate-500 dark:text-white/50 mt-1.5">
+            {existing?.openingBalanceLocked
+              ? t("suppliers:opening_balance_locked_hint")
+              : t("suppliers:opening_balance_hint")}
+          </p>
+        </div>
 
         {supplierType === "Company" && (
           <>
@@ -312,7 +328,7 @@ const SupplierForm = ({ existing }) => {
               errors={errors}
               pattern={/[a-zA-Z0-9\s.'&,-]/}
               minLength={2}
-              maxLength={150}
+              maxLength={100}
             />
             <PhoneNumberInput
               label={t("suppliers:contact_person_phone")}
@@ -334,7 +350,7 @@ const SupplierForm = ({ existing }) => {
               register={register}
               errors={errors}
               pattern={/[a-zA-Z0-9.@_+-]/}
-              maxLength={150}
+              maxLength={100}
             />
             <FormInput
               label={t("suppliers:designation")}
@@ -359,7 +375,7 @@ const SupplierForm = ({ existing }) => {
           errors={errors}
           pattern={/[a-zA-Z0-9\s.'&,-]/}
           minLength={2}
-          maxLength={150}
+          maxLength={100}
         />
         <FormInput
           label={t("suppliers:account_title")}
@@ -371,7 +387,7 @@ const SupplierForm = ({ existing }) => {
           errors={errors}
           pattern={/[a-zA-Z0-9\s.'&,-]/}
           minLength={2}
-          maxLength={150}
+          maxLength={100}
         />
         <FormInput
           label={t("suppliers:account_number")}

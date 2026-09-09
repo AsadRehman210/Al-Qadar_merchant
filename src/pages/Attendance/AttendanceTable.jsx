@@ -5,12 +5,16 @@ import { useTranslation } from "react-i18next";
 import { toast } from "react-toastify";
 import { AiOutlineEdit, AiOutlineDelete } from "react-icons/ai";
 import ActionPopup from "components/ActionPopup";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
 import { tableRows } from "global/constant";
 import { deleteAttendance } from "store/slices/attendanceSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { edit_attendance, delete_attendance } = alqadar_role_ids;
 
 const AttendanceTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, totalPages, onDeleted }) => {
   const { t } = useTranslation();
@@ -130,22 +134,26 @@ const AttendanceTable = ({ data, loading, page = 1, setPage, selRows, setSelRows
                     </td>
                     <td className="px-4 py-4 align-middle pr-6">
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => onEdit(row)}
-                          className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
-                          title={t("edit")}
-                        >
-                          <AiOutlineEdit className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDelete(row)}
-                          className="text-slate-500 dark:text-white/80 transition-all hover:text-red-600 dark:hover:text-red-400"
-                          title={t("delete")}
-                        >
-                          <AiOutlineDelete className="h-4 w-4" />
-                        </button>
+                        {checkRoleAuth(edit_attendance) && (
+                          <button
+                            type="button"
+                            onClick={() => onEdit(row)}
+                            className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
+                            title={t("edit")}
+                          >
+                            <AiOutlineEdit className="h-4 w-4" />
+                          </button>
+                        )}
+                        {checkRoleAuth(delete_attendance) && (
+                          <button
+                            type="button"
+                            onClick={() => onDelete(row)}
+                            className="text-slate-500 dark:text-white/80 transition-all hover:text-red-600 dark:hover:text-red-400"
+                            title={t("delete")}
+                          >
+                            <AiOutlineDelete className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -168,7 +176,7 @@ const AttendanceTable = ({ data, loading, page = 1, setPage, selRows, setSelRows
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

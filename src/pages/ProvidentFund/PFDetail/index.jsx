@@ -11,7 +11,7 @@ import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import ActionPopup from "components/ActionPopup";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchPfPolicy,
   fetchPfAccountByEmployee,
@@ -27,12 +27,14 @@ import {
   showPfCurrentAccount,
   showPfContributionHistory,
   showPfWithdrawalsByEmployee,
+  showPfCurrentAccountLoading,
 } from "store/slices/providentFundSlice";
-import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
+import { SkeletonCards, SkeletonDetail } from "components/Skeleton";
+import { fetchEmployees, showEmployees, showEmployeesLoading } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { pfWithdrawalTypeOptions } from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_provident_fund, edit_provident_fund } = alqadar_role_ids;
 
 const WD_BADGE = {
   Pending: "bg-amber-100 text-amber-700",
@@ -61,6 +63,8 @@ const PFDetail = () => {
   const withdrawals = useSelector(showPfWithdrawalsByEmployee);
   const employees = useSelector(showEmployees);
   const departments = useSelector(showDepartments);
+  const employeesLoading = useSelector(showEmployeesLoading);
+  const accountLoading = useSelector(showPfCurrentAccountLoading);
 
   const employee = employees.find((e) => e.id === empId);
 
@@ -77,6 +81,20 @@ const PFDetail = () => {
   const { register: regC, handleSubmit: hsC, reset: resetC, formState: { errors: errC } } = useForm();
   const { register: regW, handleSubmit: hsW, reset: resetW, formState: { errors: errW } } = useForm();
   const [wdType, setWdType] = useState(pfWithdrawalTypeOptions[0]);
+
+  // `employee` is resolved out of the employees list, so an in-flight fetch
+  // looks identical to a genuinely missing employee — only claim "no record"
+  // once both the list and the PF account have actually come back.
+  if (!checkRoleAuth(view_provident_fund)) return null;
+
+  if (employeesLoading || accountLoading) {
+    return (
+      <div className="space-y-6">
+        <SkeletonCards count={4} columns="grid-cols-2 lg:grid-cols-4" />
+        <SkeletonDetail fields={8} />
+      </div>
+    );
+  }
 
   if (!employee) {
     return (
@@ -227,12 +245,12 @@ const PFDetail = () => {
               ))}
             </div>
             <div className="flex gap-2">
-              {checkRoleAuth(add_employee) && activeTab === "contributions" && (
+              {checkRoleAuth(edit_provident_fund) && activeTab === "contributions" && (
                 <Button type="button" title={t("pf:add_contribution")} icon={FiPlusCircle} iconClass="h-4 w-4 text-white"
                   onClick={() => setShowContribForm((v) => !v)}
                   className="!w-auto !rounded-lg !h-9 !px-3 !border-0 !text-white !bg-teal-500 hover:!bg-teal-600" />
               )}
-              {checkRoleAuth(add_employee) && activeTab === "withdrawals" && (
+              {checkRoleAuth(edit_provident_fund) && activeTab === "withdrawals" && (
                 <Button type="button" title={t("pf:request_withdrawal")} icon={FiPlusCircle} iconClass="h-4 w-4 text-white"
                   onClick={() => setShowWdForm((v) => !v)}
                   className="!w-auto !rounded-lg !h-9 !px-3 !border-0 !text-white !bg-rose-500 hover:!bg-rose-600" />
@@ -352,7 +370,7 @@ const PFDetail = () => {
                           {wd.remarks && <p className="text-xs italic text-slate-400 mt-0.5">&quot;{wd.remarks}&quot;</p>}
                         </div>
                       </div>
-                      {checkRoleAuth(add_employee) && wd.status === "Pending" && (
+                      {checkRoleAuth(edit_provident_fund) && wd.status === "Pending" && (
                         <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-white/10">
                           <Button type="button" title={t("pf:approve")} icon={FiCheck} iconClass="h-3 w-3"
                             onClick={() => onApprove(wd.id)}
@@ -362,7 +380,7 @@ const PFDetail = () => {
                             className="!w-auto !rounded-lg !h-8 !px-3 !text-xs !border-0 !text-white !bg-rose-500" />
                         </div>
                       )}
-                      {checkRoleAuth(add_employee) && wd.status === "Approved" && (
+                      {checkRoleAuth(edit_provident_fund) && wd.status === "Approved" && (
                         <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10">
                           <Button type="button" title={t("pf:mark_paid")}
                             onClick={() => onMarkPaid(wd.id)}

@@ -6,9 +6,7 @@ const initialState = {
   list: [],
   totalRecords: 0,
   current: null,
-  loading: false,
-  currentLoading: false,
-  error: null,
+  loading: false,  error: null,
 };
 
 export const fetchQuarantineLots = createAsyncThunk(
@@ -37,6 +35,13 @@ const quarantineLotSlice = createSlice({
   reducers: {
     clearCurrentQuarantineLot: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearQuarantineLotsList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -56,23 +61,23 @@ const quarantineLotSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchQuarantineLotById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchQuarantineLotById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchQuarantineLotById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = null;
       });
   },
 });
 
-export const { clearCurrentQuarantineLot } = quarantineLotSlice.actions;
+export const { clearCurrentQuarantineLot, clearQuarantineLotsList } = quarantineLotSlice.actions;
 export const showQuarantineLots = (state) => state.quarantineLot.list;
 export const showQuarantineLotsTotal = (state) => state.quarantineLot.totalRecords;
 export const showQuarantineLotsLoading = (state) => state.quarantineLot.loading;
 export const showCurrentQuarantineLot = (state) => state.quarantineLot.current;
-export const showCurrentQuarantineLotLoading = (state) => state.quarantineLot.currentLoading;
+export const showCurrentQuarantineLotLoading = (state) => state.quarantineLot.loading;
 export default quarantineLotSlice.reducer;

@@ -8,23 +8,27 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
+import { SkeletonCards } from "components/Skeleton";
 import { checkRoleAuth, formatAmount, mapCoaToOptions } from "global/helper";
 import { financePaymentDirectionOptions } from "global/constant";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchBankAccounts,
   fetchChartOfAccounts,
   fetchCustomerInvoiceById,
   fetchVendorBillById,
   createPayment,
+  clearCurrentCustomerInvoice,
+  clearCurrentVendorBill,
   showBankAccounts,
   showChartOfAccounts,
   showCurrentCustomerInvoice,
+  showCurrentCustomerInvoiceLoading,
   showCurrentVendorBill,
+  showCurrentVendorBillLoading,
 } from "store/slices/financeSlice";
 
-const { add_customer } = rafeeqi_role_ids;
-
+const { add_finance_payment } = alqadar_role_ids;
 
 // A Payment is the one shared write path for cash-in/cash-out — recording
 // one against an invoice/bill is what actually advances its paidToDate and
@@ -41,7 +45,10 @@ const AddPayment = () => {
   const bankAccounts = useSelector(showBankAccounts);
   const coaAccounts = useSelector(showChartOfAccounts);
   const invoice = useSelector(showCurrentCustomerInvoice);
+  const invoiceLoading = useSelector(showCurrentCustomerInvoiceLoading);
   const bill = useSelector(showCurrentVendorBill);
+  const billLoading = useSelector(showCurrentVendorBillLoading);
+  const relatedLoading = invoiceId ? invoiceLoading : billId ? billLoading : false;
 
   useEffect(() => {
     if (!bankAccounts.length) dispatch(fetchBankAccounts());
@@ -51,6 +58,10 @@ const AddPayment = () => {
   useEffect(() => {
     if (invoiceId) dispatch(fetchCustomerInvoiceById(invoiceId));
     if (billId) dispatch(fetchVendorBillById(billId));
+    return () => {
+      dispatch(clearCurrentCustomerInvoice());
+      dispatch(clearCurrentVendorBill());
+    };
   }, [dispatch, invoiceId, billId]);
 
   const direction = invoiceId ? "receipt" : billId ? "disbursement" : null;
@@ -76,7 +87,7 @@ const AddPayment = () => {
   });
 
   useEffect(() => {
-    if (!checkRoleAuth(add_customer)) {
+    if (!checkRoleAuth(add_finance_payment)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/payments");
     }
@@ -124,7 +135,7 @@ const AddPayment = () => {
     }
   };
 
-  if (!checkRoleAuth(add_customer)) return null;
+  if (!checkRoleAuth(add_finance_payment)) return null;
   const isRTL = i18n.language === "ar";
 
   return (
@@ -145,18 +156,23 @@ const AddPayment = () => {
           onSubmit={handleSubmit(onSubmit)}
           className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-8 border-l-4 !border-l-[var(--color-teal-500)]"
         >
-          {(invoiceId || billId) && (
-            <div className="mb-6 rounded-xl border border-slate-200 dark:border-white/10 p-4 bg-slate-50 dark:bg-white/5">
-              <p className="text-sm text-mutedForeground">
-                {invoiceId ? `${t("finance:customer")}: ${invoice?.customerName || "…"}` : `${t("finance:supplier")}: ${bill?.vendorName || "…"}`}
-              </p>
-              {balanceDue != null && (
-                <p className="text-lg font-bold tabular-nums mt-1">
-                  {t("finance:balance_due")}: {formatAmount(balanceDue)}
+          {(invoiceId || billId) &&
+            (relatedLoading ? (
+              <div className="mb-6">
+                <SkeletonCards count={1} columns="grid-cols-1" />
+              </div>
+            ) : (
+              <div className="mb-6 rounded-xl border border-slate-200 dark:border-white/10 p-4 bg-slate-50 dark:bg-white/5">
+                <p className="text-sm text-mutedForeground">
+                  {invoiceId ? `${t("finance:customer")}: ${invoice?.customerName || "…"}` : `${t("finance:supplier")}: ${bill?.vendorName || "…"}`}
                 </p>
-              )}
-            </div>
-          )}
+                {balanceDue != null && (
+                  <p className="text-lg font-bold tabular-nums mt-1">
+                    {t("finance:balance_due")}: {formatAmount(balanceDue)}
+                  </p>
+                )}
+              </div>
+            ))}
 
           {!invoiceId && !billId && (
             <div className="mb-6 flex gap-2">

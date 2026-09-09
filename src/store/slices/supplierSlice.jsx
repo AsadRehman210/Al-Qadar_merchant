@@ -25,7 +25,6 @@ const initialState = {
   dropdownOptions: [],
   dropdownPage: 1,
   dropdownHasMore: false,
-  dropdownLoading: false,
 };
 
 export const fetchSuppliers = createAsyncThunk(
@@ -145,12 +144,43 @@ export const deleteSupplier = createAsyncThunk(
   },
 );
 
+export const addSupplierOpeningPayment = createAsyncThunk(
+  "supplier/addOpeningPayment",
+  async ({ id, data }, { rejectWithValue }) => {
+    const response = await erpPost(`${erpUrls.suppliers}/${id}/opening-balance/payments`, data);
+    if (!response?.success) return rejectWithValue(response?.message);
+    return { result: response.result, message: response.message };
+  },
+);
+
 const supplierSlice = createSlice({
   name: "supplier",
   initialState,
   reducers: {
     clearCurrentSupplier: (state) => {
       state.current = null;
+      state.loading = false;
+      state.invoices = [];
+      state.invoicesTotal = 0;
+      state.payments = [];
+      state.paymentsTotal = 0;
+      state.ledger = [];
+      state.ledgerTotal = 0;
+      state.ledgerOpeningBalance = 0;
+      state.balance = null;
+      state.debitCreditSummary = null;
+    },
+    clearSuppliersList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
+    },
+    resetSupplierDropdown: (state) => {
+      state.dropdownOptions = [];
+      state.dropdownPage = 1;
+      state.dropdownHasMore = false;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
@@ -170,14 +200,14 @@ const supplierSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchSupplierById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchSupplierById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchSupplierById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(fetchSupplierInvoices.fulfilled, (state, action) => {
         state.invoices = action.payload.result || [];
@@ -199,17 +229,17 @@ const supplierSlice = createSlice({
         state.debitCreditSummary = action.payload;
       })
       .addCase(fetchSuppliersDropdown.pending, (state) => {
-        state.dropdownLoading = true;
+        state.loading = true;
       })
       .addCase(fetchSuppliersDropdown.fulfilled, (state, action) => {
-        state.dropdownLoading = false;
+        state.loading = false;
         const { result, page, total_pages } = action.payload;
         state.dropdownOptions = page === 1 ? result : [...state.dropdownOptions, ...result];
         state.dropdownPage = page;
         state.dropdownHasMore = page < total_pages;
       })
       .addCase(fetchSuppliersDropdown.rejected, (state) => {
-        state.dropdownLoading = false;
+        state.loading = false;
       })
       .addCase(createSupplier.fulfilled, (state, action) => {
         if (action.payload?.result) state.list.unshift(action.payload.result);
@@ -221,16 +251,47 @@ const supplierSlice = createSlice({
       })
       .addCase(deleteSupplier.fulfilled, (state, action) => {
         state.list = state.list.filter((s) => s.id !== action.payload?.id);
-      });
+      })
+      .addCase(addSupplierOpeningPayment.fulfilled, (state, action) => {
+        if (action.payload?.result) state.current = action.payload.result;
+      })
+      .addMatcher(
+        (action) =>
+          [
+            fetchSupplierInvoices.pending.type,
+            fetchSupplierPayments.pending.type,
+            fetchSupplierLedger.pending.type,
+            fetchSupplierBalance.pending.type,
+            fetchSupplierDebitCreditSummary.pending.type,
+          ].includes(action.type),
+        (state) => { state.loading = true; },
+      )
+      .addMatcher(
+        (action) =>
+          [
+            fetchSupplierInvoices.fulfilled.type,
+            fetchSupplierInvoices.rejected.type,
+            fetchSupplierPayments.fulfilled.type,
+            fetchSupplierPayments.rejected.type,
+            fetchSupplierLedger.fulfilled.type,
+            fetchSupplierLedger.rejected.type,
+            fetchSupplierBalance.fulfilled.type,
+            fetchSupplierBalance.rejected.type,
+            fetchSupplierDebitCreditSummary.fulfilled.type,
+            fetchSupplierDebitCreditSummary.rejected.type,
+          ].includes(action.type),
+        (state) => { state.loading = false; },
+      );
   },
 });
 
-export const { clearCurrentSupplier } = supplierSlice.actions;
+export const { clearCurrentSupplier, clearSuppliersList, resetSupplierDropdown } = supplierSlice.actions;
 export const showSuppliers = (state) => state.supplier.list;
 export const showSuppliersTotal = (state) => state.supplier.totalRecords;
 export const showSuppliersLoading = (state) => state.supplier.loading;
 export const showCurrentSupplier = (state) => state.supplier.current;
-export const showCurrentSupplierLoading = (state) => state.supplier.currentLoading;
+export const showCurrentSupplierLoading = (state) => state.supplier.loading;
+export const showSupplierTabLoading = (state) => state.supplier.loading;
 export const showSupplierInvoices = (state) => state.supplier.invoices;
 export const showSupplierInvoicesTotal = (state) => state.supplier.invoicesTotal;
 export const showSupplierPayments = (state) => state.supplier.payments;
@@ -243,5 +304,5 @@ export const showSupplierDebitCreditSummary = (state) => state.supplier.debitCre
 export const showSupplierDropdownOptions = (state) => state.supplier.dropdownOptions;
 export const showSupplierDropdownPage = (state) => state.supplier.dropdownPage;
 export const showSupplierDropdownHasMore = (state) => state.supplier.dropdownHasMore;
-export const showSupplierDropdownLoading = (state) => state.supplier.dropdownLoading;
+export const showSupplierDropdownLoading = (state) => state.supplier.loading;
 export default supplierSlice.reducer;

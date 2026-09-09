@@ -1,16 +1,16 @@
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AiOutlineEdit, AiOutlineEye } from "react-icons/ai";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
 import { tableRows } from "global/constant";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import Table from "components/Table";
 
-const { add_employee, view_employee } = rafeeqi_role_ids;
+const { edit_designation, view_designation } = alqadar_role_ids;
 
 const LEVEL_COLORS = {
   "C-Level":    "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
@@ -76,7 +76,7 @@ const DesignationsTable = ({ data, loading, page = 1, setPage, selRows, setSelRo
                   </td>
                   <td className="px-4 py-4 align-middle pr-6">
                     <div className="flex items-center gap-2">
-                      {checkRoleAuth(view_employee) && (
+                      {checkRoleAuth(view_designation) && (
                         <button
                           onClick={() => navigate(`/designations/detail/${row.id}`)}
                           className="text-slate-400 hover:text-teal-600 transition-colors"
@@ -85,7 +85,7 @@ const DesignationsTable = ({ data, loading, page = 1, setPage, selRows, setSelRo
                           <AiOutlineEye className="h-4 w-4" />
                         </button>
                       )}
-                      {checkRoleAuth(add_employee) && (
+                      {checkRoleAuth(edit_designation) && (
                         <button
                           onClick={() => navigate(`/designations/edit/${row.id}`)}
                           className="text-slate-400 hover:text-teal-600 transition-colors"
@@ -115,7 +115,7 @@ const DesignationsTable = ({ data, loading, page = 1, setPage, selRows, setSelRo
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

@@ -6,24 +6,24 @@ import PurchasesTable from "./PurchasesTable";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
-import {
-  fetchPurchaseInvoices,
-  deletePurchaseInvoice,
-  showPurchaseInvoices,
-  showPurchaseInvoicesTotal,
-  showPurchaseInvoicesLoading,
-} from "store/slices/purchaseInvoiceSlice";
+import { fetchPurchaseInvoices, deletePurchaseInvoice, showPurchaseInvoices, showPurchaseInvoicesTotal, showPurchaseInvoicesLoading, clearPurchaseInvoicesList } from "store/slices/purchaseInvoiceSlice";
 import SearchInput from "components/SearchInput";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_purchase_invoice, add_purchase_invoice } = alqadar_role_ids;
 
 const Purchases = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearPurchaseInvoicesList());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useListFilters("purchases-list", { page: 1, limitId: tableRows[0].id, search: "" });
   const { page, search } = filters;
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
@@ -60,7 +60,7 @@ const Purchases = () => {
               {t("purchase:purchases_module_desc")}
             </p>
           </div>
-          {checkRoleAuth(add_customer) && (
+          {checkRoleAuth(add_purchase_invoice) && (
             <div className="relative z-10 shrink-0">
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5 disabled:hover:translate-y-0"
@@ -79,7 +79,7 @@ const Purchases = () => {
           )}
         </div>
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_purchase_invoice) && (
             <div className="mb-6">
               <div className="flex-1 min-w-[200px] min-h-[44px] max-w-md">
                 <SearchInput
@@ -90,7 +90,7 @@ const Purchases = () => {
               </div>
             </div>
           )}
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_purchase_invoice) && (
             <PurchasesTable
               data={rows}
               loading={loading}

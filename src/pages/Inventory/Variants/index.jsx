@@ -7,22 +7,23 @@ import VariantsTable from "./VariantsTable";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
-import {
-  fetchVariants,
-  showVariants,
-  showVariantsTotal,
-  showVariantsLoading,
-} from "store/slices/variantSlice";
+import { fetchVariants, showVariants, showVariantsTotal, showVariantsLoading, clearVariantsList } from "store/slices/variantSlice";
 import { useListFilters } from "hooks/useListFilters";
 
-const { add_customer, view_customer } = rafeeqi_role_ids;
+const { add_inventory_variant, view_inventory_variant } = alqadar_role_ids;
 
 const Variants = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearVariantsList());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useListFilters("inventory-variants", {
     page: 1,
     limitId: tableRows[0].id,
@@ -62,7 +63,7 @@ const Variants = () => {
               {t("product:variant_module_desc")}
             </p>
           </div>
-          {checkRoleAuth(add_customer) && (
+          {checkRoleAuth(add_inventory_variant) && (
             <div className="relative z-10 shrink-0">
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5 disabled:hover:translate-y-0"
@@ -81,7 +82,7 @@ const Variants = () => {
           )}
         </div>
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_inventory_variant) && (
             <>
               <div className="flex flex-wrap items-center gap-3 mb-5">
                 <div className="flex-1 min-w-[220px] max-w-xs">

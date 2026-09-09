@@ -4,13 +4,14 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import dayjs from "dayjs";
 import { LuShieldAlert, LuCalendarClock } from "react-icons/lu";
-import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
-import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
+import { fetchEmployees, showEmployees, showEmployeesLoading } from "store/slices/employeeSlice";
+import { fetchDepartments, showDepartments, showDepartmentsLoading } from "store/slices/departmentSlice";
+import { SkeletonCards, SkeletonTable } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { useListFilters } from "hooks/useListFilters";
 
-const { view_employee } = rafeeqi_role_ids;
+const { view_employee } = alqadar_role_ids;
 
 const WINDOW_OPTS = [30, 60, 90];
 
@@ -28,6 +29,9 @@ const Compliance = () => {
 
   const employees = useSelector(showEmployees);
   const departments = useSelector(showDepartments);
+  // Every row is an employee document joined to its department name, so both
+  // fetches have to land before the counts mean anything.
+  const loading = useSelector(showEmployeesLoading) || useSelector(showDepartmentsLoading);
 
   useEffect(() => {
     dispatch(fetchEmployees());
@@ -82,16 +86,20 @@ const Compliance = () => {
           <p className="text-mutedForeground mt-1">{t("orgHr:compliance_desc")}</p>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 text-white">
-            <p className="text-xs font-medium opacity-80 mb-1">{t("orgHr:expired")}</p>
-            <p className="text-2xl font-bold flex items-center gap-2"><LuShieldAlert className="h-5 w-5" /> {expiredCount}</p>
+        {loading ? (
+          <SkeletonCards count={2} columns="grid-cols-2 lg:grid-cols-4" />
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-600 text-white">
+              <p className="text-xs font-medium opacity-80 mb-1">{t("orgHr:expired")}</p>
+              <p className="text-2xl font-bold flex items-center gap-2"><LuShieldAlert className="h-5 w-5" /> {expiredCount}</p>
+            </div>
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white">
+              <p className="text-xs font-medium opacity-80 mb-1">{t("orgHr:expiring_soon")}</p>
+              <p className="text-2xl font-bold flex items-center gap-2"><LuCalendarClock className="h-5 w-5" /> {soonCount}</p>
+            </div>
           </div>
-          <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white">
-            <p className="text-xs font-medium opacity-80 mb-1">{t("orgHr:expiring_soon")}</p>
-            <p className="text-2xl font-bold flex items-center gap-2"><LuCalendarClock className="h-5 w-5" /> {soonCount}</p>
-          </div>
-        </div>
+        )}
 
         <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-7">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -124,7 +132,9 @@ const Compliance = () => {
             </div>
           </div>
 
-          {filtered.length === 0 ? (
+          {loading ? (
+            <SkeletonTable rows={6} columns={6} />
+          ) : filtered.length === 0 ? (
             <p className="text-center text-slate-500 dark:text-white/60 py-12">{t("orgHr:no_expiring_documents")}</p>
           ) : (
             <div className="overflow-x-auto rounded-md overflow-hidden border border-slate-200 dark:border-white/10">

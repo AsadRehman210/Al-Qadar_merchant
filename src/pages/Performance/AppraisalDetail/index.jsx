@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/react";
@@ -7,11 +7,11 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormTextarea from "components/FormTextarea";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { getAppraisalById, submitAppraisal, startReview, finalizeAppraisal } from "../performanceFakeData";
 import { statusColor, ratingLabelKey, ratingColor, weightedScore } from "../performanceHelpers";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_performance, edit_performance } = alqadar_role_ids;
 
 const FLOW_STEPS = [
   { key: "Draft", labelKey: "performance:step_draft" },
@@ -61,6 +61,8 @@ const AppraisalDetail = () => {
   const [hrComment, setHrComment] = useState(appraisal?.hrComment || "");
   const ws = useMemo(() => weightedScore(appraisal?.kpis), [appraisal?.kpis]);
 
+  if (!checkRoleAuth(view_performance)) return null;
+
   if (!appraisal) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
@@ -71,7 +73,7 @@ const AppraisalDetail = () => {
     );
   }
 
-  const canManage = checkRoleAuth(add_employee);
+  const canManage = checkRoleAuth(edit_performance);
 
   const handleSubmit = () => {
     submitAppraisal(id);

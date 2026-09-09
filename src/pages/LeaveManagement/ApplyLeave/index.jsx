@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -9,17 +9,14 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
-import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
 import { applyLeave } from "store/slices/leaveSlice";
 import { fetchLeaveTypes, showLeaveTypes } from "store/slices/leaveTypeSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 
-const { add_employee } = rafeeqi_role_ids;
-
 // Apply-only — there is no PUT/update endpoint for a submitted leave request
 // on the backend (only apply/approve/reject/cancel), so edit mode was
 // dropped, matching the Loan/Expense precedent elsewhere this session.
+// Self-service (appliedVia: "employee"); HR-for-others is AddLeave + add_leave.
 const ApplyLeave = () => {
   const { t, i18n } = useTranslation();
   const dispatch = useDispatch();
@@ -107,8 +104,6 @@ const ApplyLeave = () => {
     }
   };
 
-  if (!checkRoleAuth(add_employee)) return null;
-
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
       <div className="hidden dark:block absolute inset-0 bg-slate-900 z-0 overflow-hidden" />
@@ -152,7 +147,7 @@ const ApplyLeave = () => {
                       {i + 1}
                     </div>
                     <span className="text-xs text-blue-700 dark:text-blue-300 font-medium">{step}</span>
-                    {i < 3 && <span className="text-blue-300">→</span>}
+                    {i < 3 && <span className="text-blue-300">?</span>}
                   </div>
                 ),
               )}
@@ -174,7 +169,7 @@ const ApplyLeave = () => {
                 required
               />
               <p className="text-xs text-slate-500 dark:text-white/60 mt-1.5">
-                {t("leave:manager_label")}: <span className="font-semibold">{manager?.name || "—"}</span>
+                {t("leave:manager_label")}: <span className="font-semibold">{manager?.name || "�"}</span>
               </p>
             </div>
 
@@ -248,7 +243,7 @@ const ApplyLeave = () => {
 
             {/* Handover & Emergency */}
             <FormInput label={t("leave:handover_to")} name="handoverTo" register={register} errors={errors}
-              pattern={/[a-zA-Z\s.'-]/} minLength={2} maxLength={150} />
+              pattern={/[a-zA-Z\s.'-]/} minLength={2} maxLength={100} />
             <FormInput
               label={t("leave:emergency_contact")}
               name="emergencyContact"

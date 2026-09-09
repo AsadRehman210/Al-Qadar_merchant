@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import SalaryFilter from "./SalaryFilter";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonTable } from "components/Skeleton";
@@ -20,7 +20,7 @@ import {
 } from "store/slices/payrollBatchSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 
-const { view_employee } = rafeeqi_role_ids;
+const { view_salary } = alqadar_role_ids;
 
 // Salary is no longer something added by hand here — the real basic/
 // allowances/deductions setup lives in the Employee wizard's Salary step,
@@ -61,6 +61,10 @@ const Salary = () => {
     }
   }, [selectedEmployeeId, dispatch, page, selRows.id]);
 
+  useEffect(() => {
+    return () => dispatch(clearEmployeeHistory());
+  }, [dispatch]);
+
   const selectedEmployee = employees.find((e) => e.id === selectedEmployeeId);
 
   // Server already flattened+paginated this (payroll-run-service.getAllEmployeesHistory)
@@ -90,12 +94,12 @@ const Salary = () => {
           </div>
         </div>
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_employee) && (
+          {checkRoleAuth(view_salary) && (
             <div className="mb-6">
               <SalaryFilter selectedEmployeeId={selectedEmployeeId} onSelectEmployee={setSelectedEmployeeId} />
             </div>
           )}
-          {checkRoleAuth(view_employee) &&
+          {checkRoleAuth(view_salary) &&
             (loading ? (
               <SkeletonTable rows={6} columns={selectedEmployeeId ? 5 : 6} />
             ) : (

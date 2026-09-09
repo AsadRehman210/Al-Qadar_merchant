@@ -7,6 +7,10 @@ import Button from "components/Button";
 import ExportButton from "components/ExportButton";
 import { SkeletonTable } from "components/Skeleton";
 import { fetchAssets, showAssets, showAssetsLoading } from "store/slices/assetSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_asset } = alqadar_role_ids;
 
 const fmt = (n) => `${(parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -112,6 +116,8 @@ const AssetReports = () => {
         }),
     [assets, t],
   );
+
+  if (!checkRoleAuth(view_asset)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

@@ -2,13 +2,14 @@ import { useEffect } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
+import { SkeletonCards } from "components/Skeleton";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
@@ -20,7 +21,7 @@ import {
 } from "store/slices/purchaseInvoiceSlice";
 import FinancePage from "../FinancePage";
 
-const { view_customer } = rafeeqi_role_ids;
+const { view_finance_vat } = alqadar_role_ids;
 
 
 const RecoverableTax = () => {
@@ -43,13 +44,17 @@ const RecoverableTax = () => {
 
   return (
     <FinancePage title={t("finance:recoverable_tax_title")} description={t("finance:recoverable_tax_desc")}>
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_vat) && (
         <>
           <div className="mb-6 max-w-xs">
-            <div className="p-4 rounded-2xl border border-teal-200 bg-teal-50 dark:bg-teal-500/10 dark:border-teal-500/20">
-              <p className="text-xs text-slate-500">{t("finance:total_recoverable_tax")}</p>
-              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalAmount)}</p>
-            </div>
+            {loading ? (
+              <SkeletonCards count={1} columns="grid-cols-1" />
+            ) : (
+              <div className="p-4 rounded-2xl border border-teal-200 bg-teal-50 dark:bg-teal-500/10 dark:border-teal-500/20">
+                <p className="text-xs text-slate-500">{t("finance:total_recoverable_tax")}</p>
+                <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalAmount)}</p>
+              </div>
+            )}
           </div>
 
           <div className="mb-5 max-w-md">
@@ -99,7 +104,7 @@ const RecoverableTax = () => {
               <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page")}</span>
             </div>
             <div className="pagination ltr:ml-auto rtl:mr-auto">
-              <ReactPaginate
+              <Pagination
                 breakLabel="..."
                 nextLabel={<FaAngleRight />}
                 previousLabel={<FaAngleLeft />}

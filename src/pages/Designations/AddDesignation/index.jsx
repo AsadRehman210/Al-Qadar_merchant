@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -8,24 +8,22 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
+import { designationLevelOptions, designationGradeOptions, activeInactiveOptions as STATUS_OPTS } from "global/constant";
 import {
   fetchDesignationById,
   createDesignation,
   updateDesignation,
   showCurrentDesignation,
+  showCurrentDesignationLoading,
   clearCurrentDesignation,
 } from "store/slices/designationSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { showUserData } from "store/slices/uniqueSlice";
-import {
-  activeInactiveOptions as STATUS_OPTS,
-  designationLevelOptions,
-  designationGradeOptions,
-} from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { add_designation, edit_designation } = alqadar_role_ids;
 
 const AddDesignation = () => {
   const { t, i18n } = useTranslation();
@@ -35,6 +33,7 @@ const AddDesignation = () => {
   const isRTL = i18n.language === "ar";
 
   const existing = useSelector(showCurrentDesignation);
+  const loading = useSelector(showCurrentDesignationLoading);
   const departments = useSelector(showDepartments);
   const userData = useSelector(showUserData);
   const tenantCurrency = userData?.currency || "SAR";
@@ -74,11 +73,12 @@ const AddDesignation = () => {
   });
 
   useEffect(() => {
-    if (!checkRoleAuth(add_employee)) {
+    const allowed = id ? checkRoleAuth(edit_designation) : checkRoleAuth(add_designation);
+    if (!allowed) {
       toast.error("Not authorized");
       navigate("/designations");
     }
-  }, [navigate]);
+  }, [navigate, id]);
 
   useEffect(() => {
     if (existing && existing.id === id) {
@@ -131,7 +131,15 @@ const AddDesignation = () => {
     }
   };
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (id ? !checkRoleAuth(edit_designation) : !checkRoleAuth(add_designation)) return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={8} />
+      </div>
+    );
+  }
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

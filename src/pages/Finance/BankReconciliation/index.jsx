@@ -3,12 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import SelectDropdown from "components/SelectDropdown";
 import FormInput from "components/FormInput";
 import Button from "components/Button";
 import FinancePage from "../FinancePage";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { financeReconciliationStatusBadge, tableRows } from "global/constant";
 import {
@@ -28,12 +28,13 @@ import {
   showStatementLinesLoading,
   showLedgerAccountLines,
   showReconciliationSessions,
+  showReconciliationSessionsLoading,
 } from "store/slices/financeSlice";
 import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 import { useListFilters } from "hooks/useListFilters";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_finance_reconciliation, add_finance_reconciliation } = alqadar_role_ids;
 
 const EMPTY_LINE = { date: new Date().toISOString().slice(0, 10), description: "", amount: "", reference: "" };
 const EMPTY_SESSION = { periodStart: "", periodEnd: "", statementEndingBalance: "" };
@@ -52,6 +53,7 @@ const BankReconciliation = () => {
   const statementLinesLoading = useSelector(showStatementLinesLoading);
   const ledgerLines = useSelector(showLedgerAccountLines);
   const sessions = useSelector(showReconciliationSessions);
+  const sessionsLoading = useSelector(showReconciliationSessionsLoading);
 
   const [filters, setFilters] = useListFilters("finance-bank-reconciliation", { accountId: null, page: 1, limitId: tableRows[0].id });
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
@@ -172,7 +174,7 @@ const BankReconciliation = () => {
 
   return (
     <FinancePage title={t("finance:recon_title")} description={t("finance:recon_desc")}>
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_reconciliation) && (
         <>
           <div className="mb-6 flex flex-wrap gap-4 items-end">
             <div className="min-w-[260px]">
@@ -199,7 +201,7 @@ const BankReconciliation = () => {
             </div>
           </div>
 
-          {checkRoleAuth(add_customer) && (
+          {checkRoleAuth(add_finance_reconciliation) && (
             <div className="mb-6 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
               <p className="text-sm font-semibold mb-3">{t("finance:recon_add_line")}</p>
               <div className="grid md:grid-cols-5 gap-3 items-end">
@@ -274,13 +276,13 @@ const BankReconciliation = () => {
                       <td className="px-4 py-4 align-middle font-mono text-xs">{row.reference || "—"}</td>
                       <td className="px-4 py-4 align-middle pr-6">
                         {row.matched ? (
-                          checkRoleAuth(add_customer) && (
+                          checkRoleAuth(add_finance_reconciliation) && (
                             <button onClick={() => handleUnmatch(row.id)} className="text-xs font-medium text-teal-600 hover:underline">
                               {t("finance:recon_unmatch")}
                             </button>
                           )
                         ) : (
-                          checkRoleAuth(add_customer) && (
+                          checkRoleAuth(add_finance_reconciliation) && (
                             <div className="flex items-center gap-2 min-w-[220px]">
                               <SelectDropdown
                                 data={ledgerOpts}
@@ -314,7 +316,7 @@ const BankReconciliation = () => {
                 <span className="whitespace-nowrap">{t("per_page")}</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}
@@ -332,7 +334,7 @@ const BankReconciliation = () => {
           )}
 
           <h3 className="font-semibold text-slate-700 dark:text-white mb-3">{t("finance:recon_sessions")}</h3>
-          {checkRoleAuth(add_customer) && (
+          {checkRoleAuth(add_finance_reconciliation) && (
             <div className="mb-4 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
               <div className="grid md:grid-cols-4 gap-3 items-end">
                 <FormInput
@@ -372,7 +374,9 @@ const BankReconciliation = () => {
               </div>
             </div>
           )}
-          {sessions.length === 0 ? (
+          {sessionsLoading ? (
+            <SkeletonTable rows={4} columns={6} />
+          ) : sessions.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="overflow-x-auto rounded-md overflow-hidden border border-slate-200 dark:border-white/10">
@@ -402,7 +406,7 @@ const BankReconciliation = () => {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${financeReconciliationStatusBadge[s.status] || ""}`}>{s.status}</span>
                       </td>
                       <td className="px-4 py-4 align-middle pr-6">
-                        {s.status === "Open" && checkRoleAuth(add_customer) && (
+                        {s.status === "Open" && checkRoleAuth(add_finance_reconciliation) && (
                           <button onClick={() => handleCloseSession(s.id)} className="text-xs font-medium text-teal-600 hover:underline">
                             {t("finance:recon_close_session")}
                           </button>

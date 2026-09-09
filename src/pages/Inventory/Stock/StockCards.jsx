@@ -3,10 +3,16 @@ import { MdOutlineInventory2 } from "react-icons/md";
 import { IoWarningOutline } from "react-icons/io5";
 import { TbAlertTriangle } from "react-icons/tb";
 import Card from "components/Card";
+import { SkeletonCards } from "components/Skeleton";
 import { useTranslation } from "react-i18next";
 
-const StockCards = ({ summary }) => {
+const StockCards = ({ summary, loading = false }) => {
   const { t } = useTranslation();
+
+  if (loading) {
+    return <SkeletonCards count={4} columns="grid-cols-1 sm:grid-cols-2 xl:grid-cols-4" />;
+  }
+
   const s = summary || {
     totalSkus: 0,
     totalUnits: 0,

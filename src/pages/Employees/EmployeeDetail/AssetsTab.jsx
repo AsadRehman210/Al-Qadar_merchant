@@ -13,7 +13,9 @@ import {
   assignAsset,
   returnAsset,
   showAssets,
+  showAssetsLoading,
 } from "store/slices/assetSlice";
+import { SkeletonCards, SkeletonList } from "components/Skeleton";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -45,6 +47,7 @@ const AssetsTab = ({ data }) => {
 
   const employeeId = data?.id;
   const allAssets = useSelector(showAssets);
+  const isLoading = useSelector(showAssetsLoading);
 
   useEffect(() => {
     dispatch(fetchAssets({ limit: 500 }));
@@ -95,6 +98,15 @@ const AssetsTab = ({ data }) => {
       toast.error(message || t("employees:action_failed"));
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <SkeletonCards count={1} columns="grid-cols-1" />
+        <SkeletonList rows={4} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

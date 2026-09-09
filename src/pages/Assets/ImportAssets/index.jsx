@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import * as XLSX from "xlsx";
 import { useTranslation } from "react-i18next";
@@ -8,10 +8,10 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import ExportButton from "components/ExportButton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { fetchAssetCategories, createAsset, showAssetCategories } from "store/slices/assetSlice";
 
-const { add_customer } = rafeeqi_role_ids;
+const { import_asset } = alqadar_role_ids;
 
 const TEMPLATE_COLUMNS = [
   { label: "name", key: "name" },
@@ -40,7 +40,7 @@ const ImportAssets = () => {
     dispatch(fetchAssetCategories());
   }, [dispatch]);
 
-  if (!checkRoleAuth(add_customer)) {
+  if (!checkRoleAuth(import_asset)) {
     toast.error(t("asset:not_authorized"));
     navigate("/assets");
     return null;

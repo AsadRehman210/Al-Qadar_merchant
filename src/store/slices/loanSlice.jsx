@@ -12,6 +12,7 @@ const initialState = {
   current: null,
   currentLoading: false,
   employeeLoans: [],
+  employeeLoansLoading: false,
   loading: false,
   error: null,
 };
@@ -103,6 +104,10 @@ const loanSlice = createSlice({
     clearCurrentLoan: (state) => {
       state.current = null;
     },
+    clearEmployeeLoans: (state) => {
+      state.employeeLoans = [];
+      state.employeeLoansLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -130,8 +135,16 @@ const loanSlice = createSlice({
       .addCase(fetchLoanById.rejected, (state) => {
         state.currentLoading = false;
       })
+      .addCase(fetchLoansByEmployee.pending, (state) => {
+        state.employeeLoansLoading = true;
+      })
       .addCase(fetchLoansByEmployee.fulfilled, (state, action) => {
+        state.employeeLoansLoading = false;
         state.employeeLoans = action.payload;
+      })
+      .addCase(fetchLoansByEmployee.rejected, (state) => {
+        state.employeeLoansLoading = false;
+        state.employeeLoans = [];
       })
       .addCase(applyLoan.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -158,6 +171,7 @@ export const {
   setFilterLoanType,
   setCurrentPage,
   clearCurrentLoan,
+  clearEmployeeLoans,
 } = loanSlice.actions;
 export const showSearch = (state) => state.loan.search;
 export const showFilterStatus = (state) => state.loan.filterStatus;
@@ -169,4 +183,5 @@ export const showLoansLoading = (state) => state.loan.loading;
 export const showCurrentLoan = (state) => state.loan.current;
 export const showCurrentLoanLoading = (state) => state.loan.currentLoading;
 export const showEmployeeLoans = (state) => state.loan.employeeLoans;
+export const showEmployeeLoansLoading = (state) => state.loan.employeeLoansLoading;
 export default loanSlice.reducer;

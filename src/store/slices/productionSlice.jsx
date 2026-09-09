@@ -90,6 +90,13 @@ const productionSlice = createSlice({
   reducers: {
     clearCurrentProductionOrder: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearProductionOrdersList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -109,14 +116,14 @@ const productionSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchProductionOrderById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchProductionOrderById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchProductionOrderById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(createProductionOrder.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -134,10 +141,10 @@ const productionSlice = createSlice({
   },
 });
 
-export const { clearCurrentProductionOrder } = productionSlice.actions;
+export const { clearCurrentProductionOrder, clearProductionOrdersList } = productionSlice.actions;
 export const showProductionOrders = (state) => state.production.list;
 export const showProductionOrdersTotal = (state) => state.production.totalRecords;
 export const showProductionOrdersLoading = (state) => state.production.loading;
 export const showCurrentProductionOrder = (state) => state.production.current;
-export const showCurrentProductionOrderLoading = (state) => state.production.currentLoading;
+export const showCurrentProductionOrderLoading = (state) => state.production.loading;
 export default productionSlice.reducer;

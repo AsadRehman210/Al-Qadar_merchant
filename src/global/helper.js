@@ -1,6 +1,6 @@
 import { store } from "store";
 import { clearLoginData } from "store/slices/uniqueSlice";
-import { LEGACY_WILDCARD_PERMISSIONS } from "global/rafeeqiRoles";
+import { LEGACY_WILDCARD_PERMISSIONS } from "global/alqadarRoles";
 import { gender } from "global/constant";
 import i18n from "i18next";
 import { BASE_URL, GOOGLE_API_KEY } from "global/config";

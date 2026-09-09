@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -7,31 +7,31 @@ import { HiOutlineArrowDownTray } from "react-icons/hi2";
 import { FaRegEdit } from "react-icons/fa";
 import Button from "components/Button";
 import { toast } from "react-toastify";
-import {
-  fetchQuotationById,
-  updateQuotationStatus,
-  showCurrentQuotation,
-  showCurrentQuotationLoading,
-} from "store/slices/quotationSlice";
+import { fetchQuotationById, updateQuotationStatus, showCurrentQuotation, showCurrentQuotationLoading, clearCurrentQuotation } from "store/slices/quotationSlice";
 import QuotationPreviewModal from "../QuotationPreviewModal";
 import dayjs from "dayjs";
 import { SkeletonDetail } from "components/Skeleton";
-import { checkRoleAuth, lineTotal, lineProfit, computeInvoiceProfit, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { checkRoleAuth, lineTotal, lineProfit, computeInvoiceProfit } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { quotationStatusBadge as STATUS_BADGE, quotationStatusList } from "global/constant";
 
-const { status_sales_quotation } = rafeeqi_role_ids;
 
-const QUOTE_STATUS = quotationStatusList;
+const { status_sales_quotation } = alqadar_role_ids;
 
-const fmt = formatAmount;
+const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const QuotationDetail = () => {
   const { t, i18n } = useTranslation();
-  const navigate     = useNavigate();
-  const dispatch     = useDispatch();
-  const { id }       = useParams();
-  const isRTL        = i18n.language === "ar";
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const isRTL = i18n.language === "ar";
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentQuotation());
+    };
+  }, [dispatch]);
 
   const [showConvert, setShowConvert] = useState(false);
   const [showStatusEdit, setShowStatusEdit] = useState(false);
@@ -173,7 +173,7 @@ const QuotationDetail = () => {
               <label className="text-xs font-medium text-linkText block mb-1">{t("sales:status")}</label>
               <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)}
                 className="h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0">
-                {QUOTE_STATUS.map((s) => <option key={s}>{s}</option>)}
+                {quotationStatusList.map((s) => <option key={s}>{s}</option>)}
               </select>
             </div>
             <button type="button" onClick={handleStatusSave} className="h-9 px-3 rounded-lg bg-teal-500 text-white text-sm font-semibold"><FiCheck className="h-4 w-4" /></button>

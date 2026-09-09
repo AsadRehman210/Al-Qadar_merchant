@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
@@ -10,9 +10,9 @@ import SelectDropdown from "components/SelectDropdown";
 import Table from "components/Table";
 import { tableRows } from "global/constant";
 import { fetchVariantById, showCurrentVariant, showCurrentVariantLoading, clearCurrentVariant } from "store/slices/variantSlice";
-import { fetchProductById, showCurrentProduct } from "store/slices/productSlice";
-import { fetchStock, showStock } from "store/slices/stockSlice";
-import { fetchStockBatches, showStockBatches, showStockBatchesTotal, showStockBatchesLoading } from "store/slices/stockBatchSlice";
+import { fetchProductById, showCurrentProduct, clearCurrentProduct } from "store/slices/productSlice";
+import { fetchStock, showStock, clearStockHistory } from "store/slices/stockSlice";
+import { fetchStockBatches, showStockBatches, showStockBatchesTotal, showStockBatchesLoading, clearStockBatchesList } from "store/slices/stockBatchSlice";
 import { computeStatus, stockLocation } from "../stockHelpers";
 import BatchTableFilters from "../../BatchTableFilters";
 import { DEFAULT_BATCH_TABLE_FILTERS } from "../../batchTableHelpers";
@@ -63,8 +63,17 @@ const statusBadgeClass = (status) => {
  *  master data, not its stock movements). */
 const StockDetail = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentProduct());
+      dispatch(clearCurrentVariant());
+      dispatch(clearStockBatchesList());
+      dispatch(clearStockHistory());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const { id } = useParams();
 
   const variant = useSelector(showCurrentVariant);
@@ -352,7 +361,7 @@ const StockDetail = () => {
               <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page")}</span>
             </div>
             <div className="pagination ltr:ml-auto rtl:mr-auto">
-              <ReactPaginate
+              <Pagination
                 breakLabel="..."
                 nextLabel={<FaAngleRight />}
                 previousLabel={<FaAngleLeft />}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+Ôªøimport { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
@@ -22,7 +22,6 @@ import {
   exitInterviewReasonOptions,
   wouldRehireOptions,
 } from "global/constant";
-import { formatAmount } from "global/helper";
 import { fetchAssets, showAssets, returnAsset } from "store/slices/assetSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
@@ -39,11 +38,14 @@ import {
   processSettlement,
   cancelExit,
 } from "store/slices/offboardingSlice";
+import { checkRoleAuth, formatAmount } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_offboarding, edit_offboarding } = alqadar_role_ids;
 
 const STEPS = [EXIT_STATUS.NOTICE_PERIOD, EXIT_STATUS.CLEARANCE, EXIT_STATUS.SETTLEMENT, EXIT_STATUS.COMPLETED];
 
-
-const ClearanceCard = ({ title, section, item, onCleared, extra }) => {
+const ClearanceCard = ({ title, section, item, onCleared, extra, canEdit }) => {
   const { t } = useTranslation();
   const [notes, setNotes] = useState(item?.notes || "");
   const cleared = item?.status === "Cleared";
@@ -67,10 +69,10 @@ const ClearanceCard = ({ title, section, item, onCleared, extra }) => {
 
       {cleared ? (
         <p className="text-xs text-slate-500 dark:text-white/50">
-          {t("offboarding:cleared_by")} {item.clearedBy} ù {item.clearedOn ? dayjs(item.clearedOn).format("YYYY-MM-DD") : ""}
-          {item.notes ? ` ù ${item.notes}` : ""}
+          {t("offboarding:cleared_by")} {item.clearedBy} ¬∑ {item.clearedOn ? dayjs(item.clearedOn).format("YYYY-MM-DD") : ""}
+          {item.notes ? ` ‚Äî ${item.notes}` : ""}
         </p>
-      ) : (
+      ) : canEdit ? (
         <div className="space-y-2">
           <FormTextarea
             value={notes}
@@ -86,16 +88,16 @@ const ClearanceCard = ({ title, section, item, onCleared, extra }) => {
             className="!w-full !rounded-lg !h-10 !bg-teal-600 hover:!bg-teal-700 !border-0 !text-white !text-sm"
           />
         </div>
-      )}
+      ) : null}
     </div>
   );
 };
 
-const ExitInterviewCard = ({ exit, onSaved }) => {
+const ExitInterviewCard = ({ exit, onSaved, canEdit }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const [reasonCategory, setReasonCategory] = useState(exitInterviewReasonOptions[0]?.id);
-  const [wouldRehire, setWouldRehire] = useState(wouldRehireOptions[0]?.id);
+  const [reasonCategory, setReasonCategory] = useState(exitInterviewReasonOptions[0].id);
+  const [wouldRehire, setWouldRehire] = useState(wouldRehireOptions[0].id);
   const [comments, setComments] = useState("");
 
   if (exit.exitInterview) {
@@ -117,6 +119,8 @@ const ExitInterviewCard = ({ exit, onSaved }) => {
       </div>
     );
   }
+
+  if (!canEdit) return null;
 
   return (
     <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-5">
@@ -216,6 +220,8 @@ const ExitDetail = () => {
   const departmentsById = useMemo(() => Object.fromEntries(departments.map((d) => [d.id, d])), [departments]);
   const designationsById = useMemo(() => Object.fromEntries(designations.map((d) => [d.id, d])), [designations]);
 
+  if (!checkRoleAuth(view_offboarding)) return null;
+
   if (exitLoading && !exit) {
     return (
       <div className="space-y-6">
@@ -232,9 +238,9 @@ const ExitDetail = () => {
   }
 
   const emp = employeesById[exit.employeeId];
-  const employeeName = emp ? `${emp.first_name || ""} ${emp.last_name || ""}`.trim() : "ù";
-  const department = emp ? departmentsById[emp.departmentId]?.name || "ù" : "ù";
-  const designation = emp ? designationsById[emp.designationId]?.title || "ù" : "ù";
+  const employeeName = emp ? `${emp.first_name || ""} ${emp.last_name || ""}`.trim() : "‚Äî";
+  const department = emp ? departmentsById[emp.departmentId]?.name || "‚Äî" : "‚Äî";
+  const designation = emp ? designationsById[emp.designationId]?.title || "‚Äî" : "‚Äî";
 
   const clearance = exit.clearance || {};
   const allCleared = CLEARANCE_SECTIONS.every((s) => clearance[s]?.status === "Cleared");
@@ -283,6 +289,7 @@ const ExitDetail = () => {
   };
 
   const settlement = exit.settlement || settlementPreview;
+  const canEdit = checkRoleAuth(edit_offboarding);
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -300,7 +307,7 @@ const ExitDetail = () => {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">{employeeName}</h1>
               <p className="text-mutedForeground text-sm mt-1">
-                {emp?.employeeCode} ù {designation} ù {department}
+                {emp?.employeeCode} ¬∑ {designation} ¬∑ {department}
               </p>
             </div>
           </div>
@@ -340,13 +347,13 @@ const ExitDetail = () => {
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:exit_type")}</span>
                 <span className="font-medium text-slate-800 dark:text-white">{exit.exitType}</span>
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:resignation_date")}</span>
-                <span className="font-medium text-slate-800 dark:text-white">{exit.resignationDate ? dayjs(exit.resignationDate).format("YYYY-MM-DD") : "ù"}</span>
+                <span className="font-medium text-slate-800 dark:text-white">{exit.resignationDate ? dayjs(exit.resignationDate).format("YYYY-MM-DD") : "‚Äî"}</span>
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:last_working_day")}</span>
-                <span className="font-medium text-slate-800 dark:text-white">{exit.lastWorkingDay ? dayjs(exit.lastWorkingDay).format("YYYY-MM-DD") : "ù"}</span>
+                <span className="font-medium text-slate-800 dark:text-white">{exit.lastWorkingDay ? dayjs(exit.lastWorkingDay).format("YYYY-MM-DD") : "‚Äî"}</span>
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:notice_period_days")}</span>
                 <span className="font-medium text-slate-800 dark:text-white">{exit.noticePeriodDays}</span>
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:reason")}</span>
-                <span className="font-medium text-slate-800 dark:text-white col-span-1">{exit.reason || "ù"}</span>
+                <span className="font-medium text-slate-800 dark:text-white col-span-1">{exit.reason || "‚Äî"}</span>
               </div>
             </div>
 
@@ -357,12 +364,14 @@ const ExitDetail = () => {
                 section="assets"
                 item={clearance.assets}
                 onCleared={handleClear}
+                canEdit={canEdit}
                 extra={
                   assignedAssets.length > 0 && (
                     <div className="mb-3 space-y-2">
                       {assignedAssets.map((a) => (
                         <div key={a.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-white/5 text-sm">
                           <span className="text-slate-700 dark:text-white/80">{a.name}</span>
+                          {canEdit && (
                           <button
                             type="button"
                             onClick={() => handleReturnAsset(a.id)}
@@ -370,18 +379,19 @@ const ExitDetail = () => {
                           >
                             {t("offboarding:mark_returned")}
                           </button>
+                          )}
                         </div>
                       ))}
                     </div>
                   )
                 }
               />
-              <ClearanceCard title={t("offboarding:finance")} section="finance" item={clearance.finance} onCleared={handleClear} />
-              <ClearanceCard title={t("offboarding:it")} section="it" item={clearance.it} onCleared={handleClear} />
-              <ClearanceCard title={t("offboarding:manager")} section="manager" item={clearance.manager} onCleared={handleClear} />
+              <ClearanceCard title={t("offboarding:finance")} section="finance" item={clearance.finance} onCleared={handleClear} canEdit={canEdit} />
+              <ClearanceCard title={t("offboarding:it")} section="it" item={clearance.it} onCleared={handleClear} canEdit={canEdit} />
+              <ClearanceCard title={t("offboarding:manager")} section="manager" item={clearance.manager} onCleared={handleClear} canEdit={canEdit} />
             </div>
 
-            <ExitInterviewCard exit={exit} onSaved={() => dispatch(fetchExitById(id))} />
+            <ExitInterviewCard exit={exit} onSaved={() => dispatch(fetchExitById(id))} canEdit={canEdit} />
           </div>
 
           {/* Settlement summary */}
@@ -426,6 +436,7 @@ const ExitDetail = () => {
                   </div>
                 ) : (
                   <>
+                    {canEdit && (
                     <Button
                       type="button"
                       title={t("offboarding:process_settlement")}
@@ -434,9 +445,11 @@ const ExitDetail = () => {
                       onClick={handleProcessSettlement}
                       className="!w-full !rounded-md !bg-[var(--color-teal-500)] hover:!bg-[var(--color-teal-600)] !border-0 !text-white disabled:!opacity-50"
                     />
-                    {!allCleared && (
+                    )}
+                    {canEdit && !allCleared && (
                       <p className="text-xs text-center text-slate-400">{t("offboarding:complete_clearance_hint")}</p>
                     )}
+                    {canEdit && (
                     <button
                       type="button"
                       onClick={handleCancel}
@@ -444,6 +457,7 @@ const ExitDetail = () => {
                     >
                       {t("offboarding:cancel_exit")}
                     </button>
+                    )}
                   </>
                 )}
               </div>

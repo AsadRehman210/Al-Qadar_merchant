@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import Popup from "./Popup";
 import { SkeletonTable } from "./Skeleton";
@@ -127,7 +127,7 @@ const AnalyticsDrilldownModal = ({ config, onClose }) => {
               <span className="text-xs text-slate-500 dark:text-white/50 whitespace-nowrap">{t("per_page")}</span>
             </div>
             <div className="pagination ltr:ml-auto rtl:mr-auto">
-              <ReactPaginate
+              <Pagination
                 breakLabel="..."
                 nextLabel={<FaAngleRight />}
                 previousLabel={<FaAngleLeft />}

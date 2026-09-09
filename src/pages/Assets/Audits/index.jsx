@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -7,7 +7,7 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { assetAuditResultList } from "global/constant";
 import {
   fetchAssetAudits,
@@ -16,12 +16,13 @@ import {
   recordAssetAuditResult,
   completeAssetAudit,
   showAssetAudits,
+  showAssetAuditsLoading,
   showActiveAssetAudit,
   showActiveAssetAuditLoading,
 } from "store/slices/assetSlice";
-import { SkeletonTable } from "components/Skeleton";
+import { SkeletonTable, SkeletonList } from "components/Skeleton";
 
-const { add_customer } = rafeeqi_role_ids;
+const { add_asset_audit } = alqadar_role_ids;
 
 const RESULT_STYLES = {
   Pending: "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/50",
@@ -41,6 +42,7 @@ const AssetAudits = () => {
   const [notesDraft, setNotesDraft] = useState({});
 
   const audits = useSelector(showAssetAudits);
+  const auditsLoading = useSelector(showAssetAuditsLoading);
   const active = useSelector(showActiveAssetAudit);
   const activeLoading = useSelector(showActiveAssetAuditLoading);
   const completedAudits = audits.filter((a) => a.status === "Completed");
@@ -93,7 +95,7 @@ const AssetAudits = () => {
             <h1 className="text-3xl font-bold">{t("asset:audits_title")}</h1>
             <p className="text-mutedForeground">{t("asset:audits_desc")}</p>
           </div>
-          {!active && checkRoleAuth(add_customer) && (
+          {!active && checkRoleAuth(add_asset_audit) && (
             <Button type="button" title={t("asset:start_audit")} icon={FiClipboard} onClick={handleStart}
               className="!w-auto !rounded-lg !h-11 !px-5 !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600" />
           )}
@@ -164,7 +166,12 @@ const AssetAudits = () => {
           </div>
         )}
 
-        {completedAudits.length > 0 && (
+        {auditsLoading ? (
+          <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7">
+            <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5">{t("asset:audit_history")}</h2>
+            <SkeletonList rows={3} />
+          </div>
+        ) : completedAudits.length > 0 && (
           <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5">{t("asset:audit_history")}</h2>
             <div className="space-y-3">

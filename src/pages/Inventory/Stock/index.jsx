@@ -7,27 +7,24 @@ import StockCards from "./StockCards";
 import StockFilters from "./StockFilters";
 import StockTable from "./StockTable";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
-import {
-  fetchStock,
-  showStock,
-  showStockTotal,
-  showStockLoading,
-  fetchStockSummary,
-  showStockSummary,
-  fetchOpeningStockStatus,
-  showOpeningStockImported,
-} from "store/slices/stockSlice";
+import { fetchStock, showStock, showStockTotal, showStockLoading, showStockSummary, fetchOpeningStockStatus, showOpeningStockImported, clearStockList } from "store/slices/stockSlice";
 import { fetchWarehouses, showWarehouses } from "store/slices/warehouseSlice";
 import { useListFilters } from "hooks/useListFilters";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_warehouse_stock, add_inventory_opening_stock } = alqadar_role_ids;
 
 const InventoryStock = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearStockList());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useListFilters("inventory-stock", {
     page: 1,
     limitId: tableRows[0].id,
@@ -62,10 +59,6 @@ const InventoryStock = () => {
   }, [dispatch, page, selRows, search, statusId, warehouseId]);
 
   useEffect(() => {
-    dispatch(fetchStockSummary({}));
-  }, [dispatch]);
-
-  useEffect(() => {
     dispatch(fetchOpeningStockStatus());
   }, [dispatch]);
 
@@ -84,7 +77,7 @@ const InventoryStock = () => {
               {t("product:stock_module_desc")}
             </p>
           </div>
-          {checkRoleAuth(add_customer) && !openingImported && (
+          {checkRoleAuth(add_inventory_opening_stock) && !openingImported && (
             <Button
               type="button"
               title={t("product:import_opening_stock")}
@@ -94,9 +87,9 @@ const InventoryStock = () => {
           )}
         </div>
 
-        {checkRoleAuth(view_customer) ? (
+        {checkRoleAuth(view_warehouse_stock) ? (
           <>
-            <StockCards summary={summary} />
+            <StockCards summary={summary} loading={loading} />
 
             <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.08s_both]">
               <StockFilters

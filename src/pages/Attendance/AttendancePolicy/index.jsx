@@ -4,12 +4,20 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight, FiEdit2, FiEye, FiPlus, FiUsers } from "react-icons/fi";
 import Button from "components/Button";
+import { SkeletonDetail, SkeletonTable } from "components/Skeleton";
 import {
   fetchAttendancePolicies,
   fetchCurrentAttendancePolicy,
+  clearCurrentAttendancePolicy,
   showAttendancePolicies,
+  showAttendancePoliciesLoading,
   showCurrentAttendancePolicy,
+  showCurrentAttendancePolicyLoading,
 } from "store/slices/attendancePolicySlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_attendance_policy, add_attendance_policy, edit_attendance_policy } = alqadar_role_ids;
 
 const AttendancePolicyOverview = () => {
   const { t, i18n } = useTranslation();
@@ -18,13 +26,18 @@ const AttendancePolicyOverview = () => {
   const isRTL = i18n.language === "ar";
 
   const current = useSelector(showCurrentAttendancePolicy);
+  const currentLoading = useSelector(showCurrentAttendancePolicyLoading);
   const allPolicies = useSelector(showAttendancePolicies);
+  const listLoading = useSelector(showAttendancePoliciesLoading);
   const previous = allPolicies.filter((p) => p.endDate);
 
   useEffect(() => {
     dispatch(fetchCurrentAttendancePolicy());
     dispatch(fetchAttendancePolicies());
+    return () => dispatch(clearCurrentAttendancePolicy());
   }, [dispatch]);
+
+  if (!checkRoleAuth(view_attendance_policy)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -42,6 +55,7 @@ const AttendancePolicyOverview = () => {
             <h1 className="text-2xl font-bold tracking-tight">{t("attendance:attendance_policy")}</h1>
             <p className="text-sm text-mutedForeground mt-1">{t("attendance:attendance_policy_desc")}</p>
           </div>
+          {checkRoleAuth(add_attendance_policy) && (
           <Button
             type="button"
             title={t("attendance:create_new_policy")}
@@ -51,9 +65,12 @@ const AttendancePolicyOverview = () => {
             className="!w-auto !rounded-lg !h-10 !px-4 !text-white"
             iconClass="h-4 w-4 text-white"
           />
+          )}
         </div>
 
-        {current ? (
+        {currentLoading ? (
+          <SkeletonDetail fields={4} />
+        ) : current ? (
           <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-6 md:p-8 border-l-4 !border-l-teal-500">
             <div className="flex flex-wrap items-start justify-between gap-4 mb-5">
               <div>
@@ -73,6 +90,7 @@ const AttendancePolicyOverview = () => {
                 >
                   <FiEye className="h-4 w-4" /> {t("view")}
                 </button>
+                {checkRoleAuth(edit_attendance_policy) && (
                 <button
                   type="button"
                   onClick={() => navigate(`/attendance-policy/edit/${current.id}`)}
@@ -80,6 +98,7 @@ const AttendancePolicyOverview = () => {
                 >
                   <FiEdit2 className="h-4 w-4" /> {t("edit")}
                 </button>
+                )}
               </div>
             </div>
 
@@ -128,7 +147,9 @@ const AttendancePolicyOverview = () => {
             {t("attendance:previous_policies_desc")}
           </p>
 
-          {previous.length === 0 ? (
+          {listLoading ? (
+            <SkeletonTable rows={4} columns={3} />
+          ) : previous.length === 0 ? (
             <p className="text-sm text-slate-400 dark:text-white/40 py-6 text-center">
               {t("attendance:no_previous_policies")}
             </p>

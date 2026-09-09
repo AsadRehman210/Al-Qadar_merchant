@@ -23,15 +23,18 @@ import RequestsTab from "./RequestsTab";
 import SpecialPaymentsTab from "./SpecialPaymentsTab";
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchEmployeeById, fetchEmployees, showCurrentEmployee, showEmployees, setCurrentEmployee } from "store/slices/employeeSlice";
+import { fetchEmployeeById, fetchEmployees, showCurrentEmployee, showEmployees, clearCurrentEmployee } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { fetchDesignations, showDesignations } from "store/slices/designationSlice";
 import { fetchCurrentSalary, showCurrentSalary, clearCurrentSalary } from "store/slices/salarySlice";
-import { fetchPayrollHistoryByEmployee, showEmployeePayrollHistory, clearEmployeeHistory } from "store/slices/payrollBatchSlice";
+import { fetchPayrollHistoryByEmployee, showEmployeePayrollHistory, showEmployeePayrollHistoryLoading, clearEmployeeHistory } from "store/slices/payrollBatchSlice";
 import { SkeletonDetail } from "components/Skeleton";
-import { onboardingProgressOf } from "global/helper";
+import { onboardingProgressOf, checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { ONBOARDING_STATUS } from "global/constant";
 import { fetchOnboardingByEmployee, showOnboardingByEmployee } from "store/slices/onboardingSlice";
+
+const { view_employee, edit_employee, add_offboarding } = alqadar_role_ids;
 
 const TAB_CLASS =
   "min-w-[120px] whitespace-nowrap cursor-pointer py-3 px-5 rounded-lg h-11 flex justify-center items-center font-medium text-[0.9375rem] text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:from-teal-500 data-[selected]:to-teal-600 data-[selected]:text-white data-[selected]:font-semibold hover:text-teal-700 hover:bg-teal-500/10 dark:hover:text-white dark:hover:bg-teal-500/20";
@@ -51,6 +54,7 @@ export default function EmployeeDetail() {
   const employees = useSelector(showEmployees);
   const salary = useSelector(showCurrentSalary);
   const payrollHistory = useSelector(showEmployeePayrollHistory);
+  const payrollHistoryLoading = useSelector(showEmployeePayrollHistoryLoading);
 
   useEffect(() => {
     if (id) {
@@ -63,7 +67,7 @@ export default function EmployeeDetail() {
     dispatch(fetchDesignations());
     dispatch(fetchEmployees());
     return () => {
-      dispatch(setCurrentEmployee(null));
+      dispatch(clearCurrentEmployee());
       dispatch(clearCurrentSalary());
       dispatch(clearEmployeeHistory());
     };
@@ -102,6 +106,8 @@ export default function EmployeeDetail() {
       last_seen_date: fmtDate(currentEmployee.last_seen_date),
     };
   }, [currentEmployee, id, departments, designations, employees]);
+
+  if (!checkRoleAuth(view_employee)) return null;
 
   if (!emp) {
     return <SkeletonDetail fields={9} />;
@@ -152,7 +158,7 @@ export default function EmployeeDetail() {
                 iconClass="!text-lg"
                 onClick={() => navigate("/org-chart")}
               />
-              {["probation", "active"].includes(emp.status) && (
+              {checkRoleAuth(add_offboarding) && ["probation", "active"].includes(emp.status) && (
                 <Button
                   title={t("offboarding:initiate_exit")}
                   icon={LuUserMinus}
@@ -161,13 +167,15 @@ export default function EmployeeDetail() {
                   onClick={() => navigate(`/offboarding/add?employeeId=${id}`)}
                 />
               )}
-              <Button
-                title={t("edit")}
-                icon={FaRegEdit}
-                className="!w-auto !rounded-lg !h-11 !px-5 !border border-slate-200 dark:!border-white/25 !text-slate-700 dark:!text-white dark:!bg-white/10 hover:!bg-slate-50 dark:hover:!bg-white/20"
-                iconClass="!text-lg"
-                onClick={() => navigate(`/employees/edit/${id}`)}
-              />
+              {checkRoleAuth(edit_employee) && (
+                <Button
+                  title={t("edit")}
+                  icon={FaRegEdit}
+                  className="!w-auto !rounded-lg !h-11 !px-5 !border border-slate-200 dark:!border-white/25 !text-slate-700 dark:!text-white dark:!bg-white/10 hover:!bg-slate-50 dark:hover:!bg-white/20"
+                  iconClass="!text-lg"
+                  onClick={() => navigate(`/employees/edit/${id}`)}
+                />
+              )}
             </div>
           </div>
 
@@ -282,7 +290,7 @@ export default function EmployeeDetail() {
               </TabPanel>
               <TabPanel>
                 <div className={panelClass}>
-                  <MonthWiseSalaryTab employee={emp} payrollHistory={payrollHistory} />
+                  <MonthWiseSalaryTab employee={emp} payrollHistory={payrollHistory} payrollHistoryLoading={payrollHistoryLoading} />
                 </div>
               </TabPanel>
               <TabPanel>

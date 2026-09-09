@@ -1,19 +1,5 @@
 export const WEEKLY_DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
-// Used by the (merchant-only) Shifts module — admin's equivalent Shift
-// concept was removed earlier this session in favor of per-employee
-// weekly_schedule, but merchant's Shifts page still exists and depends on
-// this. Handles overnight shifts (end time earlier than start time).
-export const calcShiftWorkingHours = (start, end, breakMinutes = 0) => {
-  if (!start || !end) return 0;
-  const [startH, startM] = start.split(":").map(Number);
-  const [endH, endM] = end.split(":").map(Number);
-  let minutes = (endH * 60 + endM) - (startH * 60 + startM);
-  if (minutes <= 0) minutes += 24 * 60;
-  minutes -= Number(breakMinutes) || 0;
-  return Math.round((minutes / 60) * 10) / 10;
-};
-
 // Not user-configurable anymore (the Weekly Off Days section was removed from
 // the policy form) — kept as a fixed default so the employee attendance
 // calendar (attendanceResolver.js) still knows which days are recurring

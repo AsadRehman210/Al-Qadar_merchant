@@ -97,5 +97,11 @@
   "po_number": "PO #",
   "debit": "Debit",
   "credit": "Credit",
-  "opening_balance": "Opening balance"
+  "opening_balance": "Opening balance",
+  "opening_balance_hint": "Amount you already owed this supplier before you started using this system. You can correct it until a purchase invoice is created for this supplier.",
+  "opening_balance_locked_hint": "Locked because a purchase invoice exists for this supplier.",
+  "record_opening_payment": "Pay opening balance",
+  "opening_payment_remaining_hint": "Remaining opening balance: {{amount}} SAR",
+  "opening_payment_amount_required": "Enter a payment amount greater than zero.",
+  "opening_payment_recorded": "Opening balance payment recorded."
 }

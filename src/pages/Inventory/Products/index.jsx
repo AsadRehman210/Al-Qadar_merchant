@@ -8,23 +8,24 @@ import ProductsTable from "./ProductsTable";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows, productTypeFilterOptions } from "global/constant";
-import {
-  fetchProducts,
-  showProducts,
-  showProductsTotal,
-  showProductsLoading,
-} from "store/slices/productSlice";
+import { fetchProducts, showProducts, showProductsTotal, showProductsLoading, clearProductsList } from "store/slices/productSlice";
 import ExportButton from "components/ExportButton";
 import { useListFilters } from "hooks/useListFilters";
 
-const { add_customer, view_customer } = rafeeqi_role_ids;
+const { add_inventory_product, view_inventory_product } = alqadar_role_ids;
 
 const Products = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearProductsList());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useListFilters("inventory-products", {
     page: 1,
     limitId: tableRows[0].id,
@@ -73,7 +74,7 @@ const Products = () => {
           </div>
           <div className="relative z-10 shrink-0 flex flex-wrap gap-2.5">
             <ExportButton data={products} columns={exportColumns} filename="products.xlsx" title={t("product:export")} />
-            {checkRoleAuth(add_customer) && (
+            {checkRoleAuth(add_inventory_product) && (
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 !bg-white dark:!bg-white/10 !text-slate-700 dark:!text-white !border !border-slate-200 dark:!border-white/20"
                 onClick={() => navigate("/inventory/products/import")}
@@ -81,7 +82,7 @@ const Products = () => {
                 title={t("product:import_products")}
               />
             )}
-            {checkRoleAuth(add_customer) && (
+            {checkRoleAuth(add_inventory_product) && (
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5 disabled:hover:translate-y-0"
                 onClick={() => navigate("/inventory/products/add")}
@@ -99,7 +100,7 @@ const Products = () => {
           </div>
         </div>
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_inventory_product) && (
             <>
               <div className="flex flex-wrap items-center gap-3 mb-5">
                 <div className="flex-1 min-w-[220px] max-w-xs">

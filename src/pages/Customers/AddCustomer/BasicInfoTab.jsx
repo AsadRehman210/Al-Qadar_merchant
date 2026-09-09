@@ -7,7 +7,6 @@ import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import PhoneNumberInput from "components/PhoneNumberInput";
 import PaginatedSelectBox from "components/PaginatedSelectBox";
-import { DEFAULT_ADD_CUSTOMER_VALUES } from "../customerFakeData";
 import {
   customerSegmentOptions,
   customerTypeOptions,
@@ -24,23 +23,9 @@ const BasicInfoTab = ({ existing }) => {
   } = useFormContext();
   const { t } = useTranslation();
 
-  const [selCustomerType, setSelCustomerType] = useState(
-    () =>
-      customerTypeOptions.find(
-        (o) => o.id === DEFAULT_ADD_CUSTOMER_VALUES.customerType,
-      ) || customerTypeOptions[0],
-  );
-  const [selSegment, setSelSegment] = useState(
-    () =>
-      customerSegmentOptions.find(
-        (o) => o.id === DEFAULT_ADD_CUSTOMER_VALUES.customerSegment,
-      ) || customerSegmentOptions[0],
-  );
-  const [selStatus, setSelStatus] = useState(
-    () =>
-      customerStatusOptions.find((o) => o.id === DEFAULT_ADD_CUSTOMER_VALUES.status) ||
-      customerStatusOptions[0],
-  );
+  const [selCustomerType, setSelCustomerType] = useState(() => customerTypeOptions[0]);
+  const [selSegment, setSelSegment] = useState(() => customerSegmentOptions[0]);
+  const [selStatus, setSelStatus] = useState(() => customerStatusOptions[0]);
 
   const customerTypeVal = watch("customerType");
   const segmentVal = watch("customerSegment");
@@ -169,7 +154,7 @@ const BasicInfoTab = ({ existing }) => {
           errors={errors}
           pattern={/[a-zA-Z0-9\s.'&,-]/}
           minLength={2}
-          maxLength={150}
+          maxLength={100}
         />
         <FormInput
           label={t("customers:email")}
@@ -225,7 +210,7 @@ const BasicInfoTab = ({ existing }) => {
           errors={errors}
           pattern={/[a-zA-Z0-9\s.'&,-]/}
           minLength={2}
-          maxLength={150}
+          maxLength={100}
         />
         <SelectDropdown
           label={t("customers:business_type")}
@@ -262,7 +247,7 @@ const BasicInfoTab = ({ existing }) => {
           register={register}
           required={t("customers:address_required")}
           errors={errors}
-          maxLength={250}
+          maxLength={100}
         />
         <div>
           <PaginatedSelectBox

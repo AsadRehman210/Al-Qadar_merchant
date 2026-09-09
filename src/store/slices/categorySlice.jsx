@@ -13,7 +13,6 @@ const initialState = {
   dropdownOptions: [],
   dropdownPage: 1,
   dropdownHasMore: false,
-  dropdownLoading: false,
 };
 
 export const fetchCategories = createAsyncThunk(
@@ -80,6 +79,19 @@ const categorySlice = createSlice({
   reducers: {
     clearCurrentCategory: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearCategoriesList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
+    },
+    resetCategoryDropdown: (state) => {
+      state.dropdownOptions = [];
+      state.dropdownPage = 1;
+      state.dropdownHasMore = false;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
@@ -99,27 +111,27 @@ const categorySlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchCategoryById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchCategoryById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchCategoryById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(fetchCategoriesDropdown.pending, (state) => {
-        state.dropdownLoading = true;
+        state.loading = true;
       })
       .addCase(fetchCategoriesDropdown.fulfilled, (state, action) => {
-        state.dropdownLoading = false;
+        state.loading = false;
         const { result, page, total_pages } = action.payload;
         state.dropdownOptions = page === 1 ? result : [...state.dropdownOptions, ...result];
         state.dropdownPage = page;
         state.dropdownHasMore = page < total_pages;
       })
       .addCase(fetchCategoriesDropdown.rejected, (state) => {
-        state.dropdownLoading = false;
+        state.loading = false;
       })
       .addCase(createCategory.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -135,14 +147,14 @@ const categorySlice = createSlice({
   },
 });
 
-export const { clearCurrentCategory } = categorySlice.actions;
+export const { clearCurrentCategory, clearCategoriesList, resetCategoryDropdown } = categorySlice.actions;
 export const showCategories = (state) => state.category.list;
 export const showCategoriesTotal = (state) => state.category.totalRecords;
 export const showCategoriesLoading = (state) => state.category.loading;
 export const showCurrentCategory = (state) => state.category.current;
-export const showCurrentCategoryLoading = (state) => state.category.currentLoading;
+export const showCurrentCategoryLoading = (state) => state.category.loading;
 export const showCategoryDropdownOptions = (state) => state.category.dropdownOptions;
 export const showCategoryDropdownPage = (state) => state.category.dropdownPage;
 export const showCategoryDropdownHasMore = (state) => state.category.dropdownHasMore;
-export const showCategoryDropdownLoading = (state) => state.category.dropdownLoading;
+export const showCategoryDropdownLoading = (state) => state.category.loading;
 export default categorySlice.reducer;

@@ -10,7 +10,6 @@ const initialState = {
   error: null,
   returnableInvoice: null,
   returnableLines: [],
-  returnableLoading: false,
 };
 
 export const fetchDebitNotes = createAsyncThunk(
@@ -76,24 +75,34 @@ const debitNoteSlice = createSlice({
   reducers: {
     clearCurrentDebitNote: (state) => {
       state.current = null;
+      state.loading = false;
+      state.returnableInvoice = null;
+      state.returnableLines = [];
+    },
+    clearDebitNotesList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
     },
     clearReturnableLines: (state) => {
       state.returnableInvoice = null;
       state.returnableLines = [];
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchReturnableLines.pending, (state) => {
-        state.returnableLoading = true;
+        state.loading = true;
       })
       .addCase(fetchReturnableLines.fulfilled, (state, action) => {
-        state.returnableLoading = false;
+        state.loading = false;
         state.returnableInvoice = action.payload?.invoice || null;
         state.returnableLines = action.payload?.lines || [];
       })
       .addCase(fetchReturnableLines.rejected, (state) => {
-        state.returnableLoading = false;
+        state.loading = false;
         state.returnableInvoice = null;
         state.returnableLines = [];
       })
@@ -112,14 +121,14 @@ const debitNoteSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchDebitNoteById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchDebitNoteById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchDebitNoteById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(createDebitNote.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -128,13 +137,13 @@ const debitNoteSlice = createSlice({
   },
 });
 
-export const { clearCurrentDebitNote, clearReturnableLines } = debitNoteSlice.actions;
+export const { clearCurrentDebitNote, clearDebitNotesList, clearReturnableLines } = debitNoteSlice.actions;
 export const showDebitNotes = (state) => state.debitNote.list;
 export const showDebitNotesTotal = (state) => state.debitNote.totalRecords;
 export const showDebitNotesLoading = (state) => state.debitNote.loading;
 export const showCurrentDebitNote = (state) => state.debitNote.current;
-export const showCurrentDebitNoteLoading = (state) => state.debitNote.currentLoading;
+export const showCurrentDebitNoteLoading = (state) => state.debitNote.loading;
 export const showReturnableInvoice = (state) => state.debitNote.returnableInvoice;
 export const showReturnableLines = (state) => state.debitNote.returnableLines;
-export const showReturnableLoading = (state) => state.debitNote.returnableLoading;
+export const showReturnableLoading = (state) => state.debitNote.loading;
 export default debitNoteSlice.reducer;

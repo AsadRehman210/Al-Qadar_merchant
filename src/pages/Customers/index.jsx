@@ -7,21 +7,28 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import CustomersFilter from "./CustomersFilter";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
+  clearSalesCustomersList,
   fetchSalesCustomers,
   showSalesCustomers,
   showSalesCustomersTotal,
   showSalesCustomersLoading,
 } from "store/slices/salesCustomerSlice";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_customer, add_customer } = alqadar_role_ids;
 
 const Customers = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearSalesCustomersList());
+    };
+  }, [dispatch]);
+
   const navigate = useNavigate();
   const customers = useSelector(showSalesCustomers);
   const totalRecords = useSelector(showSalesCustomersTotal);

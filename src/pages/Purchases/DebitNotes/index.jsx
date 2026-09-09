@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -9,21 +9,27 @@ import SearchInput from "components/SearchInput";
 import { tableRows } from "global/constant";
 import TableState from "components/TableState";
 import { useListFilters } from "hooks/useListFilters";
-import {
-  fetchDebitNotes,
-  showDebitNotes,
-  showDebitNotesTotal,
-  showDebitNotesLoading,
-} from "store/slices/debitNoteSlice";
+import { fetchDebitNotes, showDebitNotes, showDebitNotesTotal, showDebitNotesLoading, clearDebitNotesList } from "store/slices/debitNoteSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { add_purchase_debit_note } = alqadar_role_ids;
 
 const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 import { noteStatusBadge as STATUS_BADGE } from "global/constant";
 
+
 const DebitNotes = () => {
   const { t }    = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearDebitNotesList());
+    };
+  }, [dispatch]);
+
   const [filters, setFilters] = useListFilters("purchases-debit-notes", { page: 1, search: "", limitId: tableRows[0].id });
   const { page, search } = filters;
   const selRows = tableRows.find((r) => r.id === filters.limitId) || tableRows[0];
@@ -45,9 +51,11 @@ const DebitNotes = () => {
             <h1 className="text-3xl font-bold">{t("purchase:debit_notes")}</h1>
             <p className="text-mutedForeground text-sm mt-1">{t("purchase:debit_notes_desc")}</p>
           </div>
-          <Button title={t("purchase:add_debit_note")} icon={FiPlus} btn="primary"
-            onClick={() => navigate("/debit-notes/add")}
-            className="!w-auto !rounded-md !h-11 !px-5 !border-0 !text-white !bg-teal-500" />
+          {checkRoleAuth(add_purchase_debit_note) && (
+            <Button title={t("purchase:add_debit_note")} icon={FiPlus} btn="primary"
+              onClick={() => navigate("/debit-notes/add")}
+              className="!w-auto !rounded-md !h-11 !px-5 !border-0 !text-white !bg-teal-500" />
+          )}
         </div>
 
         <div className="mb-5 max-w-sm">

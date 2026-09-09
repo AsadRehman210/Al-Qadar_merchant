@@ -9,17 +9,10 @@ import SelectDropdown from "components/SelectDropdown";
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { FaRegEdit } from "react-icons/fa";
 import { toast } from "react-toastify";
-import {
-  fetchSaleInvoiceById,
-  updateSaleDeliveryStatus,
-  addSalePayment,
-  addSaleRefund,
-  showCurrentSaleInvoice,
-  showCurrentSaleInvoiceLoading,
-} from "store/slices/saleInvoiceSlice";
+import { fetchSaleInvoiceById, updateSaleDeliveryStatus, addSalePayment, addSaleRefund, showCurrentSaleInvoice, showCurrentSaleInvoiceLoading, clearCurrentSaleInvoice } from "store/slices/saleInvoiceSlice";
 import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth, canCancelDelivery, formatAmount, lineTotal } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   salePaymentStatusBadge,
   saleDeliveryStatusBadge,
@@ -27,7 +20,7 @@ import {
   deliveryCancelledOption,
 } from "global/constant";
 
-const { status_sales_invoice } = rafeeqi_role_ids;
+const { status_sales_invoice } = alqadar_role_ids;
 import InvoicePreviewModal from "../InvoicePreviewModal";
 import InvoiceDetailsTab from "./InvoiceDetailsTab";
 import PaymentHistoryTab from "./PaymentHistoryTab";
@@ -40,8 +33,14 @@ const TAB_CLASS =
 
 const SaleDetail = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentSaleInvoice());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const { id } = useParams();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [showStatusEdit, setShowStatusEdit] = useState(false);

@@ -7,6 +7,7 @@ const initialState = {
   filterStatus: null,
   currentPage: 1,
   currentEmployee: null,
+  currentLoading: false,
   list: [],
   totalRecords: 0,
   loading: false,
@@ -76,6 +77,10 @@ const employeeSlice = createSlice({
     setCurrentEmployee: (state, action) => {
       state.currentEmployee = action.payload;
     },
+    clearCurrentEmployee: (state) => {
+      state.currentEmployee = null;
+      state.currentLoading = false;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -93,8 +98,15 @@ const employeeSlice = createSlice({
         state.list = [];
         state.error = action.payload;
       })
+      .addCase(fetchEmployeeById.pending, (state) => {
+        state.currentLoading = true;
+      })
       .addCase(fetchEmployeeById.fulfilled, (state, action) => {
+        state.currentLoading = false;
         state.currentEmployee = action.payload;
+      })
+      .addCase(fetchEmployeeById.rejected, (state) => {
+        state.currentLoading = false;
       })
       .addCase(createEmployee.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -110,11 +122,12 @@ const employeeSlice = createSlice({
   },
 });
 
-export const { setSearch, setFilterStatus, setCurrentPage, setCurrentEmployee } = employeeSlice.actions;
+export const { setSearch, setFilterStatus, setCurrentPage, setCurrentEmployee, clearCurrentEmployee } = employeeSlice.actions;
 export const showSearch = (state) => state.employee.search;
 export const showFilterStatus = (state) => state.employee.filterStatus;
 export const showCurrentPage = (state) => state.employee.currentPage;
 export const showCurrentEmployee = (state) => state.employee.currentEmployee;
+export const showCurrentEmployeeLoading = (state) => state.employee.currentLoading;
 export const showEmployees = (state) => state.employee.list;
 export const showEmployeesTotal = (state) => state.employee.totalRecords;
 export const showEmployeesLoading = (state) => state.employee.loading;

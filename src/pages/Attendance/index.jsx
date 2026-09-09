@@ -9,9 +9,10 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import AttendanceFilter from "./AttendanceFilter";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
+import { SkeletonCards } from "components/Skeleton";
 import {
   fetchAttendance,
   fetchAttendanceTodayStats,
@@ -21,7 +22,7 @@ import {
   showAttendanceTodayStats,
 } from "store/slices/attendanceSlice";
 
-const { view_employee, add_employee } = rafeeqi_role_ids;
+const { view_attendance, add_attendance } = alqadar_role_ids;
 
 const Attendance = () => {
   const { t } = useTranslation();
@@ -76,7 +77,7 @@ const Attendance = () => {
               {t("attendance:attendance_module_desc")}
             </p>
           </div>
-          {(checkRoleAuth(view_employee) || checkRoleAuth(add_employee)) && (
+          {(checkRoleAuth(view_attendance) || checkRoleAuth(add_attendance)) && (
           <div className="relative z-10 shrink-0 flex flex-wrap gap-2 justify-end">
             <Button
               type="button"
@@ -91,7 +92,7 @@ const Attendance = () => {
               onClick={() => navigate("/attendance-policy")}
               className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border border-slate-200 dark:!border-white/25 !bg-white dark:!bg-white/10 !text-slate-700 dark:!text-white"
             />
-            {checkRoleAuth(add_employee) && (
+            {checkRoleAuth(add_attendance) && (
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5 disabled:hover:translate-y-0"
                 onClick={() => navigate("/attendance/add")}
@@ -109,14 +110,21 @@ const Attendance = () => {
           </div>
           )}
         </div>
-        {checkRoleAuth(view_employee) && <AttendanceCard data={cardData} />}
+        {checkRoleAuth(view_attendance) &&
+          (loading ? (
+            <div className="mt-5">
+              <SkeletonCards count={4} columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" />
+            </div>
+          ) : (
+            <AttendanceCard data={cardData} />
+          ))}
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_employee) && (
+          {checkRoleAuth(view_attendance) && (
             <div className="mb-6">
               <AttendanceFilter filters={filters} setFilters={setFilters} />
             </div>
           )}
-          {checkRoleAuth(view_employee) && (
+          {checkRoleAuth(view_attendance) && (
             <AttendanceTable
               data={attendanceList}
               loading={loading}

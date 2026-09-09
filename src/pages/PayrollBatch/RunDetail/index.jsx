@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { formatAmount } from "global/helper";
 import { useNavigate, useParams, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight, FiPrinter, FiEdit2, FiCheck, FiX } from "react-icons/fi";
@@ -11,6 +10,7 @@ import {
   fetchPayrollRunById,
   showCurrentRun,
   showCurrentRunLoading,
+  clearCurrentRun,
   recomputePayrollLine,
   submitPayrollRun,
   approvePayrollRun,
@@ -22,18 +22,28 @@ import {
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { SkeletonDetail } from "components/Skeleton";
+import { checkRoleAuth, formatAmount } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 
+const { view_payroll_run, edit_payroll_run, process_payroll_run } = alqadar_role_ids;
 
-const ActionBar = ({ run, onAction }) => {
+const ActionBar = ({ run, onAction, canEdit, canProcess }) => {
   const { t } = useTranslation();
   const [rejectReason, setRejectReason] = useState("");
   const [showReject, setShowReject] = useState(false);
+
+  const showDraft = run.status === RUN_STATUS.DRAFT && canEdit;
+  const showPending = run.status === RUN_STATUS.PENDING_APPROVAL && canEdit;
+  const showProcess = run.status === RUN_STATUS.APPROVED && canProcess;
+  const showMarkPaid = run.status === RUN_STATUS.PROCESSING && (canEdit || canProcess);
+
+  if (!showDraft && !showPending && !showProcess && !showMarkPaid) return null;
 
   return (
     <div className="p-4 rounded-2xl border-2 border-teal-200 bg-teal-50 dark:bg-teal-500/10 dark:border-teal-500/30">
       <p className="text-sm font-semibold text-teal-800 dark:text-teal-300 mb-3">{t("payroll:available_actions")}</p>
       <div className="flex flex-wrap gap-2">
-        {run.status === RUN_STATUS.DRAFT && (
+        {showDraft && (
           <>
             <Button type="button" title={t("payroll:submit_approval")} btn="primary"
               onClick={() => onAction(submitPayrollRun({ id: run.id }))}
@@ -43,7 +53,7 @@ const ActionBar = ({ run, onAction }) => {
               className="!w-auto !rounded-lg !h-9 !px-4 !bg-rose-100 !text-rose-700 dark:!bg-rose-500/20 dark:!text-rose-300" />
           </>
         )}
-        {run.status === RUN_STATUS.PENDING_APPROVAL && (
+        {showPending && (
           <>
             <Button type="button" title={t("payroll:approve")} btn="primary"
               onClick={() => onAction(approvePayrollRun({ id: run.id }))}
@@ -53,18 +63,18 @@ const ActionBar = ({ run, onAction }) => {
               className="!w-auto !rounded-lg !h-9 !px-4 !bg-rose-100 !text-rose-700 dark:!bg-rose-500/20 dark:!text-rose-300" />
           </>
         )}
-        {run.status === RUN_STATUS.APPROVED && (
+        {showProcess && (
           <Button type="button" title={t("payroll:process_payroll")} btn="primary"
             onClick={() => onAction(processPayrollRun({ id: run.id }))}
             className="!w-auto !rounded-lg !h-9 !px-4 !border-0 !text-white !bg-purple-500 hover:!bg-purple-600" />
         )}
-        {run.status === RUN_STATUS.PROCESSING && (
+        {showMarkPaid && (
           <Button type="button" title={t("payroll:mark_paid")} btn="primary"
             onClick={() => onAction(markPayrollRunPaid({ id: run.id }))}
             className="!w-auto !rounded-lg !h-9 !px-4 !border-0 !text-white !bg-emerald-500 hover:!bg-emerald-600" />
         )}
       </div>
-      {showReject && (
+      {showPending && showReject && (
         <div className="mt-3">
           <FormInput
             value={rejectReason}
@@ -109,6 +119,7 @@ const RunDetail = () => {
     dispatch(fetchPayrollRunById(id));
     dispatch(fetchEmployees());
     dispatch(fetchDepartments());
+    return () => dispatch(clearCurrentRun());
   }, [dispatch, id]);
 
   const onAction = (thunk) => { dispatch(thunk).then(() => dispatch(fetchPayrollRunById(id))); };
@@ -126,6 +137,8 @@ const RunDetail = () => {
     });
   }, [run, employeesById, departmentsById]);
 
+  if (!checkRoleAuth(view_payroll_run)) return null;
+
   if (loading && !run) return <SkeletonDetail fields={9} />;
 
   if (!run) return (
@@ -134,6 +147,9 @@ const RunDetail = () => {
       <Button title={t("back")} onClick={() => navigate("/payroll-batch")} className="mt-4" />
     </div>
   );
+
+  const canEdit = checkRoleAuth(edit_payroll_run);
+  const canProcess = checkRoleAuth(process_payroll_run);
 
   const monthLabel = run.month ? new Date(`${run.month}-01`).toLocaleDateString(undefined, { month: "long", year: "numeric" }) : "—";
   const depts = ["All", ...new Set(lines.map((e) => e.department))];
@@ -193,7 +209,7 @@ const RunDetail = () => {
 
         {/* Action bar */}
         {run.status !== RUN_STATUS.PAID && run.status !== RUN_STATUS.CANCELLED && (
-          <ActionBar run={run} onAction={onAction} />
+          <ActionBar run={run} onAction={onAction} canEdit={canEdit} canProcess={canProcess} />
         )}
 
         {/* Summary strip */}
@@ -281,7 +297,7 @@ const RunDetail = () => {
                   </thead>
                   <tbody>
                     {filteredEmps.map((e) => {
-                      const canEdit = run.status === RUN_STATUS.DRAFT;
+                      const canEditLine = canEdit && run.status === RUN_STATUS.DRAFT;
                       const isEditingThisOt = editingOtId === e.employeeId;
                       const isEditingThisBonus = editingBonusId === e.employeeId;
                       return (
@@ -295,7 +311,7 @@ const RunDetail = () => {
                           <td className="px-3 py-3 text-xs text-teal-600">{formatAmount((e.medical || 0) + (e.transport || 0) + (e.food || 0) + (e.mobile || 0))}</td>
                           {/* OT Hours — editable */}
                           <td className="px-3 py-3 text-xs">
-                            {canEdit && isEditingThisOt ? (
+                            {canEditLine && isEditingThisOt ? (
                               <div className="flex items-center gap-1">
                                 <FormInput type="number" min={0} decimal decimalPlaces={2} value={editingOtVal} onValueChange={setEditingOtVal}
                                   inputClass="!w-14 !h-7 !rounded !px-1.5 !py-0 !text-xs !text-center" wrapperClass="w-14" />
@@ -305,7 +321,7 @@ const RunDetail = () => {
                             ) : (
                               <span className="flex items-center gap-1 group">
                                 <span className="font-medium text-amber-700 dark:text-amber-300">{e.overtimeHours ?? 0} hrs</span>
-                                {canEdit && (
+                                {canEditLine && (
                                   <button type="button" onClick={() => { setEditingOtId(e.employeeId); setEditingOtVal(String(e.overtimeHours ?? 0)); }}
                                     className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-amber-500 transition-opacity">
                                     <FiEdit2 className="h-3 w-3" />
@@ -318,7 +334,7 @@ const RunDetail = () => {
                           <td className="px-3 py-3 text-xs font-semibold text-amber-600">SAR {formatAmount(e.overtime)}</td>
                           {/* Bonus — editable */}
                           <td className="px-3 py-3 text-xs">
-                            {canEdit && isEditingThisBonus ? (
+                            {canEditLine && isEditingThisBonus ? (
                               <div className="flex items-center gap-1">
                                 <FormInput type="number" min={0} decimal decimalPlaces={2} value={editingBonusVal} onValueChange={setEditingBonusVal}
                                   inputClass="!w-20 !h-7 !rounded !px-1.5 !py-0 !text-xs !text-center" wrapperClass="w-20" />
@@ -328,7 +344,7 @@ const RunDetail = () => {
                             ) : (
                               <span className="flex items-center gap-1 group">
                                 <span className="font-semibold text-purple-600 dark:text-purple-400">SAR {formatAmount(e.bonus)}</span>
-                                {canEdit && (
+                                {canEditLine && (
                                   <button type="button" onClick={() => { setEditingBonusId(e.employeeId); setEditingBonusVal(String(e.bonus ?? 0)); }}
                                     className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-purple-500 transition-opacity">
                                     <FiEdit2 className="h-3 w-3" />
@@ -359,7 +375,7 @@ const RunDetail = () => {
                   </tbody>
                 </table>
               </div>
-              {run.status === RUN_STATUS.DRAFT && (
+              {canEdit && run.status === RUN_STATUS.DRAFT && (
                 <p className="mt-2 text-xs text-slate-400 flex items-center gap-1">
                   <FiEdit2 className="h-3 w-3" /> {t("payroll:ot_bonus_edit_hint")}
                 </p>

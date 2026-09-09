@@ -9,7 +9,7 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchBankAccounts,
   fetchChartOfAccounts,
@@ -18,7 +18,7 @@ import {
   showChartOfAccounts,
 } from "store/slices/financeSlice";
 
-const { add_customer } = rafeeqi_role_ids;
+const { add_finance_expense } = alqadar_role_ids;
 
 // A quick business-expense entry — posts Debit Expense / Credit Bank
 // immediately on save, so there's no edit mode: it's already part of the
@@ -51,7 +51,7 @@ const AddExpense = () => {
   });
 
   useEffect(() => {
-    if (!checkRoleAuth(add_customer)) {
+    if (!checkRoleAuth(add_finance_expense)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/expenses");
     }
@@ -84,7 +84,7 @@ const AddExpense = () => {
     }
   };
 
-  if (!checkRoleAuth(add_customer)) return null;
+  if (!checkRoleAuth(add_finance_expense)) return null;
   const isRTL = i18n.language === "ar";
 
   return (

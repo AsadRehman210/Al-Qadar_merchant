@@ -5,7 +5,7 @@ const Field = ({ label, value }) => (
     <p className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase">
       {label}
     </p>
-    <p className="font-semibold text-slate-900 dark:text-white mt-1">
+    <p className="font-semibold text-slate-900 dark:text-white mt-1 break-words">
       {value ?? "-"}
     </p>
   </div>

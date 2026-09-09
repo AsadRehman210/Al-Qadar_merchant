@@ -5,15 +5,16 @@ import { useDispatch, useSelector } from "react-redux";
 import { IoAdd } from "react-icons/io5";
 import { FiEye } from "react-icons/fi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
 import SearchInput from "components/SearchInput";
 import TableState from "components/TableState";
-import { RUN_STATUS_BADGE } from "global/constant";
+import { SkeletonCards } from "components/Skeleton";
 import { tableRows, payrollRunStatusFilterOptions } from "global/constant";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
+import { RUN_STATUS_BADGE } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
   fetchPayrollRuns,
@@ -30,8 +31,7 @@ import {
 } from "store/slices/payrollBatchSlice";
 import dayjs from "dayjs";
 
-const { add_employee, view_employee } = rafeeqi_role_ids;
-
+const { add_payroll_run, view_payroll_run } = alqadar_role_ids;
 
 const PayrollBatch = () => {
   const { t } = useTranslation();
@@ -90,7 +90,7 @@ const PayrollBatch = () => {
     { label: t("payroll:total_disbursed"), value: `SAR ${formatAmount(summary.totalNetPaid)}`, sub: t("payroll:net_salary_paid"), color: "from-teal-500 to-teal-600" },
   ];
 
-  if (!checkRoleAuth(view_employee)) return null;
+  if (!checkRoleAuth(view_payroll_run)) return null;
 
   return (
     <div className="relative min-h-[60vh]">
@@ -103,7 +103,7 @@ const PayrollBatch = () => {
             <p className="text-mutedForeground mt-1">{t("payroll:module_desc")}</p>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
-            {checkRoleAuth(add_employee) && (
+            {checkRoleAuth(add_payroll_run) && (
               <Button
                 className="!w-auto !rounded-lg !h-10 !px-4 !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600"
                 onClick={() => navigate("/payroll-batch/create")}
@@ -117,15 +117,21 @@ const PayrollBatch = () => {
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {STAT_CARDS.map((c) => (
-            <div key={c.label} className={`p-5 rounded-2xl bg-gradient-to-br ${c.color} text-white`}>
-              <p className="text-xs font-medium opacity-75 mb-1">{c.label}</p>
-              <p className="text-2xl font-bold">{c.value}</p>
-              <p className="text-xs opacity-70 mt-0.5">{c.sub}</p>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="mb-6">
+            <SkeletonCards count={4} columns="grid-cols-2 lg:grid-cols-4" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {STAT_CARDS.map((c) => (
+              <div key={c.label} className={`p-5 rounded-2xl bg-gradient-to-br ${c.color} text-white`}>
+                <p className="text-xs font-medium opacity-75 mb-1">{c.label}</p>
+                <p className="text-2xl font-bold">{c.value}</p>
+                <p className="text-xs opacity-70 mt-0.5">{c.sub}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-7">
@@ -213,7 +219,7 @@ const PayrollBatch = () => {
               <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
             </div>
             <div className="pagination ltr:ml-auto rtl:mr-auto">
-              <ReactPaginate
+              <Pagination
                 breakLabel="..." nextLabel={<FaAngleRight />} previousLabel={<FaAngleLeft />}
                 onPageChange={(e) => dispatch(setCurrentPage(e.selected + 1))}
                 pageRangeDisplayed={3} marginPagesDisplayed={1} pageCount={totalPages}

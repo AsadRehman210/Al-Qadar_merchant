@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -9,14 +9,16 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { productTypeOptions } from "global/constant";
 import {
   createProduct,
   updateProduct,
   fetchProductById,
   showCurrentProduct,
+  showCurrentProductLoading,
   clearCurrentProduct,
 } from "store/slices/productSlice";
 import {
@@ -26,21 +28,32 @@ import {
   showCategoryDropdownPage,
   showCategoryDropdownHasMore,
   showCategoryDropdownLoading,
+  resetCategoryDropdown,
+  clearCurrentCategory,
 } from "store/slices/categorySlice";
+import { resetWarehouseDropdown } from "store/slices/warehouseSlice";
 
-const { add_customer } = rafeeqi_role_ids;
+const { add_inventory_product, edit_inventory_product } = alqadar_role_ids;
 
-/** The product catalog is deliberately bare — name, category, raw-material
+/** The product catalog is deliberately bare � name, category, raw-material
  *  flag, status. Everything a purchasable/sellable item actually needs
  *  (SKU, cost, price, stock) lives on its Variants, created separately in
  *  the standalone Variants module. */
 const AddProduct = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(resetCategoryDropdown());
+      dispatch(resetWarehouseDropdown());
+    };
+  }, [dispatch]);
+
+  const navigate = useNavigate();
   const { id } = useParams();
 
   const existing = useSelector(showCurrentProduct);
+  const loading = useSelector(showCurrentProductLoading);
   const categoryDropdownOptions = useSelector(showCategoryDropdownOptions);
   const categoryDropdownPage = useSelector(showCategoryDropdownPage);
   const categoryDropdownHasMore = useSelector(showCategoryDropdownHasMore);
@@ -74,7 +87,10 @@ const AddProduct = () => {
   useEffect(() => {
     dispatch(fetchCategoriesDropdown({ page: 1, search: "" }));
     if (id) dispatch(fetchProductById(id));
-    return () => dispatch(clearCurrentProduct());
+    return () => {
+      dispatch(clearCurrentProduct());
+      dispatch(clearCurrentCategory());
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -94,7 +110,7 @@ const AddProduct = () => {
           setSelCategory(inFirstPage);
         } else if (existing.categoryName) {
           // Category referenced by this product isn't in the first dropdown
-          // page — the DTO already carries its populated name, use that
+          // page � the DTO already carries its populated name, use that
           // directly rather than issuing a second lookup.
           setSelCategory({ id: existing.categoryId, title: existing.categoryName, name: existing.categoryName });
         } else {
@@ -146,7 +162,16 @@ const AddProduct = () => {
     trigger("categoryId");
   };
 
-  if (!checkRoleAuth(add_customer)) return null;
+  if (id && !checkRoleAuth(edit_inventory_product)) return null;
+  if (!id && !checkRoleAuth(add_inventory_product)) return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
 
@@ -183,7 +208,7 @@ const AddProduct = () => {
               required
               pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
-              maxLength={150}
+              maxLength={100}
               placeholder={t("product:product_name_placeholder")}
             />
             <SearchablePaginatedDropdown

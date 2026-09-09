@@ -182,7 +182,11 @@ const Warehouse = lazy(() => import("pages/Warehouse"));
 const AddWarehouse = lazy(() => import("pages/Warehouse/AddWarehouse"));
 const WarehouseDetail = lazy(() => import("pages/Warehouse/WarehouseDetail"));
 const StockTransfer = lazy(() => import("pages/Warehouse/StockTransfer"));
+const AddStockTransfer = lazy(() => import("pages/Warehouse/StockTransfer/AddStockTransfer"));
+const StockTransferDetail = lazy(() => import("pages/Warehouse/StockTransfer/StockTransferDetail"));
 const StockIssue = lazy(() => import("pages/Warehouse/StockIssue"));
+const AddStockIssue = lazy(() => import("pages/Warehouse/StockIssue/AddStockIssue"));
+const StockIssueDetail = lazy(() => import("pages/Warehouse/StockIssue/StockIssueDetail"));
 const Settings = lazy(() => import("pages/Settings"));
 const Roles = lazy(() => import("pages/Roles"));
 const AddRole = lazy(() => import("pages/Roles/AddRole"));
@@ -456,9 +460,12 @@ function Router() {
               <Route path="warehouse/edit/:id" element={<AddWarehouse />} />
               <Route path="warehouse/detail/:id" element={<WarehouseDetail />} />
               <Route path="warehouse_transfers" element={<StockTransfer />} />
-              <Route path="warehouse_transfers/add" element={<StockTransfer />} />
+              <Route path="warehouse_transfers/add" element={<AddStockTransfer />} />
+              <Route path="warehouse_transfers/edit/:id" element={<AddStockTransfer />} />
+              <Route path="warehouse_transfers/detail/:id" element={<StockTransferDetail />} />
               <Route path="warehouse_issues" element={<StockIssue />} />
-              <Route path="warehouse_issues/add" element={<StockIssue />} />
+              <Route path="warehouse_issues/add" element={<AddStockIssue />} />
+              <Route path="warehouse_issues/detail/:id" element={<StockIssueDetail />} />
               <Route path="settings" element={<Settings />} />
               <Route path="roles" element={<Roles />} />
               <Route path="roles/add" element={<AddRole />} />

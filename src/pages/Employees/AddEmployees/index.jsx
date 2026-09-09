@@ -12,15 +12,17 @@ import Qualification from "./Qualification";
 import Documents from "./Documents";
 import Salary from "./Salary";
 import { useParams, useNavigate } from "react-router";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { SkeletonDetail } from "components/Skeleton";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { checkRoleAuth } from "global/helper";
 import {
   fetchEmployeeById,
   showCurrentEmployee,
-  setCurrentEmployee,
+  showCurrentEmployeeLoading,
+  clearCurrentEmployee,
 } from "store/slices/employeeSlice";
 
-const { add_employee, edit_employee } = rafeeqi_role_ids;
+const { add_employee, edit_employee } = alqadar_role_ids;
 
 const dateOrEmpty = (d) => (d ? moment(d).format("DD-MM-YYYY") : "");
 
@@ -37,6 +39,7 @@ const AddEmployees = () => {
   const isRTL = i18n.language === "ar";
 
   const existing = useSelector(showCurrentEmployee);
+  const loading = useSelector(showCurrentEmployeeLoading);
 
   const methods = useForm({
     mode: "onChange",
@@ -45,7 +48,7 @@ const AddEmployees = () => {
 
   useEffect(() => {
     if (id) dispatch(fetchEmployeeById(id));
-    return () => dispatch(setCurrentEmployee(null));
+    return () => dispatch(clearCurrentEmployee());
   }, [id, dispatch]);
 
   // Populate the form once the real record has loaded — every field name
@@ -90,6 +93,14 @@ const AddEmployees = () => {
 
   if (id && !checkRoleAuth(edit_employee)) return null;
   if (!id && !checkRoleAuth(add_employee)) return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={10} />
+      </div>
+    );
+  }
 
   const panelClass =
     "bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-8 pl-9 border-l-4 !border-l-[var(--color-teal-500)] dark:border-l-teal-500/60 dark:[&_label]:!text-white/90 dark:[&_.font-medium]:!text-white/90 dark:[&_input]:!bg-white/10 dark:[&_input]:!border-white/20 dark:[&_input]:!text-white dark:[&_select]:!bg-white/10 dark:[&_select]:!border-white/20 dark:[&_select]:!text-white dark:[&_textarea]:!bg-white/10 dark:[&_textarea]:!border-white/20 dark:[&_textarea]:!text-white";

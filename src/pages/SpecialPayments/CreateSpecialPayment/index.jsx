@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -9,20 +9,19 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { fetchSpTypes, showSpTypes, createSpecialPayment } from "store/slices/payrollBatchSlice";
-import { specialPaymentTargetOptions } from "global/constant";
+import { specialPaymentTargetOptions, specialPaymentModeOptions } from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { add_special_payment } = alqadar_role_ids;
 
 const MODE_BADGE = {
   fixed: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300",
   pct_basic: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
   pct_gross: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
 };
-const MODE_LABEL = { fixed: "Fixed", pct_basic: "% of Basic", pct_gross: "% of Gross" };
 
 const CreateSpecialPayment = () => {
   const { t, i18n } = useTranslation();
@@ -110,7 +109,7 @@ const CreateSpecialPayment = () => {
       : `${selType.amountValue}% of each employee's gross salary`
     : "";
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (!checkRoleAuth(add_special_payment)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -181,7 +180,9 @@ const CreateSpecialPayment = () => {
                           ? `SAR ${(selType.amountValue || 0).toLocaleString()}`
                           : `${selType.amountValue}%`}
                       </span>
-                      <span className="text-xs text-slate-500 dark:text-white/60">{MODE_LABEL[selType.amountMode]}</span>
+                      <span className="text-xs text-slate-500 dark:text-white/60">
+                        {specialPaymentModeOptions.find((m) => m.id === selType.amountMode)?.title || selType.amountMode}
+                      </span>
                     </div>
                     <p className="text-xs text-slate-400">{amountHint}</p>
                   </div>

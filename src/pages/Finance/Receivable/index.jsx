@@ -2,15 +2,16 @@ import { useEffect } from "react";
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import TableState from "components/TableState";
+import { SkeletonCards } from "components/Skeleton";
 import {
   fetchReceivables,
   showReceivables,
@@ -21,7 +22,7 @@ import {
 } from "store/slices/saleInvoiceSlice";
 import FinancePage from "../FinancePage";
 
-const { view_customer } = rafeeqi_role_ids;
+const { view_finance_receivable } = alqadar_role_ids;
 
 
 // The real Accounts Receivable view — every Sale Invoice this tenant is
@@ -49,18 +50,24 @@ const Receivable = () => {
 
   return (
     <FinancePage title={t("finance:ar_title")} description={t("finance:ar_desc")}>
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_receivable) && (
         <>
-          <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-2xl">
-            <div className="p-4 rounded-2xl border border-rose-200 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/20">
-              <p className="text-xs text-slate-500">{t("finance:total_receivable", { defaultValue: "Total receivable" })}</p>
-              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalBalanceDue)}</p>
+          {loading ? (
+            <div className="mb-6 max-w-2xl">
+              <SkeletonCards count={2} columns="grid-cols-2 sm:grid-cols-3" />
             </div>
-            <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/20">
-              <p className="text-xs text-slate-500">{t("finance:total_refund_due", { defaultValue: "Refund due to customers" })}</p>
-              <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalRefundDue)}</p>
+          ) : (
+            <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-2xl">
+              <div className="p-4 rounded-2xl border border-rose-200 bg-rose-50 dark:bg-rose-500/10 dark:border-rose-500/20">
+                <p className="text-xs text-slate-500">{t("finance:total_receivable", { defaultValue: "Total receivable" })}</p>
+                <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalBalanceDue)}</p>
+              </div>
+              <div className="p-4 rounded-2xl border border-amber-200 bg-amber-50 dark:bg-amber-500/10 dark:border-amber-500/20">
+                <p className="text-xs text-slate-500">{t("finance:total_refund_due", { defaultValue: "Refund due to customers" })}</p>
+                <p className="font-bold text-lg text-slate-900 dark:text-white mt-0.5">{formatAmount(totalRefundDue)}</p>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="mb-6 max-w-md">
             <SearchInput
@@ -82,7 +89,9 @@ const Receivable = () => {
               </thead>
               <tbody>
                 <TableState loading={loading} data={rows} colSpan={5}>
-                  {rows.map((row) => (
+                  {rows.map((row) => {
+                    const isOpening = row.source === "opening" || String(row.id || "").startsWith("opening-");
+                    return (
                       <tr key={row.id} className="transition-colors border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10 last:[&_td]:border-b-0">
                         <td className="px-4 py-4 align-middle pl-6 font-medium">
                           <Link to={`/customers/detail/${row.customerId}`} className="text-teal-700 hover:underline dark:text-teal-400">
@@ -90,7 +99,13 @@ const Receivable = () => {
                           </Link>
                         </td>
                         <td className="px-4 py-4 align-middle font-mono text-xs">
-                          <Link to={`/sales/detail/${row.id}`} className="hover:underline">{row.invoiceNumber}</Link>
+                          {isOpening ? (
+                            <Link to={`/customers/detail/${row.customerId}`} className="hover:underline">
+                              {t("finance:opening_balance", { defaultValue: row.invoiceNumber || "Opening balance" })}
+                            </Link>
+                          ) : (
+                            <Link to={`/sales/detail/${row.id}`} className="hover:underline">{row.invoiceNumber}</Link>
+                          )}
                         </td>
                         <td className="px-4 py-4 align-middle">{row.date ? String(row.date).slice(0, 10) : "—"}</td>
                         <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold">
@@ -100,7 +115,8 @@ const Receivable = () => {
                           {(Number(row.refundDue) || 0) > 0 ? `${formatAmount(row.refundDue)} ${row.currency}` : "—"}
                         </td>
                       </tr>
-                  ))}
+                    );
+                  })}
                 </TableState>
               </tbody>
             </table>
@@ -118,7 +134,7 @@ const Receivable = () => {
               <span className="whitespace-nowrap">{t("per_page")}</span>
             </div>
             <div className="pagination ltr:ml-auto rtl:mr-auto">
-              <ReactPaginate
+              <Pagination
                 breakLabel="..."
                 nextLabel={<FaAngleRight />}
                 previousLabel={<FaAngleLeft />}

@@ -8,10 +8,12 @@ const initialState = {
   jobsLoading: false,
   jobsSummary: { totalJobs: 0, openJobs: 0, inProcessCandidates: 0, hiredCandidates: 0 },
   currentJob: null,
+  currentJobLoading: false,
 
   candidates: [],
   candidatesLoading: false,
   candidatesByJob: {},
+  candidatesByJobLoading: false,
 };
 
 // ── Jobs ───────────────────────────────────────
@@ -167,9 +169,12 @@ const recruitmentSlice = createSlice({
         state.candidatesLoading = false;
         state.candidates = [];
       })
+      .addCase(fetchCandidatesByJob.pending, (state) => { state.candidatesByJobLoading = true; })
       .addCase(fetchCandidatesByJob.fulfilled, (state, action) => {
+        state.candidatesByJobLoading = false;
         state.candidatesByJob[action.payload.jobId] = action.payload.result || [];
       })
+      .addCase(fetchCandidatesByJob.rejected, (state) => { state.candidatesByJobLoading = false; })
       .addCase(applyCandidate.fulfilled, (state, action) => {
         if (!action.payload) return;
         state.candidates.unshift(action.payload);
@@ -192,5 +197,6 @@ export const showCurrentJobLoading = (state) => state.recruitment.currentJobLoad
 
 export const showCandidates = (state) => state.recruitment.candidates;
 export const showCandidatesByJob = (jobId) => (state) => state.recruitment.candidatesByJob[jobId] || [];
+export const showCandidatesByJobLoading = (state) => state.recruitment.candidatesByJobLoading;
 
 export default recruitmentSlice.reducer;

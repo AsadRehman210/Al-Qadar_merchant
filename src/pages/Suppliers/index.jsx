@@ -6,24 +6,31 @@ import SuppliersTable from "./SuppliersTable";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows, statusFilterOptions } from "global/constant";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { useListFilters } from "hooks/useListFilters";
 import {
+  clearSuppliersList,
   fetchSuppliers,
   showSuppliers,
   showSuppliersTotal,
   showSuppliersLoading,
 } from "store/slices/supplierSlice";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_purchase_supplier, add_purchase_supplier } = alqadar_role_ids;
 
 const Suppliers = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearSuppliersList());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useListFilters("suppliers-list", {
     page: 1,
     limitId: tableRows[0].id,
@@ -68,7 +75,7 @@ const Suppliers = () => {
               {t("suppliers:suppliers_module_desc")}
             </p>
           </div>
-          {checkRoleAuth(add_customer) && (
+          {checkRoleAuth(add_purchase_supplier) && (
             <div className="relative z-10 shrink-0">
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5 disabled:hover:translate-y-0"
@@ -87,7 +94,7 @@ const Suppliers = () => {
           )}
         </div>
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_purchase_supplier) && (
             <div className="mb-6 flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-end">
               <div className="flex-1 min-w-[200px] min-h-[44px]">
                 <SearchInput
@@ -108,7 +115,7 @@ const Suppliers = () => {
               </div>
             </div>
           )}
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_purchase_supplier) && (
             <SuppliersTable
               data={suppliers}
               loading={loading}

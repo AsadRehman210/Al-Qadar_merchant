@@ -64,6 +64,17 @@
   "create_transfer": "Create Transfer",
   "same_warehouse_error": "Source and destination cannot be the same warehouse",
   "transfer_created": "Stock transfer created successfully",
+  "select_from_warehouse_first": "Select the source warehouse first to load products in stock there.",
+  "available_qty": "Qty",
+  "edit_transfer": "Edit Transfer",
+  "update_transfer": "Update Transfer",
+  "transfer_updated": "Stock transfer updated successfully",
+  "transfer_deleted": "Stock transfer deleted successfully",
+  "delete_transfer": "Delete Transfer",
+  "confirm_delete_transfer": "Delete this pending transfer? This cannot be undone.",
+  "only_pending_editable": "Only pending transfers can be edited.",
+  "qty_exceeds_available": "Transfer quantity cannot exceed available stock in the source warehouse.",
+  "qty_exceeds_available_named": "Insufficient stock for {{product}}: available {{available}}, requested {{requested}}",
   "warehouse": "Warehouse",
   "edit": "Edit",
 
@@ -92,5 +103,19 @@
   "create_issue": "Create Issue",
   "issue_created": "Stock issue recorded — stock deducted.",
   "no_issues": "No stock issues recorded",
-  "select_item_required": "Add at least one item."
+  "select_item_required": "Add at least one item.",
+
+  "batch": "Batch",
+  "select_batch": "Select batch",
+  "select_batch_required": "Select a batch for each item",
+  "batch_qty_exceeds": "Quantity exceeds available stock in the selected batch for {{product}}",
+  "expiry": "Expiry",
+
+  "status_issued": "Issued",
+  "status_reversed": "Reversed",
+  "reverse_issue": "Reverse Issue",
+  "confirm_reverse_issue": "This will restore stock and batches, and reverse the expense journal. Continue?",
+  "issue_reverse_success": "Stock issue reversed — stock restored.",
+  "issue_reverse_failed": "Could not reverse this stock issue.",
+  "reversed_at": "Reversed At"
 }

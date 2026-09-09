@@ -41,12 +41,35 @@ export const createStockIssue = createAsyncThunk(
   },
 );
 
+export const reverseStockIssue = createAsyncThunk(
+  "stockIssue/reverse",
+  async (id, { rejectWithValue }) => {
+    const response = await erpPost(`${erpUrls.stockIssues}/${id}/reverse`);
+    if (!response?.success) return rejectWithValue(response?.message);
+    return response.result;
+  },
+);
+
+const upsertCurrentAndList = (state, issue) => {
+  if (!issue) return;
+  const idx = state.list.findIndex((o) => o.id === issue.id);
+  if (idx !== -1) state.list[idx] = issue;
+  if (state.current?.id === issue.id) state.current = issue;
+};
+
 const stockIssueSlice = createSlice({
   name: "stockIssue",
   initialState,
   reducers: {
     clearCurrentStockIssue: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearStockIssuesList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -65,18 +88,32 @@ const stockIssueSlice = createSlice({
         state.list = [];
         state.error = action.payload;
       })
+      .addCase(fetchStockIssueById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(fetchStockIssueById.fulfilled, (state, action) => {
+        state.loading = false;
         state.current = action.payload;
+      })
+      .addCase(fetchStockIssueById.rejected, (state, action) => {
+        state.loading = false;
+        state.current = null;
+        state.error = action.payload;
       })
       .addCase(createStockIssue.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
+      })
+      .addCase(reverseStockIssue.fulfilled, (state, action) => {
+        upsertCurrentAndList(state, action.payload);
       });
   },
 });
 
-export const { clearCurrentStockIssue } = stockIssueSlice.actions;
+export const { clearCurrentStockIssue, clearStockIssuesList } = stockIssueSlice.actions;
 export const showStockIssues = (state) => state.stockIssue.list;
 export const showStockIssuesTotal = (state) => state.stockIssue.totalRecords;
 export const showStockIssuesLoading = (state) => state.stockIssue.loading;
 export const showCurrentStockIssue = (state) => state.stockIssue.current;
+export const showCurrentStockIssueLoading = (state) => state.stockIssue.loading;
 export default stockIssueSlice.reducer;

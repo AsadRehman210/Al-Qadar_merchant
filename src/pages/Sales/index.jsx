@@ -6,21 +6,27 @@ import SalesTable from "./SalesTable";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import SearchInput from "components/SearchInput";
 import { DateRangePicker } from "components/DateRangePicker";
 import { useListFilters } from "hooks/useListFilters";
-import { fetchSaleInvoices, showSaleInvoices, showSaleInvoicesTotal, showSaleInvoicesLoading } from "store/slices/saleInvoiceSlice";
+import { fetchSaleInvoices, showSaleInvoices, showSaleInvoicesTotal, showSaleInvoicesLoading, clearSaleInvoicesList } from "store/slices/saleInvoiceSlice";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_sales_invoice, add_sales_invoice } = alqadar_role_ids;
 
 const toIsoDate = (d) => (d ? new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString().slice(0, 10) : undefined);
 
 const Sales = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearSaleInvoicesList());
+    };
+  }, [dispatch]);
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useListFilters("sales-invoices", {
     page: 1,
     limitId: tableRows[0].id,
@@ -67,7 +73,7 @@ const Sales = () => {
               {t("sales:sales_module_desc")}
             </p>
           </div>
-          {checkRoleAuth(add_customer) && (
+          {checkRoleAuth(add_sales_invoice) && (
             <div className="relative z-10 shrink-0">
               <Button
                 className="!w-auto !rounded-md !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5 disabled:hover:translate-y-0"
@@ -86,7 +92,7 @@ const Sales = () => {
           )}
         </div>
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_sales_invoice) && (
             <div className="mb-6 flex flex-col sm:flex-row flex-wrap gap-4 items-stretch sm:items-end">
               <div className="flex-1 min-w-[200px] min-h-[44px] max-w-md">
                 <SearchInput
@@ -110,7 +116,7 @@ const Sales = () => {
               </div>
             </div>
           )}
-          {checkRoleAuth(view_customer) && (
+          {checkRoleAuth(view_sales_invoice) && (
             <SalesTable
               data={invoices}
               loading={loading}

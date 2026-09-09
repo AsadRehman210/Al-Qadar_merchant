@@ -12,16 +12,13 @@ const initialState = {
   dropdownOptions: [],
   dropdownPage: 1,
   dropdownHasMore: false,
-  dropdownLoading: false,
   payables: [],
   payablesTotal: 0,
   payablesTotalBalanceDue: 0,
   payablesTotalRefundDue: 0,
-  payablesLoading: false,
   recoverableTax: [],
   recoverableTaxTotal: 0,
   recoverableTaxTotalAmount: 0,
-  recoverableTaxLoading: false,
 };
 
 // Accounts Payable — real Purchase Invoices still owed to the supplier or
@@ -146,35 +143,55 @@ const purchaseInvoiceSlice = createSlice({
   reducers: {
     clearCurrentPurchaseInvoice: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearPurchaseInvoicesList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
+      state.payables = [];
+      state.payablesTotal = 0;
+      state.payablesTotalBalanceDue = 0;
+      state.payablesTotalRefundDue = 0;
+      state.recoverableTax = [];
+      state.recoverableTaxTotal = 0;
+      state.recoverableTaxTotalAmount = 0;
+    },
+    resetPurchaseInvoiceDropdown: (state) => {
+      state.dropdownOptions = [];
+      state.dropdownPage = 1;
+      state.dropdownHasMore = false;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchPayables.pending, (state) => {
-        state.payablesLoading = true;
+        state.loading = true;
       })
       .addCase(fetchPayables.fulfilled, (state, action) => {
-        state.payablesLoading = false;
+        state.loading = false;
         state.payables = action.payload?.result || [];
         state.payablesTotal = action.payload?.total_records || 0;
         state.payablesTotalBalanceDue = action.payload?.totalBalanceDue || 0;
         state.payablesTotalRefundDue = action.payload?.totalRefundDue || 0;
       })
       .addCase(fetchPayables.rejected, (state) => {
-        state.payablesLoading = false;
+        state.loading = false;
         state.payables = [];
       })
       .addCase(fetchRecoverableTaxReport.pending, (state) => {
-        state.recoverableTaxLoading = true;
+        state.loading = true;
       })
       .addCase(fetchRecoverableTaxReport.fulfilled, (state, action) => {
-        state.recoverableTaxLoading = false;
+        state.loading = false;
         state.recoverableTax = action.payload?.result || [];
         state.recoverableTaxTotal = action.payload?.total_records || 0;
         state.recoverableTaxTotalAmount = action.payload?.totalTaxAmount || 0;
       })
       .addCase(fetchRecoverableTaxReport.rejected, (state) => {
-        state.recoverableTaxLoading = false;
+        state.loading = false;
         state.recoverableTax = [];
       })
       .addCase(fetchPurchaseInvoices.pending, (state) => {
@@ -192,27 +209,27 @@ const purchaseInvoiceSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchPurchaseInvoiceById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchPurchaseInvoiceById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchPurchaseInvoiceById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(fetchPurchaseInvoicesDropdown.pending, (state) => {
-        state.dropdownLoading = true;
+        state.loading = true;
       })
       .addCase(fetchPurchaseInvoicesDropdown.fulfilled, (state, action) => {
-        state.dropdownLoading = false;
+        state.loading = false;
         const { result, page, total_pages } = action.payload;
         state.dropdownOptions = page === 1 ? result : [...state.dropdownOptions, ...result];
         state.dropdownPage = page;
         state.dropdownHasMore = page < total_pages;
       })
       .addCase(fetchPurchaseInvoicesDropdown.rejected, (state) => {
-        state.dropdownLoading = false;
+        state.loading = false;
       })
       .addCase(createPurchaseInvoice.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -230,7 +247,7 @@ const purchaseInvoiceSlice = createSlice({
   },
 });
 
-export const { clearCurrentPurchaseInvoice } = purchaseInvoiceSlice.actions;
+export const { clearCurrentPurchaseInvoice, clearPurchaseInvoicesList, resetPurchaseInvoiceDropdown } = purchaseInvoiceSlice.actions;
 export const showPurchaseInvoices = (state) => state.purchaseInvoice.list;
 export const showPurchaseInvoicesTotal = (state) => state.purchaseInvoice.totalRecords;
 export const showPurchaseInvoicesLoading = (state) => state.purchaseInvoice.loading;
@@ -241,12 +258,12 @@ export const showPayablesTotalRefundDue = (state) => state.purchaseInvoice.payab
 export const showRecoverableTax = (state) => state.purchaseInvoice.recoverableTax;
 export const showRecoverableTaxTotal = (state) => state.purchaseInvoice.recoverableTaxTotal;
 export const showRecoverableTaxTotalAmount = (state) => state.purchaseInvoice.recoverableTaxTotalAmount;
-export const showRecoverableTaxLoading = (state) => state.purchaseInvoice.recoverableTaxLoading;
-export const showPayablesLoading = (state) => state.purchaseInvoice.payablesLoading;
+export const showRecoverableTaxLoading = (state) => state.purchaseInvoice.loading;
+export const showPayablesLoading = (state) => state.purchaseInvoice.loading;
 export const showCurrentPurchaseInvoice = (state) => state.purchaseInvoice.current;
-export const showCurrentPurchaseInvoiceLoading = (state) => state.purchaseInvoice.currentLoading;
+export const showCurrentPurchaseInvoiceLoading = (state) => state.purchaseInvoice.loading;
 export const showPurchaseInvoiceDropdownOptions = (state) => state.purchaseInvoice.dropdownOptions;
 export const showPurchaseInvoiceDropdownPage = (state) => state.purchaseInvoice.dropdownPage;
 export const showPurchaseInvoiceDropdownHasMore = (state) => state.purchaseInvoice.dropdownHasMore;
-export const showPurchaseInvoiceDropdownLoading = (state) => state.purchaseInvoice.dropdownLoading;
+export const showPurchaseInvoiceDropdownLoading = (state) => state.purchaseInvoice.loading;
 export default purchaseInvoiceSlice.reducer;

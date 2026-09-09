@@ -3,13 +3,14 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { LuChevronDown, LuChevronUp, LuUsers } from "react-icons/lu";
-import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
-import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
-import { fetchDesignations, showDesignations } from "store/slices/designationSlice";
+import { fetchEmployees, showEmployees, showEmployeesLoading } from "store/slices/employeeSlice";
+import { fetchDepartments, showDepartments, showDepartmentsLoading } from "store/slices/departmentSlice";
+import { fetchDesignations, showDesignations, showDesignationsLoading } from "store/slices/designationSlice";
+import { SkeletonCards } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 
-const { view_employee } = rafeeqi_role_ids;
+const { view_employee } = alqadar_role_ids;
 
 const initials = (name = "") =>
   name.split(" ").filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join("");
@@ -83,6 +84,13 @@ const OrgChart = () => {
   const employees = useSelector(showEmployees);
   const departments = useSelector(showDepartments);
   const designations = useSelector(showDesignations);
+  // The tree can't be drawn until all three arrive — an employee's box shows
+  // their designation and department, and a missing manager would briefly
+  // promote their reports to roots.
+  const loading =
+    useSelector(showEmployeesLoading) ||
+    useSelector(showDepartmentsLoading) ||
+    useSelector(showDesignationsLoading);
 
   useEffect(() => {
     dispatch(fetchEmployees());
@@ -158,7 +166,9 @@ const OrgChart = () => {
         </div>
 
         <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-7 overflow-x-auto">
-          {roots.length === 0 ? (
+          {loading ? (
+            <SkeletonCards count={6} columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" />
+          ) : roots.length === 0 ? (
             <p className="text-center text-slate-500 dark:text-white/60 py-10">{t("no_record_found")}</p>
           ) : (
             <div className="flex items-start justify-center gap-10 min-w-fit">

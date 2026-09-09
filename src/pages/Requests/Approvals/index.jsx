@@ -4,13 +4,13 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiX } from "react-icons/fi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
 import FormTextarea from "components/FormTextarea";
 import { APPROVAL_STATUS_BADGE, APPROVAL_STATUS } from "global/approvalEngine";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { cardRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonCards } from "components/Skeleton";
@@ -28,7 +28,7 @@ import {
   hrRejectRequest,
 } from "store/slices/requestSlice";
 
-const { add_employee } = rafeeqi_role_ids;
+const { approve_employee_request } = alqadar_role_ids;
 
 const QuickPanel = ({ stage, req, onDone }) => {
   const { t } = useTranslation();
@@ -136,7 +136,7 @@ const Approvals = ({ stage = "manager" }) => {
     ? "border-amber-200 dark:border-amber-500/30"
     : "border-blue-200 dark:border-blue-500/30";
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (!checkRoleAuth(approve_employee_request)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -214,7 +214,7 @@ const Approvals = ({ stage = "manager" }) => {
             <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
           </div>
           <div className="pagination ltr:ml-auto rtl:mr-auto">
-            <ReactPaginate
+            <Pagination
               breakLabel="..."
               nextLabel={<FaAngleRight />}
               previousLabel={<FaAngleLeft />}

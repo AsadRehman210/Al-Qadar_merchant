@@ -6,7 +6,7 @@ import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import { AiOutlineEdit } from "react-icons/ai";
 import Button from "components/Button";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchDesignationById,
   showCurrentDesignation,
@@ -16,8 +16,7 @@ import {
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { SkeletonDetail } from "components/Skeleton";
 
-const { add_employee, view_employee } = rafeeqi_role_ids;
-
+const { edit_designation, view_designation } = alqadar_role_ids;
 
 const LEVEL_COLORS = {
   "C-Level":    "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300",
@@ -57,7 +56,7 @@ const DesignationDetail = () => {
     [departments, des],
   );
 
-  if (!checkRoleAuth(view_employee)) return null;
+  if (!checkRoleAuth(view_designation)) return null;
   if (desLoading && (!des || des.id !== id)) {
     return (
       <div className="space-y-6">
@@ -89,7 +88,7 @@ const DesignationDetail = () => {
               <p className="text-mutedForeground text-sm">{des.code} · {departmentName || "—"}</p>
             </div>
           </div>
-          {checkRoleAuth(add_employee) && (
+          {checkRoleAuth(edit_designation) && (
             <Button
               type="button"
               onClick={() => navigate(`/designations/edit/${des.id}`)}

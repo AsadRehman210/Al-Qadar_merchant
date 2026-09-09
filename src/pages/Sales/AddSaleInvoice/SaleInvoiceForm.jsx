@@ -18,6 +18,7 @@ import {
   deliveryCancelledOption,
 } from "global/constant";
 import {
+  defaultSaleLine,
   lineTotal,
   lineProfit,
   computeInvoiceProfit,
@@ -27,8 +28,7 @@ import {
 } from "global/helper";
 import { HiOutlinePlusCircle, HiOutlineTrash } from "react-icons/hi2";
 
-// Local default keeps batchId/taxPercent used by the sale line picker.
-const defaultLine = () => ({ variantId: "", productName: "", qty: 1, price: 0, costPrice: 0, unit: "", batchId: "", taxPercent: null });
+const defaultLine = () => ({ ...defaultSaleLine(), batchId: "", taxPercent: null });
 
 const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockProductFields = false, stockApplied = false }) => {
   const { t } = useTranslation();
@@ -325,7 +325,7 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
             errors={errors}
             pattern={/[a-zA-Z0-9\s.'&,-]/}
             minLength={2}
-            maxLength={150}
+            maxLength={100}
             labelClass="text-sm text-linkText font-medium"
           />
         </div>
@@ -568,7 +568,7 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
           errors={errors}
           pattern={/[a-zA-Z0-9\s.'&,-]/}
           minLength={2}
-          maxLength={150}
+          maxLength={100}
           labelClass="text-sm text-linkText font-medium"
         />
       </div>
@@ -806,8 +806,6 @@ function LineRow({ index, sr, register, setValue, loadVariantOptions, warehouseS
           name={`products.${index}.qty`}
           type="number"
           min={0}
-          decimal
-          decimalPlaces={3}
           maxLength={10}
           disabled={fieldsLocked}
           register={register}

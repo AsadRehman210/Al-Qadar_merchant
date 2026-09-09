@@ -9,7 +9,7 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchBankAccounts,
   fetchChartOfAccounts,
@@ -18,7 +18,7 @@ import {
   showChartOfAccounts,
 } from "store/slices/financeSlice";
 
-const { add_customer } = rafeeqi_role_ids;
+const { add_finance_income } = alqadar_role_ids;
 
 // A quick misc-revenue entry — posts Debit Bank / Credit Revenue immediately
 // on save, so there's no edit mode: it's already part of the permanent
@@ -50,7 +50,7 @@ const AddIncome = () => {
   });
 
   useEffect(() => {
-    if (!checkRoleAuth(add_customer)) {
+    if (!checkRoleAuth(add_finance_income)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/income");
     }
@@ -83,7 +83,7 @@ const AddIncome = () => {
     }
   };
 
-  if (!checkRoleAuth(add_customer)) return null;
+  if (!checkRoleAuth(add_finance_income)) return null;
   const isRTL = i18n.language === "ar";
 
   return (

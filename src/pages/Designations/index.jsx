@@ -7,7 +7,7 @@ import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { IoAdd } from "react-icons/io5";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows, statusFilterOptions, designationLevelFilterOptions } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import {
@@ -18,7 +18,7 @@ import {
 } from "store/slices/designationSlice";
 import DesignationsTable from "./DesignationsTable";
 
-const { add_employee, view_employee } = rafeeqi_role_ids;
+const { add_designation, view_designation } = alqadar_role_ids;
 
 const Designations = () => {
   const { t } = useTranslation();
@@ -64,7 +64,7 @@ const Designations = () => {
             <h1 className="text-3xl font-bold tracking-tight">{t("designation:designations")}</h1>
             <p className="text-mutedForeground">{t("designation:module_desc")}</p>
           </div>
-          {checkRoleAuth(add_employee) && (
+          {checkRoleAuth(add_designation) && (
             <div className="relative z-10 shrink-0">
               <Button
                 className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700 hover:-translate-y-0.5"
@@ -80,7 +80,7 @@ const Designations = () => {
         </div>
 
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
-          {checkRoleAuth(view_employee) && (
+          {checkRoleAuth(view_designation) && (
             <>
               <div className="mb-5 flex flex-wrap gap-3 items-center">
                 <div className="flex-1 min-w-[200px] max-w-xs">

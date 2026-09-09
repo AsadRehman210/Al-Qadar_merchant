@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -8,7 +8,7 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   assetRequestStatusFilterOptions,
   assetRequestPriorityOptions,
@@ -29,7 +29,7 @@ import {
 import { SkeletonCards } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+const { add_asset_request, edit_asset_request, approve_asset_request } = alqadar_role_ids;
 
 const statusClass = (s) => {
   const m = {
@@ -163,7 +163,7 @@ const AssetRequests = () => {
             <h1 className="text-3xl font-bold">{t("asset:requests_title")}</h1>
             <p className="text-mutedForeground">{t("asset:requests_desc")}</p>
           </div>
-          {checkRoleAuth(add_customer) && (
+          {checkRoleAuth(add_asset_request) && (
             <Button type="button" title={t("asset:new_request")} icon={FiPlus} onClick={() => setShowForm((v) => !v)}
               className="!w-auto !rounded-lg !h-11 !px-5 !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600" />
           )}
@@ -254,7 +254,7 @@ const AssetRequests = () => {
                         </p>
                       )}
                     </div>
-                    {checkRoleAuth(edit_customer) && r.status === "Pending" && (
+                    {checkRoleAuth(approve_asset_request) && r.status === "Pending" && (
                       <div className="flex gap-2 shrink-0">
                         <button type="button" onClick={() => openDecide(r.id)}
                           className="px-3 py-1.5 rounded-lg bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-100">
@@ -262,7 +262,7 @@ const AssetRequests = () => {
                         </button>
                       </div>
                     )}
-                    {checkRoleAuth(edit_customer) && r.status === "Approved" && (
+                    {checkRoleAuth(edit_asset_request) && r.status === "Approved" && (
                       <button type="button" onClick={() => openFulfill(r.id)}
                         className="px-3 py-1.5 rounded-lg bg-teal-500 text-white text-sm font-semibold hover:bg-teal-600 shrink-0 flex items-center gap-1.5">
                         <FiPackage className="h-3.5 w-3.5" /> {t("asset:fulfill_request")}

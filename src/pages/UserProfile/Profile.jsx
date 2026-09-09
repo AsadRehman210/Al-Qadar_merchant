@@ -114,7 +114,7 @@ const PersonalInformation = () => {
             required="Enter Company Name"
             pattern={/[a-zA-Z0-9\s.'&,-]/}
             minLength={2}
-            maxLength={150}
+            maxLength={100}
           />
           <FormInput
             label="Full Name"
@@ -127,7 +127,7 @@ const PersonalInformation = () => {
             required="Enter Full Name"
             pattern={/[a-zA-Z0-9\s.'&,-]/}
             minLength={2}
-            maxLength={150}
+            maxLength={100}
           />
           <FormInput
             label="Email Address"

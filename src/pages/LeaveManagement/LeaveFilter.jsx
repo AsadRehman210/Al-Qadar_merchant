@@ -18,7 +18,6 @@ const LeaveFilter = ({ filters, setFilters }) => {
     dispatch(fetchDepartments());
   }, [dispatch]);
 
-  const statusOpts = leaveStatusFilterOptions;
   const typeOpts = [
     { id: "all", title: "leave:all_types" },
     ...leaveTypes.filter((x) => x.status === "Active").map((x) => ({
@@ -51,8 +50,8 @@ const LeaveFilter = ({ filters, setFilters }) => {
         </div>
         <div className="w-full sm:w-[180px]">
           <SelectDropdown
-            data={statusOpts}
-            selected={statusOpts.find((x) => x.id === (filters.filterStatus || "all")) || statusOpts[0]}
+            data={leaveStatusFilterOptions}
+            selected={leaveStatusFilterOptions.find((x) => x.id === (filters.filterStatus || "all")) || leaveStatusFilterOptions[0]}
             setSelected={(v) => go("filterStatus", v.id)}
           />
         </div>

@@ -97,5 +97,11 @@
   "po_number": "رقم أمر الشراء",
   "debit": "مدين",
   "credit": "دائن",
-  "opening_balance": "الرصيد الافتتاحي"
+  "opening_balance": "الرصيد الافتتاحي",
+  "opening_balance_hint": "المبلغ المستحق لهذا المورد قبل بدء استخدام النظام. يمكن تعديله حتى يتم إنشاء فاتورة شراء لهذا المورد.",
+  "opening_balance_locked_hint": "مقفل لأن فاتورة شراء موجودة لهذا المورد.",
+  "record_opening_payment": "دفع الرصيد الافتتاحي",
+  "opening_payment_remaining_hint": "الرصيد الافتتاحي المتبقي: {{amount}} ر.س",
+  "opening_payment_amount_required": "أدخل مبلغ دفع أكبر من صفر.",
+  "opening_payment_recorded": "تم تسجيل دفع الرصيد الافتتاحي."
 }

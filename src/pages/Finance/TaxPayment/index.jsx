@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { fetchVatSummary, showVatSummary, showVatSummaryLoading } from "store/slices/financeSlice";
 import { SkeletonDetail } from "components/Skeleton";
 import FinancePage from "../FinancePage";
 import FormInput from "components/FormInput";
 
-const { view_customer } = rafeeqi_role_ids;
+const { view_finance_vat } = alqadar_role_ids;
 
 
 // Collected tax (Output VAT, from Sales) minus recoverable tax (Input VAT,
@@ -34,7 +34,7 @@ const TaxPayment = () => {
 
   return (
     <FinancePage title={t("finance:tax_payment_title")} description={t("finance:tax_payment_desc")}>
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_vat) && (
         <>
           <div className="flex flex-wrap gap-4 items-end mb-6 bg-slate-50 dark:bg-white/5 rounded-2xl p-4 border border-slate-200 dark:border-white/10">
             <FormInput

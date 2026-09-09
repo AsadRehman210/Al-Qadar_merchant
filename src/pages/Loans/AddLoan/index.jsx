@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
@@ -10,12 +10,12 @@ import FormInput from "components/FormInput";
 import FormTextarea from "components/FormTextarea";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { applyLoan } from "store/slices/loanSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { loanTypeOptions, loanPurposeOptions } from "global/constant";
 
-const { add_employee } = rafeeqi_role_ids;
+const { add_loan, approve_loan } = alqadar_role_ids;
 
 // Applying for a loan only submits its terms — the backend computes status,
 // EMI schedule, approvals, disbursement, etc. through its own workflow
@@ -103,7 +103,7 @@ const AddLoan = ({ selfService = false }) => {
   };
 
   // HR direct entry requires the add permission; employee self-service is open.
-  if (!selfService && !checkRoleAuth(add_employee)) return null;
+  if (!selfService && !checkRoleAuth(add_loan)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

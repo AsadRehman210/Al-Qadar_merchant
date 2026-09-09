@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Checkboxes from "components/Checkboxes";
-import { rafeeqi_roles, flattenRoleModules } from "global/rafeeqiRoles";
+import { alqadar_roles, flattenRoleModules } from "global/alqadarRoles";
 
 // Controlled permission picker for the Role builder. `value` is a flat array of
 // permission strings; `onChange` receives the next array.
@@ -46,7 +46,7 @@ export default function PermissionMatrix({ value = [], onChange }) {
       </div>
 
       <div className="space-y-8">
-        {rafeeqi_roles.map((sec) => {
+        {alqadar_roles.map((sec) => {
           const sectionIds = (sec.modules || []).flatMap((m) => m.sub_modules.map((s) => s.id));
           const sectionAll = sectionIds.length > 0 && sectionIds.every((id) => selected.has(id));
           return (

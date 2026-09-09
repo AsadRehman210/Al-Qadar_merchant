@@ -10,15 +10,21 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import ActionPopup from "components/ActionPopup";
+import TableState from "components/TableState";
 import { onboardingTaskCategoryOptions } from "global/constant";
 import {
   fetchOnboardingTemplates,
   showOnboardingTemplates,
+  showOnboardingTemplatesLoading,
   createOnboardingTemplate,
   updateOnboardingTemplate,
   deleteOnboardingTemplate,
   reorderOnboardingTemplates,
 } from "store/slices/onboardingSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_onboarding_template, add_onboarding_template, edit_onboarding_template, delete_onboarding_template } = alqadar_role_ids;
 
 const TaskTemplateForm = ({ existing, onDone }) => {
   const { t } = useTranslation();
@@ -52,7 +58,7 @@ const TaskTemplateForm = ({ existing, onDone }) => {
         className="md:col-span-2"
         pattern={/[a-zA-Z0-9\s.'-]/}
         minLength={2}
-        maxLength={150}
+        maxLength={100}
       />
       <SelectDropdown label="hrhub:task_category" data={onboardingTaskCategoryOptions} selected={selCategory} setSelected={(v) => setSelCategory(v || onboardingTaskCategoryOptions[0])} required hideClear />
       <label className="flex items-center gap-2 cursor-pointer text-sm md:col-span-3">
@@ -78,10 +84,13 @@ const TaskTemplates = () => {
   const isRTL = i18n.language === "ar";
 
   const list = useSelector(showOnboardingTemplates);
+  const loading = useSelector(showOnboardingTemplatesLoading);
 
   useEffect(() => {
     dispatch(fetchOnboardingTemplates());
   }, [dispatch]);
+
+  if (!checkRoleAuth(view_onboarding_template)) return null;
 
   const move = (id, direction) => {
     const idx = list.findIndex((t) => t.id === id);
@@ -108,18 +117,20 @@ const TaskTemplates = () => {
             <h1 className="text-3xl font-bold tracking-tight">{t("hrhub:manage_checklist")}</h1>
             <p className="text-mutedForeground">{t("hrhub:manage_checklist_desc")}</p>
           </div>
-          <Button
-            type="button"
-            title={t("hrhub:add_task")}
-            icon={IoAdd}
-            iconClass="h-4 w-4 text-white"
-            btn="primary"
-            onClick={() => { setEditing(null); setShowForm(true); }}
-            className="!w-auto !rounded-md !h-10 !px-4 !border-0 !text-white !bg-teal-500 hover:!bg-teal-600"
-          />
+          {checkRoleAuth(add_onboarding_template) && (
+            <Button
+              type="button"
+              title={t("hrhub:add_task")}
+              icon={IoAdd}
+              iconClass="h-4 w-4 text-white"
+              btn="primary"
+              onClick={() => { setEditing(null); setShowForm(true); }}
+              className="!w-auto !rounded-md !h-10 !px-4 !border-0 !text-white !bg-teal-500 hover:!bg-teal-600"
+            />
+          )}
         </div>
 
-        {showForm && (
+        {showForm && (editing ? checkRoleAuth(edit_onboarding_template) : checkRoleAuth(add_onboarding_template)) && (
           <TaskTemplateForm
             existing={editing}
             onDone={() => { setShowForm(false); setEditing(null); }}
@@ -137,16 +148,21 @@ const TaskTemplates = () => {
                 </tr>
               </thead>
               <tbody>
-                {list.map((tpl, idx) => (
+                {loading && <TableState loading data={[]} colSpan={6} />}
+                {!loading && list.map((tpl, idx) => (
                   <tr key={tpl.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10">
                     <td className="px-4 py-4 pl-6">
                       <div className="flex items-center gap-1">
-                        <button type="button" disabled={idx === 0} onClick={() => move(tpl.id, "up")} className="disabled:opacity-20 hover:text-teal-600 text-slate-500">
-                          <FiArrowUp className="h-3.5 w-3.5" />
-                        </button>
-                        <button type="button" disabled={idx === list.length - 1} onClick={() => move(tpl.id, "down")} className="disabled:opacity-20 hover:text-teal-600 text-slate-500">
-                          <FiArrowDown className="h-3.5 w-3.5" />
-                        </button>
+                        {checkRoleAuth(edit_onboarding_template) && (
+                          <>
+                            <button type="button" disabled={idx === 0} onClick={() => move(tpl.id, "up")} className="disabled:opacity-20 hover:text-teal-600 text-slate-500">
+                              <FiArrowUp className="h-3.5 w-3.5" />
+                            </button>
+                            <button type="button" disabled={idx === list.length - 1} onClick={() => move(tpl.id, "down")} className="disabled:opacity-20 hover:text-teal-600 text-slate-500">
+                              <FiArrowDown className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-4 font-semibold text-slate-900 dark:text-white">{tpl.label}</td>
@@ -161,31 +177,41 @@ const TaskTemplates = () => {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <button
-                        type="button"
-                        onClick={() => dispatch(updateOnboardingTemplate({ id: tpl.id, data: { active: !tpl.active } }))}
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${tpl.active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/50"}`}
-                      >
-                        {tpl.active ? t("active") : t("inactive")}
-                      </button>
+                      {checkRoleAuth(edit_onboarding_template) ? (
+                        <button
+                          type="button"
+                          onClick={() => dispatch(updateOnboardingTemplate({ id: tpl.id, data: { active: !tpl.active } }))}
+                          className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${tpl.active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/50"}`}
+                        >
+                          {tpl.active ? t("active") : t("inactive")}
+                        </button>
+                      ) : (
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${tpl.active ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300" : "bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/50"}`}>
+                          {tpl.active ? t("active") : t("inactive")}
+                        </span>
+                      )}
                     </td>
                     <td className="px-4 py-4 pr-6">
                       <div className="flex gap-2 text-slate-500 dark:text-white/70">
-                        <button type="button" onClick={() => { setEditing(tpl); setShowForm(true); }} className="hover:text-teal-600">
-                          <FiEdit2 className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setDeletingId(tpl.id); deleteRef.current?.openModal?.(tpl); }}
-                          className="hover:text-red-600"
-                        >
-                          <FiTrash2 className="h-4 w-4" />
-                        </button>
+                        {checkRoleAuth(edit_onboarding_template) && (
+                          <button type="button" onClick={() => { setEditing(tpl); setShowForm(true); }} className="hover:text-teal-600">
+                            <FiEdit2 className="h-4 w-4" />
+                          </button>
+                        )}
+                        {checkRoleAuth(delete_onboarding_template) && (
+                          <button
+                            type="button"
+                            onClick={() => { setDeletingId(tpl.id); deleteRef.current?.openModal?.(tpl); }}
+                            className="hover:text-red-600"
+                          >
+                            <FiTrash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
                 ))}
-                {list.length === 0 && (
+                {!loading && list.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-10 text-center text-slate-400">{t("hrhub:no_tasks")}</td>
                   </tr>

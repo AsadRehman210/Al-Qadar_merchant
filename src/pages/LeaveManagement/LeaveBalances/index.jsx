@@ -5,10 +5,14 @@ import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
-import { fetchLeaveBalance, showLeaveBalance, showLeaveBalanceLoading } from "store/slices/leaveSlice";
+import { fetchLeaveBalance, showLeaveBalance, showLeaveBalanceLoading, clearLeaveBalance } from "store/slices/leaveSlice";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { SkeletonTable } from "components/Skeleton";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_leave } = alqadar_role_ids;
 
 // No bulk "every employee's balance" endpoint exists on the backend — only
 // a per-employee lookup (balances are computed live from that employee's
@@ -49,6 +53,12 @@ const LeaveBalances = () => {
   useEffect(() => {
     if (selEmployee?.id) dispatch(fetchLeaveBalance(selEmployee.id));
   }, [selEmployee, dispatch]);
+
+  useEffect(() => {
+    return () => dispatch(clearLeaveBalance());
+  }, [dispatch]);
+
+  if (!checkRoleAuth(view_leave)) return null;
 
   const totalTaken = balance.reduce((s, b) => s + (b.taken || 0), 0);
 

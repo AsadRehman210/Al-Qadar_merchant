@@ -8,9 +8,10 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import EmployeesFilter from "./EmployeesFilter";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
+import { SkeletonCards } from "components/Skeleton";
 import {
   fetchEmployees,
   showEmployees,
@@ -19,7 +20,7 @@ import {
 } from "store/slices/employeeSlice";
 
 const { add_employee, view_employee, edit_employee, delete_employee } =
-  rafeeqi_role_ids;
+  alqadar_role_ids;
 
 const Employees = () => {
   const { t } = useTranslation();
@@ -89,7 +90,14 @@ const Employees = () => {
             </div>
           )}
         </div>
-        {checkRoleAuth(view_employee) && <EmployeesCard data={cardData} />}
+        {checkRoleAuth(view_employee) &&
+          (loading ? (
+            <div className="mt-5">
+              <SkeletonCards count={3} columns="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" />
+            </div>
+          ) : (
+            <EmployeesCard data={cardData} />
+          ))}
         <div className="mt-6 bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 animate-[partners-cardIn_0.5s_ease-out_0.1s_both]">
           {checkRoleAuth(view_employee) && (
             <div className="mb-6">

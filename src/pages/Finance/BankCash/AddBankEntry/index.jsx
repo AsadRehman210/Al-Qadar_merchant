@@ -8,18 +8,20 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth, mapCoaToOptions } from "global/helper";
 import { bankTxTypeOptions } from "global/constant";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchBankAccounts,
   fetchChartOfAccounts,
   postBankEntry,
   showBankAccounts,
+  showBankAccountsLoading,
   showChartOfAccounts,
 } from "store/slices/financeSlice";
 
-const { add_customer } = rafeeqi_role_ids;
+const { add_finance_bank } = alqadar_role_ids;
 
 // A bank entry is a manual journal entry between the bank/cash account and a
 // contra account the user picks — it always posts through the same
@@ -31,6 +33,7 @@ const AddBankEntry = () => {
   const dispatch = useDispatch();
   const { accountId } = useParams();
   const accounts = useSelector(showBankAccounts);
+  const accountsLoading = useSelector(showBankAccountsLoading);
   const coaAccounts = useSelector(showChartOfAccounts);
 
   useEffect(() => {
@@ -59,7 +62,7 @@ const AddBankEntry = () => {
   });
 
   useEffect(() => {
-    if (!checkRoleAuth(add_customer)) {
+    if (!checkRoleAuth(add_finance_bank)) {
       toast.error(t("finance:not_authorized"));
       navigate(`/finance/bank-cash/account/${accountId}`);
     }
@@ -96,7 +99,11 @@ const AddBankEntry = () => {
   };
 
   if (!account) {
-    return (
+    return accountsLoading ? (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    ) : (
       <div className="p-8 dark:text-white">
         <p>{t("finance:empty_list")}</p>
         <Button type="button" title={t("back")} onClick={() => navigate("/finance/bank-cash")} />
@@ -104,7 +111,7 @@ const AddBankEntry = () => {
     );
   }
 
-  if (!checkRoleAuth(add_customer)) return null;
+  if (!checkRoleAuth(add_finance_bank)) return null;
 
   const isRTL = i18n.language === "ar";
 

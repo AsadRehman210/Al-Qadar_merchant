@@ -37,7 +37,7 @@ const GeneralInfoTab = ({ customer }) => {
           <p className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase">
             {f.label}
           </p>
-          <p className="font-semibold text-slate-900 dark:text-white mt-1">
+          <p className="font-semibold text-slate-900 dark:text-white mt-1 break-words">
             {f.value || "-"}
           </p>
         </div>

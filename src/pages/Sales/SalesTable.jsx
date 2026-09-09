@@ -8,7 +8,7 @@ import { HiOutlineDocumentText } from "react-icons/hi2";
 import { toast } from "react-toastify";
 import ActionPopup from "components/ActionPopup";
 import InvoicePreviewModal from "./InvoicePreviewModal";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
@@ -173,7 +173,7 @@ const SalesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

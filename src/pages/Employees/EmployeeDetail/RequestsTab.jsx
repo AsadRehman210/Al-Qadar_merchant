@@ -4,16 +4,19 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HiOutlineClipboardDocumentList } from "react-icons/hi2";
 import { requestTypeById } from "../../Requests/requestsFakeData";
-import { fetchRequestsByEmployee, showRequestsByEmployee } from "store/slices/requestSlice";
+import { fetchRequestsByEmployee, showRequestsByEmployee, showRequestsByEmployeeLoading, clearRequestsByEmployee } from "store/slices/requestSlice";
 import { APPROVAL_STATUS_BADGE } from "global/approvalEngine";
+import { SkeletonTable } from "components/Skeleton";
 
 const RequestsTab = ({ data }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const history = useSelector(showRequestsByEmployee);
+  const isLoading = useSelector(showRequestsByEmployeeLoading);
 
   useEffect(() => {
     if (data?.id) dispatch(fetchRequestsByEmployee(data.id));
+    return () => dispatch(clearRequestsByEmployee());
   }, [data?.id, dispatch]);
 
   return (
@@ -37,7 +40,11 @@ const RequestsTab = ({ data }) => {
       </div>
 
       <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/20 rounded-md overflow-hidden">
-        {history.length === 0 ? (
+        {isLoading ? (
+          <div className="p-4">
+            <SkeletonTable rows={4} columns={5} />
+          </div>
+        ) : history.length === 0 ? (
           <p className="p-6 text-center text-sm text-slate-500 dark:text-white/60">
             {t("no_record_found")}
           </p>

@@ -2,14 +2,14 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import Button from "components/Button";
 import { IoAdd } from "react-icons/io5";
 import SearchInput from "components/SearchInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { financeJournalStatusBadge, tableRows } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonCards } from "components/Skeleton";
@@ -17,8 +17,7 @@ import EmptyState from "components/EmptyState";
 import { fetchJournalEntries, showJournalEntries, showJournalEntriesTotal, showJournalEntriesLoading } from "store/slices/financeSlice";
 import FinancePage from "../FinancePage";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
-
+const { view_finance_journal, add_finance_journal } = alqadar_role_ids;
 
 const JournalEntries = () => {
   const { t } = useTranslation();
@@ -43,7 +42,7 @@ const JournalEntries = () => {
       title={t("finance:journal_title")}
       description={t("finance:journal_desc")}
       action={
-        checkRoleAuth(add_customer) ? (
+        checkRoleAuth(add_finance_journal) ? (
           <Button
             className="!w-auto !rounded-lg !h-11 !px-5 !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600"
             onClick={() => navigate("/finance/journal/add")}
@@ -55,7 +54,7 @@ const JournalEntries = () => {
         ) : null
       }
     >
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_journal) && (
         <>
           <div className="mb-6 max-w-md">
             <SearchInput
@@ -133,7 +132,7 @@ const JournalEntries = () => {
                 <span className="whitespace-nowrap text-sm text-slate-500 dark:text-white/50">{t("per_page")}</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}

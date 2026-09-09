@@ -10,14 +10,14 @@ import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SelectDropdown from "components/SelectDropdown";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchChartOfAccounts,
   createJournalEntry,
   showChartOfAccounts,
 } from "store/slices/financeSlice";
 
-const { add_customer } = rafeeqi_role_ids;
+const { add_finance_journal } = alqadar_role_ids;
 
 const emptyLine = () => ({ key: `${Date.now()}-${Math.random()}`, account: null, debit: "", credit: "" });
 
@@ -48,7 +48,7 @@ const AddJournal = () => {
   });
 
   useEffect(() => {
-    if (!checkRoleAuth(add_customer)) {
+    if (!checkRoleAuth(add_finance_journal)) {
       toast.error(t("finance:not_authorized"));
       navigate("/finance/journal");
     }
@@ -94,7 +94,7 @@ const AddJournal = () => {
     }
   };
 
-  if (!checkRoleAuth(add_customer)) return null;
+  if (!checkRoleAuth(add_finance_journal)) return null;
   const isRTL = i18n.language === "ar";
 
   return (

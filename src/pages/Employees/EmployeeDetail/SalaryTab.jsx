@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import {
   HiOutlineCurrencyDollar,
   HiOutlineMinusCircle,
@@ -8,12 +9,24 @@ import { FiCreditCard, FiCalendar } from "react-icons/fi";
 
 import { salaryAllowanceKeys as ALLOWANCE_KEYS, salaryDeductionKeys as DEDUCTION_KEYS } from "global/constant";
 import { formatAmount } from "global/helper";
+import { showSalaryLoading } from "store/slices/salarySlice";
+import { SkeletonCards, SkeletonDetail } from "components/Skeleton";
 
 // `salary` is the employee's real, current /api/salary/employee/:id record —
 // allowances/deductions are nested objects there (see salary-model.ts), not
 // flat top-level keys, and gross_salary/net_salary are always server-computed.
 const SalaryTab = ({ salary }) => {
   const { t } = useTranslation();
+  const isLoading = useSelector(showSalaryLoading);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <SkeletonCards count={4} columns="grid-cols-2 md:grid-cols-4" />
+        <SkeletonDetail fields={8} />
+      </div>
+    );
+  }
 
   if (!salary) {
     return (
@@ -66,7 +79,6 @@ const SalaryTab = ({ salary }) => {
       {children}
     </div>
   );
-
 
   const fmtDate = (d) => (d ? new Date(d).toLocaleDateString() : "-");
 

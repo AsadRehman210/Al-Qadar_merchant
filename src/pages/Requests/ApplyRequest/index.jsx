@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -12,7 +12,7 @@ import SelectDropdown from "components/SelectDropdown";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { APPLIED_VIA } from "global/approvalEngine";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   REQUEST_TYPES,
   requestTypeById,
@@ -21,10 +21,9 @@ import {
 } from "../requestsFakeData";
 import { applyRequest, triggerRefresh } from "store/slices/requestSlice";
 
-const { add_employee } = rafeeqi_role_ids;
+const { add_employee_request, approve_employee_request } = alqadar_role_ids;
 
-const toOpts = (arr) =>
-  arr.map((x) => (x && typeof x === "object" ? x : { id: x, title: x }));
+const toOpts = (arr) => arr.map((x) => (x && typeof x === "object" ? x : { id: x, title: x }));
 const NUMBER_FIELDS = ["hours", "noticePeriodDays", "advanceAmount", "quantity", "cost"];
 
 // Extra per-field validation props for the config-driven fields below.
@@ -182,7 +181,7 @@ const ApplyRequest = ({ hrMode = false }) => {
     );
   };
 
-  if (hrMode && !checkRoleAuth(add_employee)) return null;
+  if (hrMode && !checkRoleAuth(add_employee_request)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

@@ -25,7 +25,14 @@ export const fetchStockBatches = createAsyncThunk(
 const stockBatchSlice = createSlice({
   name: "stockBatch",
   initialState,
-  reducers: {},
+  reducers: {
+    clearStockBatchesList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchStockBatches.pending, (state) => {
@@ -45,6 +52,7 @@ const stockBatchSlice = createSlice({
   },
 });
 
+export const { clearStockBatchesList } = stockBatchSlice.actions;
 export const showStockBatches = (state) => state.stockBatch.list;
 export const showStockBatchesTotal = (state) => state.stockBatch.totalRecords;
 export const showStockBatchesLoading = (state) => state.stockBatch.loading;

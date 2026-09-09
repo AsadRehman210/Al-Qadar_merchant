@@ -1,28 +1,29 @@
-﻿import { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { IoAdd } from "react-icons/io5";
 import Button from "components/Button";
 import { checkRoleAuth, formatAmount } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import {
   fetchBankAccounts,
   fetchLedgerByAccount,
   clearLedgerByAccount,
   showBankAccounts,
+  showBankAccountsLoading,
   showLedgerAccountLines,
   showLedgerClosingBalance,
   showLedgerAccountLoading,
 } from "store/slices/financeSlice";
 import FinancePage from "../../FinancePage";
-import { SkeletonTable } from "components/Skeleton";
+import { SkeletonCards, SkeletonDetail, SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_finance_bank, add_finance_bank } = alqadar_role_ids;
 
 
-// A thin wrapper around Ledger's per-account view (getByAccount) — a bank/
+// A thin wrapper around Ledger's per-account view (getByAccount) � a bank/
 // cash account's transaction history IS its chartAccountId's ledger, there
 // is no separate bank-transaction record to fetch.
 const BankAccountDetail = () => {
@@ -31,6 +32,7 @@ const BankAccountDetail = () => {
   const dispatch = useDispatch();
   const { accountId } = useParams();
   const accounts = useSelector(showBankAccounts);
+  const accountsLoading = useSelector(showBankAccountsLoading);
   const lines = useSelector(showLedgerAccountLines);
   const closingBalance = useSelector(showLedgerClosingBalance);
   const loading = useSelector(showLedgerAccountLoading);
@@ -53,8 +55,14 @@ const BankAccountDetail = () => {
   if (!account) {
     return (
       <FinancePage title={t("finance:bank_title")} description="">
-        <p className="text-mutedForeground">{loading ? t("loading") : t("finance:empty_list")}</p>
-        <Button type="button" title={t("back")} onClick={() => navigate("/finance/bank-cash")} />
+        {accountsLoading ? (
+          <SkeletonDetail fields={4} />
+        ) : (
+          <>
+            <p className="text-mutedForeground">{t("finance:empty_list")}</p>
+            <Button type="button" title={t("back")} onClick={() => navigate("/finance/bank-cash")} />
+          </>
+        )}
       </FinancePage>
     );
   }
@@ -62,9 +70,9 @@ const BankAccountDetail = () => {
   return (
     <FinancePage
       title={account.name}
-      description={`${account.bankName || ""}${account.bankName && account.accountNumber ? " · " : ""}${account.accountNumber || ""}`}
+      description={`${account.bankName || ""}${account.bankName && account.accountNumber ? " � " : ""}${account.accountNumber || ""}`}
       action={
-        checkRoleAuth(add_customer) ? (
+        checkRoleAuth(add_finance_bank) ? (
           <Button
             className="!w-auto !rounded-lg !h-11 !px-5 !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600"
             onClick={() => navigate(`/finance/bank-cash/account/${accountId}/entry/add`)}
@@ -76,9 +84,14 @@ const BankAccountDetail = () => {
         ) : null
       }
     >
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_bank) && (
         <>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            {loading ? (
+              <div className="w-[260px]">
+                <SkeletonCards count={1} columns="grid-cols-1" />
+              </div>
+            ) : (
             <div className="rounded-2xl border border-slate-200 dark:border-white/15 px-5 py-4 bg-teal-50/80 dark:bg-teal-500/10">
               <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-white/60">
                 {t("finance:current_balance")}
@@ -87,9 +100,10 @@ const BankAccountDetail = () => {
                 {formatAmount(closingBalance)} {account.currency}
               </p>
               <p className="text-sm text-mutedForeground mt-1">
-                {account.type} · {t("finance:bank_ledger_hint")}
+                {account.type} � {t("finance:bank_ledger_hint")}
               </p>
             </div>
+            )}
             <Button
               type="button"
               title={t("back")}
@@ -127,9 +141,9 @@ const BankAccountDetail = () => {
                     >
                       <td className="px-4 py-4 align-middle pl-6 whitespace-nowrap">{row.date ? new Date(row.date).toLocaleDateString() : ""}</td>
                       <td className="px-4 py-4 align-middle max-w-[220px]">{row.source}</td>
-                      <td className="px-4 py-4 align-middle font-mono text-xs">{row.ref || "—"}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.debit ? formatAmount(row.debit) : "—"}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.credit ? formatAmount(row.credit) : "—"}</td>
+                      <td className="px-4 py-4 align-middle font-mono text-xs">{row.ref || "�"}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.debit ? formatAmount(row.debit) : "�"}</td>
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">{row.credit ? formatAmount(row.credit) : "�"}</td>
                       <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold pr-6">{formatAmount(row.balance)}</td>
                     </tr>
                   ))}

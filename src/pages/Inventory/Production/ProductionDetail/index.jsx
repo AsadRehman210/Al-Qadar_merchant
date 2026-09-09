@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate, Link } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -8,7 +8,7 @@ import { FaRegEdit } from "react-icons/fa";
 import Button from "components/Button";
 import ActionPopup from "components/ActionPopup";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { SkeletonDetail } from "components/Skeleton";
 import {
   fetchProductionOrderById,
@@ -19,7 +19,7 @@ import {
   reverseProduction,
 } from "store/slices/productionSlice";
 
-const { edit_customer } = rafeeqi_role_ids;
+const { edit_inventory_production } = alqadar_role_ids;
 
 const STATUS_BADGE = {
   Draft: "bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-300",
@@ -71,8 +71,8 @@ const ProductionDetail = () => {
     );
   }
 
-  const canEdit = checkRoleAuth(edit_customer) && order.status !== "Completed" && order.status !== "Cancelled" && order.status !== "Reversed";
-  const canReverse = checkRoleAuth(edit_customer) && order.status === "Completed";
+  const canEdit = checkRoleAuth(edit_inventory_production) && order.status !== "Completed" && order.status !== "Cancelled" && order.status !== "Reversed";
+  const canReverse = checkRoleAuth(edit_inventory_production) && order.status === "Completed";
 
   const handleComplete = async () => {
     setCompleting(true);
@@ -100,6 +100,11 @@ const ProductionDetail = () => {
   };
 
   const totalConsumedQty = (order.rawLines || []).reduce((s, l) => s + (Number(l.quantity) || 0), 0);
+  const orderDate = order.completedDate
+    ? String(order.completedDate).slice(0, 10)
+    : order.scheduledDate
+      ? String(order.scheduledDate).slice(0, 10)
+      : null;
 
   const panelCls = "bg-white dark:bg-white/10 dark:backdrop-blur-xl border border-slate-200 dark:border-white/20 rounded-3xl p-7 border-l-4 !border-l-[var(--color-teal-500)]";
 
@@ -117,8 +122,8 @@ const ProductionDetail = () => {
                 {t(varKey(order.status))}
               </span>
             </div>
-            {order.scheduledDate && (
-              <p className="text-mutedForeground text-sm mt-1">{t("production:scheduled_date")}: {order.scheduledDate?.slice(0, 10)}</p>
+            {orderDate && (
+              <p className="text-mutedForeground text-sm mt-1">{t("production:completed_date")}: {orderDate}</p>
             )}
           </div>
           <div className="flex gap-2">
@@ -134,7 +139,7 @@ const ProductionDetail = () => {
                 <FiCheckCircle className="h-4 w-4" />{t("production:complete_order")}
               </button>
             )}
-            {canEdit && checkRoleAuth(edit_customer) && (
+            {canEdit && checkRoleAuth(edit_inventory_production) && (
               <Button title={t("edit")} icon={FaRegEdit} type="button"
                 onClick={() => navigate(`/inventory/production/edit/${order.id}`)}
                 className="!w-auto !rounded-md !h-11 !px-5 !border-0 !text-white !bg-teal-500" />
@@ -163,18 +168,26 @@ const ProductionDetail = () => {
               </div>
               {[
                 { label: t("production:output_quantity"), value: order.outputQuantity ?? "—" },
-                { label: t("production:completed_date"), value: order.completedDate ? String(order.completedDate).slice(0, 10) : "—" },
-                { label: t("production:raw_warehouse"), value: order.warehouseName || "—" },
-                { label: t("production:output_warehouse"), value: order.outputWarehouseName || order.warehouseName || "—" },
-                { label: t("production:output_expiry_date"), value: order.outputExpiryDate ? String(order.outputExpiryDate).slice(0, 10) : "—" },
+                { label: t("production:completed_date"), value: orderDate || "—" },
+                { label: t("production:total_raw_cost"), value: fmtNum(order.totalRawCost) },
+                { label: t("production:total_other_cost"), value: fmtNum(order.totalOtherCost) },
+                { label: t("production:total_cost"), value: fmtNum(order.totalCost) },
                 { label: t("production:batch_unit_cost"), value: fmtNum(order.unitCost) },
                 ...(order.quarantineLotId
-                  ? [{
-                      label: t("production:quarantine_lot"),
-                      value: order.quarantineLotNumber
-                        ? `${order.quarantineLotNumber}${order.quarantineQty ? ` × ${order.quarantineQty}` : ""}`
-                        : "—",
-                    }]
+                  ? [
+                      {
+                        label: t("production:quarantine_lot"),
+                        value: order.quarantineLotNumber
+                          ? `${order.quarantineLotNumber}${order.quarantineQty ? ` × ${order.quarantineQty}` : ""}`
+                          : "—",
+                      },
+                      {
+                        label: t("production:quarantine_cost"),
+                        value: fmtNum(
+                          (Number(order.quarantineQty) || 0) * (Number(order.quarantineCostPrice) || 0),
+                        ),
+                      },
+                    ]
                   : []),
               ].map((f) => (
                 <div key={f.label} className="flex justify-between gap-4">
@@ -206,6 +219,38 @@ const ProductionDetail = () => {
           </div>
         </div>
 
+        {(order.outputLines || []).length > 0 && (
+          <div className={`${panelCls} mb-6`}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-base font-bold text-slate-800 dark:text-white">
+                {t("production:output_destinations")} ({order.outputLines.length})
+              </h2>
+            </div>
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
+              <table className="w-full text-sm min-w-[480px]">
+                <thead>
+                  <tr className="bg-[var(--color-teal-500)]">
+                    {[t("production:output_warehouse"), t("production:output_quantity"), t("production:output_expiry_date")].map((h) => (
+                      <th key={h} className="px-3 py-2.5 text-start text-xs font-semibold text-white/90">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.outputLines.map((line, idx) => (
+                    <tr key={`${line.warehouseId}-${idx}`} className="border-t border-slate-100 dark:border-white/5">
+                      <td className="px-3 py-2.5 font-medium">{line.warehouseName || "—"}</td>
+                      <td className="px-3 py-2.5 tabular-nums font-semibold">{fmtNum(line.quantity)}</td>
+                      <td className="px-3 py-2.5 text-xs text-slate-500 whitespace-nowrap">
+                        {line.expiryDate ? String(line.expiryDate).slice(0, 10) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className={panelCls}>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-base font-bold text-slate-800 dark:text-white">
@@ -213,17 +258,26 @@ const ProductionDetail = () => {
             </h2>
           </div>
           <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
-            <table className="w-full text-sm min-w-[480px]">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="bg-[var(--color-teal-500)]">
-                  {[t("production:material_name"), t("production:material_sku"), t("production:actual_qty")].map((h) => (
+                  {[
+                    t("production:material_name"),
+                    t("production:material_sku"),
+                    t("production:raw_warehouse"),
+                    t("production:per_unit_cost"),
+                    t("production:actual_qty"),
+                    t("production:line_cost"),
+                  ].map((h) => (
                     <th key={h} className="px-3 py-2.5 text-start text-xs font-semibold text-white/90">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {(order.rawLines || []).map((line) => (
-                  <tr key={line.variantId} className="border-t border-slate-100 dark:border-white/5">
+                {(order.rawLines || []).map((line, idx) => {
+                  const lineCost = (Number(line.costPrice) || 0) * (Number(line.quantity) || 0);
+                  return (
+                  <tr key={`${line.variantId}-${line.warehouseId}-${idx}`} className="border-t border-slate-100 dark:border-white/5">
                     <td className="px-3 py-2.5 font-medium">
                       {line.variantId ? (
                         <Link
@@ -237,9 +291,13 @@ const ProductionDetail = () => {
                       )}
                     </td>
                     <td className="px-3 py-2.5 font-mono text-xs text-slate-500">{line.sku || "—"}</td>
+                    <td className="px-3 py-2.5 text-slate-600 dark:text-white/80">{line.warehouseName || "—"}</td>
+                    <td className="px-3 py-2.5 tabular-nums">{fmtNum(line.costPrice)}</td>
                     <td className="px-3 py-2.5 tabular-nums font-semibold text-slate-700 dark:text-white">{fmtNum(line.quantity)}</td>
+                    <td className="px-3 py-2.5 tabular-nums font-semibold text-slate-700 dark:text-white">{fmtNum(lineCost)}</td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -25,6 +25,7 @@ const initialState = {
   accountsByEmployee: {},
 
   currentAccount: null,
+  currentAccountLoading: false,
   contributionHistory: [],
   withdrawalsByEmployee: [],
   currentWithdrawal: null,
@@ -167,6 +168,7 @@ const providentFundSlice = createSlice({
     triggerRefresh: (state) => { state.lastUpdated = Date.now(); },
     clearPfDetail: (state) => {
       state.currentAccount = null;
+      state.currentAccountLoading = false;
       state.contributionHistory = [];
       state.withdrawalsByEmployee = [];
     },
@@ -181,12 +183,19 @@ const providentFundSlice = createSlice({
       .addCase(fetchPfPolicy.rejected, (state) => { state.policyLoading = false; })
       .addCase(upsertPfPolicy.fulfilled, (state, action) => { state.policy = action.payload; })
 
+      .addCase(fetchPfAccountByEmployee.pending, (state) => {
+        state.currentAccountLoading = true;
+      })
       .addCase(fetchPfAccountByEmployee.fulfilled, (state, action) => {
+        state.currentAccountLoading = false;
         const { employeeId, account } = action.payload;
         state.accountsByEmployee[employeeId] = account;
         if (state.currentAccount === null || state.currentAccount?.employeeId === employeeId) {
           state.currentAccount = account;
         }
+      })
+      .addCase(fetchPfAccountByEmployee.rejected, (state) => {
+        state.currentAccountLoading = false;
       })
 
       .addCase(fetchAllPfAccounts.pending, (state) => {
@@ -260,6 +269,7 @@ export const showPfAccountsList = (state) => state.providentFund.list;
 export const showPfAccountsTotal = (state) => state.providentFund.totalRecords;
 export const showPfAccountsLoading = (state) => state.providentFund.listLoading;
 export const showPfCurrentAccount = (state) => state.providentFund.currentAccount;
+export const showPfCurrentAccountLoading = (state) => state.providentFund.currentAccountLoading;
 export const showPfAccountsSummary = (state) => state.providentFund.summary;
 export const showPfContributionHistory = (state) => state.providentFund.contributionHistory;
 export const showPfWithdrawalsByEmployee = (state) => state.providentFund.withdrawalsByEmployee;

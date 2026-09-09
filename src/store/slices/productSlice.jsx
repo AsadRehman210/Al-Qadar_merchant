@@ -13,7 +13,6 @@ const initialState = {
   dropdownOptions: [],
   dropdownPage: 1,
   dropdownHasMore: false,
-  dropdownLoading: false,
 };
 
 export const fetchProducts = createAsyncThunk(
@@ -89,6 +88,19 @@ const productSlice = createSlice({
   reducers: {
     clearCurrentProduct: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearProductsList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
+    },
+    resetProductDropdown: (state) => {
+      state.dropdownOptions = [];
+      state.dropdownPage = 1;
+      state.dropdownHasMore = false;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
@@ -108,27 +120,27 @@ const productSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchProductById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchProductById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchProductById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(fetchProductsDropdown.pending, (state) => {
-        state.dropdownLoading = true;
+        state.loading = true;
       })
       .addCase(fetchProductsDropdown.fulfilled, (state, action) => {
-        state.dropdownLoading = false;
+        state.loading = false;
         const { result, page, total_pages } = action.payload;
         state.dropdownOptions = page === 1 ? result : [...state.dropdownOptions, ...result];
         state.dropdownPage = page;
         state.dropdownHasMore = page < total_pages;
       })
       .addCase(fetchProductsDropdown.rejected, (state) => {
-        state.dropdownLoading = false;
+        state.loading = false;
       })
       .addCase(createProduct.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -147,14 +159,14 @@ const productSlice = createSlice({
   },
 });
 
-export const { clearCurrentProduct } = productSlice.actions;
+export const { clearCurrentProduct, clearProductsList, resetProductDropdown } = productSlice.actions;
 export const showProducts = (state) => state.product.list;
 export const showProductsTotal = (state) => state.product.totalRecords;
 export const showProductsLoading = (state) => state.product.loading;
 export const showCurrentProduct = (state) => state.product.current;
-export const showCurrentProductLoading = (state) => state.product.currentLoading;
+export const showCurrentProductLoading = (state) => state.product.loading;
 export const showProductDropdownOptions = (state) => state.product.dropdownOptions;
 export const showProductDropdownPage = (state) => state.product.dropdownPage;
 export const showProductDropdownHasMore = (state) => state.product.dropdownHasMore;
-export const showProductDropdownLoading = (state) => state.product.dropdownLoading;
+export const showProductDropdownLoading = (state) => state.product.loading;
 export default productSlice.reducer;

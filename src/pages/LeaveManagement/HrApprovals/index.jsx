@@ -3,14 +3,14 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiX } from "react-icons/fi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import Button from "components/Button";
 import SelectDropdown from "components/SelectDropdown";
 import FormTextarea from "components/FormTextarea";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { cardRows, leaveStatusBadge } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
 import { SkeletonCards } from "components/Skeleton";
@@ -23,7 +23,7 @@ import {
   hrRejectLeave,
 } from "store/slices/leaveSlice";
 
-const { add_employee } = rafeeqi_role_ids;
+const { approve_leave } = alqadar_role_ids;
 
 const QuickActionPanel = ({ leave, onDone }) => {
   const { t } = useTranslation();
@@ -118,7 +118,7 @@ const HrApprovals = () => {
   const handleRowsChange = (v) => setFilters({ limitId: v.id, page: 1 });
   const handleDone = () => dispatch(fetchLeaves({ status: "Pending HR", page, limit: selRows.id }));
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (!checkRoleAuth(approve_leave)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -222,7 +222,7 @@ const HrApprovals = () => {
                 <span className="text-sm text-slate-600 dark:text-white/70">{t("per_page")}</span>
               </div>
               <div className="pagination ltr:ml-auto rtl:mr-auto">
-                <ReactPaginate
+                <Pagination
                   breakLabel="..."
                   nextLabel={<FaAngleRight />}
                   previousLabel={<FaAngleLeft />}

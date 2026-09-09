@@ -8,11 +8,16 @@ import { tableRows, quarantineStatusFilterOptions } from "global/constant";
 import TableState from "components/TableState";
 import { useListFilters } from "hooks/useListFilters";
 import {
+  clearQuarantineLotsList,
   fetchQuarantineLots,
   showQuarantineLots,
   showQuarantineLotsTotal,
   showQuarantineLotsLoading,
 } from "store/slices/quarantineLotSlice";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_inventory_quarantine } = alqadar_role_ids;
 
 const STATUS_BADGE = {
   Open: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300",
@@ -22,8 +27,14 @@ const STATUS_BADGE = {
 
 const QuarantineLots = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(clearQuarantineLotsList());
+    };
+  }, [dispatch]);
+
+  const navigate = useNavigate();
   const [filters, setFilters] = useListFilters("inventory-quarantine", {
     page: 1,
     search: "",
@@ -48,6 +59,8 @@ const QuarantineLots = () => {
       status: statusId === "all" ? undefined : statusId,
     }));
   }, [dispatch, page, selRows.id, search, statusId]);
+
+  if (!checkRoleAuth(view_inventory_quarantine)) return null;
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">

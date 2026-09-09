@@ -13,6 +13,10 @@ import {
   clearCurrentDepartment,
 } from "store/slices/departmentSlice";
 import { SkeletonDetail } from "components/Skeleton";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_department, edit_department } = alqadar_role_ids;
 
 const DetailField = ({ label, value }) => (
   <div>
@@ -38,6 +42,8 @@ const DepartmentDetail = () => {
     dispatch(fetchDepartmentById(id));
     return () => dispatch(clearCurrentDepartment());
   }, [id, dispatch]);
+
+  if (!checkRoleAuth(view_department)) return null;
 
   if (deptLoading && (!dept || dept.id !== id)) {
     return (
@@ -85,14 +91,16 @@ const DepartmentDetail = () => {
               {t("department:detail_title")} · {dept.hodName || "—"}
             </p>
           </div>
-          <Button
-            title={t("edit")}
-            icon={FaRegEdit}
-            className="!w-auto !rounded-lg !h-11 !px-5 !border border-slate-200 dark:!border-white/25 !text-white dark:!text-white dark:!bg-white/10 hover:!bg-slate-50 dark:hover:!bg-white/20"
-            iconClass="!text-lg"
-            onClick={() => navigate(`/departments/edit/${dept.id}`)}
-            btn="primary"
-          />
+          {checkRoleAuth(edit_department) && (
+            <Button
+              title={t("edit")}
+              icon={FaRegEdit}
+              className="!w-auto !rounded-lg !h-11 !px-5 !border border-slate-200 dark:!border-white/25 !text-white dark:!text-white dark:!bg-white/10 hover:!bg-slate-50 dark:hover:!bg-white/20"
+              iconClass="!text-lg"
+              onClick={() => navigate(`/departments/edit/${dept.id}`)}
+              btn="primary"
+            />
+          )}
         </div>
 
         <div className={`${panelClass} grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6`}>

@@ -9,6 +9,8 @@ import FormInput from "components/FormInput";
 import RichTextContent from "components/RichTextContent";
 import { recruitmentStageOptions } from "global/constant";
 const STAGE_PIPELINE = recruitmentStageOptions.map((s) => s.id);
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import {
   fetchJobById,
@@ -17,12 +19,22 @@ import {
   clearCurrentJob,
   fetchCandidatesByJob,
   showCandidatesByJob,
+  showCandidatesByJobLoading,
   applyCandidate,
   updateCandidateStage,
   hireCandidate,
 } from "store/slices/recruitmentSlice";
 import JobStatusMenu from "../JobStatusMenu";
-import { SkeletonDetail } from "components/Skeleton";
+import { SkeletonDetail, SkeletonTable, SkeletonCards } from "components/Skeleton";
+
+const {
+  view_recruitment,
+  edit_recruitment,
+  view_candidate,
+  add_candidate,
+  edit_candidate,
+  delete_candidate,
+} = alqadar_role_ids;
 
 const stageColor = (s) => {
   if (s === "Hired") return "bg-emerald-100 text-emerald-700";
@@ -42,7 +54,7 @@ const nextStage = (current) => {
 const InfoRow = ({ label, value }) => (
   <div className="flex flex-col sm:flex-row sm:items-center gap-1 py-3 border-b border-slate-100 dark:border-white/10 last:border-0">
     <span className="text-sm text-slate-500 dark:text-white/50 sm:w-40 shrink-0">{label}</span>
-    <span className="text-sm font-medium text-slate-900 dark:text-white">{value || "—"}</span>
+    <span className="text-sm font-medium text-slate-900 dark:text-white">{value || "?"}</span>
   </div>
 );
 
@@ -55,7 +67,7 @@ const AddCandidateForm = ({ jobId, onSaved, onCancel }) => {
     e.preventDefault();
     if (!form.name?.trim() || form.name.trim().length < 2) { toast.error("Name is required (min 2 characters)."); return; }
     if (!form.email) { toast.error("Email is required."); return; }
-    if (form.phone && form.phone.replace(/\D/g, "").length < 7) { toast.error("Phone must be 7–20 characters."); return; }
+    if (form.phone && form.phone.replace(/\D/g, "").length < 7) { toast.error("Phone must be 7?20 characters."); return; }
     try {
       await dispatch(applyCandidate({ ...form, jobId })).unwrap();
       await dispatch(fetchCandidatesByJob(jobId));
@@ -70,7 +82,7 @@ const AddCandidateForm = ({ jobId, onSaved, onCancel }) => {
     <div className="bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 rounded-2xl p-6 mb-5">
       <div className="flex items-center justify-between mb-4">
         <h4 className="font-semibold text-slate-900 dark:text-white">Add Candidate</h4>
-        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-600 text-xl">×</button>
+        <button type="button" onClick={onCancel} className="text-slate-400 hover:text-slate-600 text-xl">?</button>
       </div>
       <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {[
@@ -105,7 +117,7 @@ const AddCandidateForm = ({ jobId, onSaved, onCancel }) => {
   );
 };
 
-// Hire confirmation inline form — the designation (and department) come from
+// Hire confirmation inline form ? the designation (and department) come from
 // the job posting itself now, so only the joining date needs to be captured
 // here to create the real Employee record.
 const HireForm = ({ candidate, onDone, onCancel }) => {
@@ -122,7 +134,7 @@ const HireForm = ({ candidate, onDone, onCancel }) => {
         data: { joiningDate },
       })).unwrap();
       await dispatch(fetchCandidatesByJob(candidate.jobId));
-      toast.success(`${candidate.name} hired — employee record created, onboarding checklist started.`);
+      toast.success(`${candidate.name} hired ? employee record created, onboarding checklist started.`);
       onDone?.();
     } catch (err) {
       toast.error(err || "Failed to hire candidate.");
@@ -161,6 +173,7 @@ const JobDetail = () => {
   const job = useSelector(showCurrentJob);
   const jobLoading = useSelector(showCurrentJobLoading);
   const candidates = useSelector(showCandidatesByJob(id));
+  const candidatesLoading = useSelector(showCandidatesByJobLoading);
   const departments = useSelector(showDepartments);
   const [showAdd, setShowAdd] = useState(false);
   const [hiringCandidateId, setHiringCandidateId] = useState(null);
@@ -173,6 +186,10 @@ const JobDetail = () => {
   }, [dispatch, id]);
 
   const departmentsById = useMemo(() => Object.fromEntries(departments.map((d) => [d.id, d])), [departments]);
+
+  // Only skeleton the first load ? stage changes refetch the same list and
+  // should leave the already-rendered rows in place.
+  const candidatesPending = candidatesLoading && candidates.length === 0;
 
   const handleAdvance = async (candId, stage) => {
     if (stage === "Hired") {
@@ -198,6 +215,8 @@ const JobDetail = () => {
     }
   };
 
+  if (!checkRoleAuth(view_recruitment)) return null;
+
   if (jobLoading && !job) {
     return (
       <div className="space-y-6">
@@ -217,7 +236,7 @@ const JobDetail = () => {
     );
   }
 
-  const departmentName = departmentsById[job.departmentId]?.name || "—";
+  const departmentName = departmentsById[job.departmentId]?.name || "?";
   const tabCls = ({ selected }) =>
     `flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-xl transition-all outline-none ${selected ? "bg-[var(--color-teal-500)] text-white shadow-sm" : "text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/10"}`;
 
@@ -230,16 +249,22 @@ const JobDetail = () => {
             <h1 className="text-3xl font-bold tracking-tight">{job.title}</h1>
             <JobStatusMenu jobId={job.id} status={job.status} size="md" onChanged={() => dispatch(fetchJobById(id))} />
           </div>
-          <p className="text-slate-500 dark:text-white/50 text-sm">{job.jobCode} · {departmentName} · {job.openings} opening(s) · Deadline: {job.deadline ? job.deadline.slice(0, 10) : "—"}</p>
+          <p className="text-slate-500 dark:text-white/50 text-sm">{job.jobCode} ? {departmentName} ? {job.openings} opening(s) ? Deadline: {job.deadline ? job.deadline.slice(0, 10) : "?"}</p>
         </div>
-        <Button type="button" title="Edit Job" icon={FiEdit2} onClick={() => navigate(`/recruitment/edit/${id}`)} btn="primary" className="!rounded-md !bg-[var(--color-teal-500)] hover:!bg-[var(--color-teal-600)] !border-0" />
+        {checkRoleAuth(edit_recruitment) && (
+          <Button type="button" title="Edit Job" icon={FiEdit2} onClick={() => navigate(`/recruitment/edit/${id}`)} btn="primary" className="!rounded-md !bg-[var(--color-teal-500)] hover:!bg-[var(--color-teal-600)] !border-0" />
+        )}
       </div>
 
       <TabGroup>
         <TabList className="flex flex-wrap gap-1 p-1.5 bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 mb-6">
           <Tab className={tabCls}><FiBriefcase size={14} />Job Info</Tab>
-          <Tab className={tabCls}><FiUsers size={14} />Candidates <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded-full">{candidates.length}</span></Tab>
-          <Tab className={tabCls}><FiList size={14} />Pipeline</Tab>
+          {checkRoleAuth(view_candidate) && (
+            <Tab className={tabCls}><FiUsers size={14} />Candidates <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded-full">{candidates.length}</span></Tab>
+          )}
+          {checkRoleAuth(view_candidate) && (
+            <Tab className={tabCls}><FiList size={14} />Pipeline</Tab>
+          )}
         </TabList>
 
         <TabPanels>
@@ -253,7 +278,7 @@ const JobDetail = () => {
                 <InfoRow label="Department" value={departmentName} />
                 <InfoRow label="Openings" value={job.openings} />
                 <InfoRow label="Experience" value={job.experience} />
-                <InfoRow label="Salary" value={`${job.salaryMin?.toLocaleString()} — ${job.salaryMax?.toLocaleString()} ${job.currency}`} />
+                <InfoRow label="Salary" value={`${job.salaryMin?.toLocaleString()} ? ${job.salaryMax?.toLocaleString()} ${job.currency}`} />
                 <InfoRow label="Deadline" value={job.deadline ? job.deadline.slice(0, 10) : null} />
                 <InfoRow label="Posted" value={job.createdAt ? job.createdAt.slice(0, 10) : null} />
               </div>
@@ -271,13 +296,19 @@ const JobDetail = () => {
           </TabPanel>
 
           {/* Candidates */}
+          {checkRoleAuth(view_candidate) && (
           <TabPanel>
+            {checkRoleAuth(add_candidate) && (
             <div className="flex justify-end mb-4">
               <button onClick={() => setShowAdd(!showAdd)} className="flex items-center gap-2 h-9 px-4 rounded-xl bg-[var(--color-teal-500)] hover:bg-[var(--color-teal-600)] text-white text-sm font-medium">
                 <FiPlus size={14} />Add Candidate
               </button>
             </div>
-            {showAdd && <AddCandidateForm jobId={job.id} onSaved={() => setShowAdd(false)} onCancel={() => setShowAdd(false)} />}
+            )}
+            {checkRoleAuth(add_candidate) && showAdd && <AddCandidateForm jobId={job.id} onSaved={() => setShowAdd(false)} onCancel={() => setShowAdd(false)} />}
+            {candidatesPending ? (
+              <SkeletonTable rows={5} columns={6} />
+            ) : (
             <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -289,12 +320,12 @@ const JobDetail = () => {
                       <th className="px-4 py-3">Current Co.</th>
                       <th className="px-4 py-3">Applied</th>
                       <th className="px-4 py-3">Stage</th>
-                      <th className="px-4 py-3">Actions</th>
+                      {checkRoleAuth(edit_candidate) && <th className="px-4 py-3">Actions</th>}
                     </tr>
                   </thead>
                   <tbody>
                     {candidates.length === 0 ? (
-                      <tr><td colSpan={7} className="text-center py-12 text-slate-400">No candidates yet</td></tr>
+                      <tr><td colSpan={checkRoleAuth(edit_candidate) ? 7 : 6} className="text-center py-12 text-slate-400">No candidates yet</td></tr>
                     ) : candidates.map((c) => {
                       const next = nextStage(c.stage);
                       return (
@@ -303,9 +334,10 @@ const JobDetail = () => {
                             <td className="px-6 py-3 font-medium text-slate-900 dark:text-white">{c.name}</td>
                             <td className="px-4 py-3 text-slate-500">{c.email}</td>
                             <td className="px-4 py-3 text-slate-500">{c.experience}</td>
-                            <td className="px-4 py-3 text-slate-500">{c.currentCompany || "—"}</td>
-                            <td className="px-4 py-3 text-slate-400">{c.createdAt ? c.createdAt.slice(0, 10) : "—"}</td>
+                            <td className="px-4 py-3 text-slate-500">{c.currentCompany || "?"}</td>
+                            <td className="px-4 py-3 text-slate-400">{c.createdAt ? c.createdAt.slice(0, 10) : "?"}</td>
                             <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${stageColor(c.stage)}`}>{c.stage}</span></td>
+                            {checkRoleAuth(edit_candidate) && (
                             <td className="px-4 py-3">
                               <div className="flex items-center gap-2">
                                 {next && c.stage !== "Rejected" && (
@@ -318,8 +350,9 @@ const JobDetail = () => {
                                 )}
                               </div>
                             </td>
+                            )}
                           </tr>
-                          {hiringCandidateId === c.id && (
+                          {checkRoleAuth(edit_candidate) && hiringCandidateId === c.id && (
                             <tr>
                               <td colSpan={7} className="px-6 pb-4">
                                 <HireForm
@@ -337,10 +370,16 @@ const JobDetail = () => {
                 </table>
               </div>
             </div>
+            )}
           </TabPanel>
+          )}
 
           {/* Pipeline Kanban */}
+          {checkRoleAuth(view_candidate) && (
           <TabPanel>
+            {candidatesPending ? (
+              <SkeletonCards count={6} columns="grid-cols-2 md:grid-cols-3 lg:grid-cols-6" />
+            ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {STAGE_PIPELINE.map((stage) => {
                 const stageCands = candidates.filter((c) => c.stage === stage);
@@ -352,7 +391,7 @@ const JobDetail = () => {
                         <div key={c.id} className="bg-slate-50 dark:bg-white/5 rounded-xl p-2.5 border border-slate-100 dark:border-white/10">
                           <p className="text-xs font-medium text-slate-900 dark:text-white truncate">{c.name}</p>
                           <p className="text-xs text-slate-400 truncate">{c.currentCompany || c.email}</p>
-                          {stage !== "Hired" && stage !== "Rejected" && (
+                          {checkRoleAuth(edit_candidate) && stage !== "Hired" && stage !== "Rejected" && (
                             <div className="flex gap-1 mt-1.5">
                               {nextStage(stage) && <button onClick={() => handleAdvance(c.id, nextStage(stage))} className="flex-1 text-[10px] bg-teal-100 text-teal-700 rounded py-0.5">? {nextStage(stage)}</button>}
                             </div>
@@ -365,7 +404,8 @@ const JobDetail = () => {
                 );
               })}
             </div>
-            {hiringCandidateId && candidates.find((c) => c.id === hiringCandidateId) && (
+            )}
+            {checkRoleAuth(edit_candidate) && hiringCandidateId && candidates.find((c) => c.id === hiringCandidateId) && (
               <HireForm
                 candidate={candidates.find((c) => c.id === hiringCandidateId)}
                 onDone={() => setHiringCandidateId(null)}
@@ -373,6 +413,7 @@ const JobDetail = () => {
               />
             )}
           </TabPanel>
+          )}
         </TabPanels>
       </TabGroup>
     </div>

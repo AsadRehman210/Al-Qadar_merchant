@@ -1,17 +1,19 @@
 import { useEffect, useMemo } from "react";
-import { formatAmount } from "global/helper";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HiOutlineGift } from "react-icons/hi2";
 import { SP_STATUS_BADGE } from "global/constant";
-import { fetchSpecialPayments, showSpecialPayments } from "store/slices/payrollBatchSlice";
+import { fetchSpecialPayments, showSpecialPayments, showSpecialPaymentsLoading } from "store/slices/payrollBatchSlice";
+import { SkeletonTable } from "components/Skeleton";
+import { formatAmount } from "global/helper";
 
 const SpecialPaymentsTab = ({ data }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const employeeId = data?.id;
   const payments = useSelector(showSpecialPayments);
+  const isLoading = useSelector(showSpecialPaymentsLoading);
 
   useEffect(() => {
     dispatch(fetchSpecialPayments());
@@ -23,7 +25,6 @@ const SpecialPaymentsTab = ({ data }) => {
       .map((p) => ({ ...p, myEntry: p.employees.find((e) => e.employeeId === employeeId) }))
       .sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
   }, [payments, employeeId]);
-
 
   return (
     <div className="space-y-6">
@@ -46,7 +47,11 @@ const SpecialPaymentsTab = ({ data }) => {
       </div>
 
       <div className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/20 rounded-md overflow-hidden">
-        {history.length === 0 ? (
+        {isLoading ? (
+          <div className="p-4">
+            <SkeletonTable rows={4} columns={4} />
+          </div>
+        ) : history.length === 0 ? (
           <p className="p-6 text-center text-sm text-slate-500 dark:text-white/60">
             {t("no_record_found")}
           </p>

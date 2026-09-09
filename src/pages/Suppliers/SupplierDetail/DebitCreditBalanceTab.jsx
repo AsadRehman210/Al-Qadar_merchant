@@ -1,12 +1,14 @@
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchSupplierDebitCreditSummary, showSupplierDebitCreditSummary } from "store/slices/supplierSlice";
+import { fetchSupplierDebitCreditSummary, showSupplierDebitCreditSummary, showSupplierTabLoading } from "store/slices/supplierSlice";
+import { SkeletonCards } from "components/Skeleton";
 
 const DebitCreditBalanceTab = ({ supplier }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const summary = useSelector(showSupplierDebitCreditSummary);
+  const loading = useSelector(showSupplierTabLoading);
   const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
   useEffect(() => {
@@ -14,6 +16,17 @@ const DebitCreditBalanceTab = ({ supplier }) => {
   }, [dispatch, supplier?.id]);
 
   if (!supplier) return null;
+
+  if (loading && !summary) {
+    return (
+      <div>
+        <h4 className="font-semibold text-slate-900 dark:text-white mb-4">
+          {t("suppliers:debit_credit_balance")}
+        </h4>
+        <SkeletonCards count={3} columns="grid-cols-1 sm:grid-cols-3" />
+      </div>
+    );
+  }
 
   const openingBalance = summary?.openingBalance ?? 0;
   const totalPaid = summary?.totalPaid ?? 0;

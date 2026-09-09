@@ -1,11 +1,15 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { FiEye } from "react-icons/fi";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
 import { tableRows } from "global/constant";
+import { checkRoleAuth } from "global/helper";
+import { alqadar_role_ids } from "global/alqadarRoles";
+
+const { view_expense } = alqadar_role_ids;
 
 const formatAmount = (val) => (parseFloat(val) || 0).toLocaleString();
 
@@ -139,13 +143,15 @@ const ExpensesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, 
                   </td>
                   <td className="px-4 py-4 align-middle pr-6">
                     <div className="flex items-center gap-2">
-                      <Link
-                        to={`/expenses/details/${row.id}`}
-                        className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
-                        title={t("view")}
-                      >
-                        <FiEye className="h-4 w-4" />
-                      </Link>
+                      {checkRoleAuth(view_expense) && (
+                        <Link
+                          to={`/expenses/details/${row.id}`}
+                          className="text-slate-500 dark:text-white/80 transition-all hover:text-teal-600 dark:hover:text-teal-300"
+                          title={t("view")}
+                        >
+                          <FiEye className="h-4 w-4" />
+                        </Link>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -168,7 +174,7 @@ const ExpensesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, 
           <span className="whitespace-nowrap">{t("per_page")}</span>
         </div>
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

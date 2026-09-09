@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { formatAmount } from "global/helper";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
@@ -14,10 +13,12 @@ import {
   clearPfDetail,
   showPfPolicy,
   showPfCurrentAccount,
+  showPfCurrentAccountLoading,
   showPfContributionHistory,
   showPfWithdrawalsByEmployee,
 } from "store/slices/providentFundSlice";
-
+import { formatAmount } from "global/helper";
+import { SkeletonCards, SkeletonTable } from "components/Skeleton";
 
 const WD_BADGE = {
   Pending: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300",
@@ -34,6 +35,7 @@ const ProvidentFundTab = ({ data }) => {
 
   const policy = useSelector(showPfPolicy);
   const account = useSelector(showPfCurrentAccount);
+  const accountLoading = useSelector(showPfCurrentAccountLoading);
   const contributions = useSelector(showPfContributionHistory);
   const withdrawals = useSelector(showPfWithdrawalsByEmployee);
 
@@ -50,6 +52,15 @@ const ProvidentFundTab = ({ data }) => {
   const totalEmployerContrib = account?.totalEmployerContrib || 0;
   const totalContrib = totalEmployeeContrib + totalEmployerContrib;
   const currentBalance = account?.currentBalance || 0;
+
+  if (accountLoading) {
+    return (
+      <div className="space-y-6">
+        <SkeletonCards count={3} columns="grid-cols-2 md:grid-cols-3" />
+        <SkeletonTable rows={5} columns={6} />
+      </div>
+    );
+  }
 
   if (!account) {
     return (

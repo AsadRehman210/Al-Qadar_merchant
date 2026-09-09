@@ -1,25 +1,23 @@
-﻿import { useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
 import Button from "components/Button";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { SkeletonDetail } from "components/Skeleton";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { checkRoleAuth, defaultPurchaseLine } from "global/helper";
 import { toast } from "react-toastify";
 import dayjs from "dayjs";
-import {
-  createPurchaseInvoice,
-  updatePurchaseInvoice,
-  updatePurchaseStatus,
-  fetchPurchaseInvoiceById,
-  showCurrentPurchaseInvoice,
-  clearCurrentPurchaseInvoice,
-} from "store/slices/purchaseInvoiceSlice";
+import { createPurchaseInvoice, updatePurchaseInvoice, updatePurchaseStatus, fetchPurchaseInvoiceById, showCurrentPurchaseInvoice, showCurrentPurchaseInvoiceLoading, clearCurrentPurchaseInvoice, resetPurchaseInvoiceDropdown } from "store/slices/purchaseInvoiceSlice";
 import PurchaseInvoiceForm from "./PurchaseInvoiceForm";
 
-const { add_customer, edit_customer } = rafeeqi_role_ids;
+import { resetSupplierDropdown } from "store/slices/supplierSlice";
+import { resetWarehouseDropdown } from "store/slices/warehouseSlice";
+import { resetVariantDropdown } from "store/slices/variantSlice";
+
+const { add_purchase_invoice, edit_purchase_invoice } = alqadar_role_ids;
 
 const DEFAULT_PURCHASE_FORM = {
   supplierId: "", date: dayjs().format("YYYY-MM-DD"), expectedDelivery: "",
@@ -30,9 +28,19 @@ const DEFAULT_PURCHASE_FORM = {
 
 const AddPurchaseInvoice = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { id } = useParams();
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearCurrentPurchaseInvoice());
+      dispatch(resetSupplierDropdown());
+      dispatch(resetWarehouseDropdown());
+      dispatch(resetVariantDropdown());
+      dispatch(resetPurchaseInvoiceDropdown());
+    };
+  }, [dispatch]);
 
   const methods = useForm({
     mode: "onChange",
@@ -45,10 +53,10 @@ const AddPurchaseInvoice = () => {
   } = methods;
 
   const current = useSelector(showCurrentPurchaseInvoice);
+  const loading = useSelector(showCurrentPurchaseInvoiceLoading);
 
   useEffect(() => {
     if (id) dispatch(fetchPurchaseInvoiceById(id));
-    return () => { if (id) dispatch(clearCurrentPurchaseInvoice()); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, dispatch]);
 
@@ -80,10 +88,10 @@ const AddPurchaseInvoice = () => {
   }, [id, current, reset]);
 
   useEffect(() => {
-    if (id && !checkRoleAuth(edit_customer)) {
+    if (id && !checkRoleAuth(edit_purchase_invoice)) {
       toast.error(t("purchase:not_authorized"));
       navigate("/purchases");
-    } else if (!id && !checkRoleAuth(add_customer)) {
+    } else if (!id && !checkRoleAuth(add_purchase_invoice)) {
       toast.error(t("purchase:not_authorized"));
       navigate("/purchases");
     }
@@ -132,8 +140,18 @@ const AddPurchaseInvoice = () => {
     }
   };
 
-  if (id && !checkRoleAuth(edit_customer)) return null;
-  if (!id && !checkRoleAuth(add_customer)) return null;
+  if (id && !checkRoleAuth(edit_purchase_invoice)) return null;
+  if (!id && !checkRoleAuth(add_purchase_invoice)) return null;
+
+  // Edit mode renders an empty form until fetchPurchaseInvoiceById lands and
+  // reset() hydrates it — show the skeleton instead of that blank flash.
+  if (id && loading && current?.id !== id) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={8} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
   // Every field is disabled once Received (see PurchaseInvoiceForm) — nothing

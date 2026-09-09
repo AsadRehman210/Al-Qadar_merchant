@@ -11,8 +11,6 @@ const initialState = {
   totalRecords: 0,
   current: null,
   loading: false,
-  currentLoading: false,
-  tabLoading: false,
   error: null,
 
   invoices: [],
@@ -28,7 +26,6 @@ const initialState = {
   dropdownOptions: [],
   dropdownPage: 1,
   dropdownHasMore: false,
-  dropdownLoading: false,
 };
 
 export const fetchSalesCustomers = createAsyncThunk(
@@ -149,12 +146,43 @@ export const deleteSalesCustomer = createAsyncThunk(
   },
 );
 
+export const addCustomerOpeningPayment = createAsyncThunk(
+  "salesCustomer/addOpeningPayment",
+  async ({ id, data }, { rejectWithValue }) => {
+    const response = await erpPost(`${erpUrls.customers}/${id}/opening-balance/payments`, data);
+    if (!response?.success) return rejectWithValue(response?.message);
+    return { result: response.result, message: response.message };
+  },
+);
+
 const salesCustomerSlice = createSlice({
   name: "salesCustomer",
   initialState,
   reducers: {
     clearCurrentSalesCustomer: (state) => {
       state.current = null;
+      state.loading = false;
+      state.invoices = [];
+      state.invoicesTotal = 0;
+      state.payments = [];
+      state.paymentsTotal = 0;
+      state.ledger = [];
+      state.ledgerTotal = 0;
+      state.ledgerOpeningBalance = 0;
+      state.balance = null;
+      state.debitCreditSummary = null;
+    },
+    clearSalesCustomersList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
+    },
+    resetSalesCustomerDropdown: (state) => {
+      state.dropdownOptions = [];
+      state.dropdownPage = 1;
+      state.dropdownHasMore = false;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
@@ -174,14 +202,14 @@ const salesCustomerSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchSalesCustomerById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchSalesCustomerById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchSalesCustomerById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(fetchCustomerInvoices.fulfilled, (state, action) => {
         state.invoices = action.payload.result || [];
@@ -203,17 +231,17 @@ const salesCustomerSlice = createSlice({
         state.debitCreditSummary = action.payload;
       })
       .addCase(fetchSalesCustomersDropdown.pending, (state) => {
-        state.dropdownLoading = true;
+        state.loading = true;
       })
       .addCase(fetchSalesCustomersDropdown.fulfilled, (state, action) => {
-        state.dropdownLoading = false;
+        state.loading = false;
         const { result, page, total_pages } = action.payload;
         state.dropdownOptions = page === 1 ? result : [...state.dropdownOptions, ...result];
         state.dropdownPage = page;
         state.dropdownHasMore = page < total_pages;
       })
       .addCase(fetchSalesCustomersDropdown.rejected, (state) => {
-        state.dropdownLoading = false;
+        state.loading = false;
       })
       .addCase(createSalesCustomer.fulfilled, (state, action) => {
         if (action.payload?.result) state.list.unshift(action.payload.result);
@@ -226,6 +254,9 @@ const salesCustomerSlice = createSlice({
       .addCase(deleteSalesCustomer.fulfilled, (state, action) => {
         state.list = state.list.filter((c) => c.id !== action.payload?.id);
       })
+      .addCase(addCustomerOpeningPayment.fulfilled, (state, action) => {
+        if (action.payload?.result) state.current = action.payload.result;
+      })
       .addMatcher(
         (action) =>
           [
@@ -235,7 +266,7 @@ const salesCustomerSlice = createSlice({
             fetchCustomerBalance.pending.type,
             fetchCustomerDebitCreditSummary.pending.type,
           ].includes(action.type),
-        (state) => { state.tabLoading = true; },
+        (state) => { state.loading = true; },
       )
       .addMatcher(
         (action) =>
@@ -251,18 +282,18 @@ const salesCustomerSlice = createSlice({
             fetchCustomerDebitCreditSummary.fulfilled.type,
             fetchCustomerDebitCreditSummary.rejected.type,
           ].includes(action.type),
-        (state) => { state.tabLoading = false; },
+        (state) => { state.loading = false; },
       );
   },
 });
 
-export const { clearCurrentSalesCustomer } = salesCustomerSlice.actions;
+export const { clearCurrentSalesCustomer, clearSalesCustomersList, resetSalesCustomerDropdown } = salesCustomerSlice.actions;
 export const showSalesCustomers = (state) => state.salesCustomer.list;
 export const showSalesCustomersTotal = (state) => state.salesCustomer.totalRecords;
 export const showSalesCustomersLoading = (state) => state.salesCustomer.loading;
 export const showCurrentSalesCustomer = (state) => state.salesCustomer.current;
-export const showCurrentSalesCustomerLoading = (state) => state.salesCustomer.currentLoading;
-export const showSalesCustomerTabLoading = (state) => state.salesCustomer.tabLoading;
+export const showCurrentSalesCustomerLoading = (state) => state.salesCustomer.loading;
+export const showSalesCustomerTabLoading = (state) => state.salesCustomer.loading;
 export const showCustomerInvoices = (state) => state.salesCustomer.invoices;
 export const showCustomerInvoicesTotal = (state) => state.salesCustomer.invoicesTotal;
 export const showCustomerPayments = (state) => state.salesCustomer.payments;
@@ -275,5 +306,5 @@ export const showCustomerDebitCreditSummary = (state) => state.salesCustomer.deb
 export const showSalesCustomerDropdownOptions = (state) => state.salesCustomer.dropdownOptions;
 export const showSalesCustomerDropdownPage = (state) => state.salesCustomer.dropdownPage;
 export const showSalesCustomerDropdownHasMore = (state) => state.salesCustomer.dropdownHasMore;
-export const showSalesCustomerDropdownLoading = (state) => state.salesCustomer.dropdownLoading;
+export const showSalesCustomerDropdownLoading = (state) => state.salesCustomer.loading;
 export default salesCustomerSlice.reducer;

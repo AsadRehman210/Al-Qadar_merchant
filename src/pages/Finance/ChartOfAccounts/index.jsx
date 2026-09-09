@@ -12,14 +12,14 @@ import {
   coaAccountTypeFilterOptions,
   coaAccountSubTypeOptions,
 } from "global/constant";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { fetchChartOfAccounts, showChartOfAccounts, showChartOfAccountsLoading } from "store/slices/financeSlice";
 import FinancePage from "../FinancePage";
 import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 import { useListFilters } from "hooks/useListFilters";
 
-const { view_customer, add_customer } = rafeeqi_role_ids;
+const { view_finance_coa, add_finance_coa } = alqadar_role_ids;
 
 const SUB_TYPE_LABELS = Object.fromEntries(
   coaAccountSubTypeOptions.map((o) => [o.id, o.title]),
@@ -54,7 +54,7 @@ const ChartOfAccounts = () => {
       title={t("finance:coa_title")}
       description={t("finance:coa_desc")}
       action={
-        checkRoleAuth(add_customer) ? (
+        checkRoleAuth(add_finance_coa) ? (
           <Button
             className="!w-auto !rounded-lg !h-11 !px-5 flex-row rtl:flex-row-reverse !border-0 !text-white !bg-gradient-to-br !from-teal-500 !to-teal-600 hover:!from-teal-600 hover:!to-teal-700"
             onClick={() => navigate("/finance/coa/add")}
@@ -67,7 +67,7 @@ const ChartOfAccounts = () => {
         ) : null
       }
     >
-      {checkRoleAuth(view_customer) && (
+      {checkRoleAuth(view_finance_coa) && (
         <>
           <div className="mb-5 flex flex-wrap gap-3 items-center">
             <div className="flex-1 min-w-[200px] max-w-xs">
@@ -124,7 +124,7 @@ const ChartOfAccounts = () => {
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${row.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{row.status}</span>
                         </td>
                         <td className="px-4 py-4 align-middle pr-6">
-                          {checkRoleAuth(add_customer) && (
+                          {checkRoleAuth(add_finance_coa) && (
                             <Link to={`/finance/coa/edit/${row.id}`} className="text-slate-500 hover:text-teal-600" title={t("edit")}>
                               <AiOutlineEdit className="h-4 w-4" />
                             </Link>

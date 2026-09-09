@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -8,25 +8,21 @@ import { toast } from "react-toastify";
 import Button from "components/Button";
 import FormInput from "components/FormInput";
 import SearchablePaginatedDropdown from "components/SearchablePaginatedDropdown";
+import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
+import { fetchProductsDropdown, fetchProductById, showProductDropdownOptions, showProductDropdownPage, showProductDropdownHasMore, showProductDropdownLoading, resetProductDropdown, clearCurrentProduct } from "store/slices/productSlice";
 import {
-  fetchProductsDropdown,
-  fetchProductById,
-  showProductDropdownOptions,
-  showProductDropdownPage,
-  showProductDropdownHasMore,
-  showProductDropdownLoading,
-} from "store/slices/productSlice";
-import {
+
   createVariant,
   updateVariant,
   fetchVariantById,
   showCurrentVariant,
+  showCurrentVariantLoading,
   clearCurrentVariant,
 } from "store/slices/variantSlice";
 
-const { add_customer } = rafeeqi_role_ids;
+const { add_inventory_variant } = alqadar_role_ids;
 
 const buildAttributes = (data) => {
   const attrs = {};
@@ -37,11 +33,18 @@ const buildAttributes = (data) => {
 
 const AddVariant = () => {
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
   const dispatch = useDispatch();
+  useEffect(() => {
+    return () => {
+      dispatch(resetProductDropdown());
+    };
+  }, [dispatch]);
+
+  const navigate = useNavigate();
   const { id } = useParams();
 
   const existing = useSelector(showCurrentVariant);
+  const loading = useSelector(showCurrentVariantLoading);
   const productDropdownOptions = useSelector(showProductDropdownOptions);
   const productDropdownPage = useSelector(showProductDropdownPage);
   const productDropdownHasMore = useSelector(showProductDropdownHasMore);
@@ -68,14 +71,17 @@ const AddVariant = () => {
       attrSize: "",
       attrColor: "",
       unit: "",
-      lowStockQty: "0",
+      lowStockQty: "",
     },
   });
 
   useEffect(() => {
     dispatch(fetchProductsDropdown({ page: 1, search: "" }));
     if (id) dispatch(fetchVariantById(id));
-    return () => dispatch(clearCurrentVariant());
+    return () => {
+      dispatch(clearCurrentVariant());
+      dispatch(clearCurrentProduct());
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -89,7 +95,7 @@ const AddVariant = () => {
         attrSize: attrs.Size ?? "",
         attrColor: attrs.Color ?? "",
         unit: existing.unit || "pcs",
-        lowStockQty: existing.lowStockQty != null ? String(existing.lowStockQty) : "0",
+        lowStockQty: existing.lowStockQty != null && Number(existing.lowStockQty) > 0 ? String(existing.lowStockQty) : "",
       });
       if (existing.productId) {
         const inFirstPage = productOpts.find((p) => p.id === existing.productId);
@@ -127,7 +133,7 @@ const AddVariant = () => {
       sku: data.sku,
       attributes,
       unit: data.unit?.trim() || "pcs",
-      lowStockQty: Math.max(0, Number(data.lowStockQty) || 0),
+      lowStockQty: Math.max(1, Number(data.lowStockQty)),
     };
     try {
       if (id) {
@@ -153,7 +159,15 @@ const AddVariant = () => {
     trigger("productId");
   };
 
-  if (!checkRoleAuth(add_customer)) return null;
+  if (!checkRoleAuth(add_inventory_variant)) return null;
+
+  if (id && loading && !existing) {
+    return (
+      <div className="space-y-6">
+        <SkeletonDetail fields={6} />
+      </div>
+    );
+  }
 
   const isRTL = i18n.language === "ar";
 
@@ -210,7 +224,7 @@ const AddVariant = () => {
               required
               pattern={/[a-zA-Z0-9\s.'-]/}
               minLength={2}
-              maxLength={150}
+              maxLength={100}
               placeholder={t("product:variant_name_placeholder")}
             />
             <FormInput
@@ -259,12 +273,16 @@ const AddVariant = () => {
               type="number"
               register={register}
               errors={errors}
-              min={0}
+              required
               decimal
               decimalPlaces={2}
               maxLength={10}
               placeholder={t("product:low_stock_qty_placeholder")}
               helperText={t("product:low_stock_qty_hint")}
+              validate={(value) => {
+                if (value === "" || value === undefined || value === null) return true;
+                return Number(value) > 0 || t("product:low_stock_qty_zero_error");
+              }}
             />
           </div>
 

@@ -91,6 +91,13 @@ const quotationSlice = createSlice({
   reducers: {
     clearCurrentQuotation: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearQuotationsList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
@@ -110,14 +117,14 @@ const quotationSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchQuotationById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchQuotationById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchQuotationById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(createQuotation.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -135,10 +142,10 @@ const quotationSlice = createSlice({
   },
 });
 
-export const { clearCurrentQuotation } = quotationSlice.actions;
+export const { clearCurrentQuotation, clearQuotationsList } = quotationSlice.actions;
 export const showQuotations = (state) => state.quotation.list;
 export const showQuotationsTotal = (state) => state.quotation.totalRecords;
 export const showQuotationsLoading = (state) => state.quotation.loading;
 export const showCurrentQuotation = (state) => state.quotation.current;
-export const showCurrentQuotationLoading = (state) => state.quotation.currentLoading;
+export const showCurrentQuotationLoading = (state) => state.quotation.loading;
 export default quotationSlice.reducer;

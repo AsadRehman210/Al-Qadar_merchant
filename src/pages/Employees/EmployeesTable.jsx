@@ -6,20 +6,20 @@ import { Link } from "react-router";
 import ImageWithFallback from "components/ImageWithFallback";
 import ActionPopup from "components/ActionPopup";
 import TableState from "components/TableState";
-import ReactPaginate from "react-paginate";
+import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import { useDispatch } from "react-redux";
 import { toast } from "react-toastify";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { tableRows, employeeStatusOptions, employeeStatusBadge } from "global/constant";
 import { deleteEmployee } from "store/slices/employeeSlice";
 
 const statusLabel = (id) =>
   employeeStatusOptions.find((s) => s.id === id)?.title || id;
 
-const { view_employee, edit_employee, delete_employee } = rafeeqi_role_ids;
+const { view_employee, edit_employee, delete_employee } = alqadar_role_ids;
 
 const EmployeesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, totalPages, onDeleted }) => {
   const { t } = useTranslation();
@@ -172,7 +172,7 @@ const EmployeesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows,
         </div>
 
         <div className="pagination ltr:ml-auto rtl:mr-auto">
-          <ReactPaginate
+          <Pagination
             breakLabel="..."
             nextLabel={<FaAngleRight />}
             previousLabel={<FaAngleLeft />}

@@ -20,7 +20,6 @@ const initialState = {
   dropdownOptions: [],
   dropdownPage: 1,
   dropdownHasMore: false,
-  dropdownLoading: false,
 };
 
 export const fetchWarehouses = createAsyncThunk(
@@ -90,6 +89,20 @@ const warehouseSlice = createSlice({
   reducers: {
     clearCurrentWarehouse: (state) => {
       state.current = null;
+      state.loading = false;
+    },
+    clearWarehousesList: (state) => {
+      state.list = [];
+      state.totalRecords = 0;
+      state.loading = false;
+      state.error = null;
+      state.summary = { totalWarehouses: 0, activeWarehouses: 0, totalCapacity: 0, totalStockItems: 0 };
+    },
+    resetWarehouseDropdown: (state) => {
+      state.dropdownOptions = [];
+      state.dropdownPage = 1;
+      state.dropdownHasMore = false;
+      state.loading = false;
     },
   },
   extraReducers: (builder) => {
@@ -111,27 +124,27 @@ const warehouseSlice = createSlice({
         state.error = action.payload;
       })
       .addCase(fetchWarehouseById.pending, (state) => {
-        state.currentLoading = true;
+        state.loading = true;
       })
       .addCase(fetchWarehouseById.fulfilled, (state, action) => {
-        state.currentLoading = false;
+        state.loading = false;
         state.current = action.payload;
       })
       .addCase(fetchWarehouseById.rejected, (state) => {
-        state.currentLoading = false;
+        state.loading = false;
       })
       .addCase(fetchWarehousesDropdown.pending, (state) => {
-        state.dropdownLoading = true;
+        state.loading = true;
       })
       .addCase(fetchWarehousesDropdown.fulfilled, (state, action) => {
-        state.dropdownLoading = false;
+        state.loading = false;
         const { result, page, total_pages } = action.payload;
         state.dropdownOptions = page === 1 ? result : [...state.dropdownOptions, ...result];
         state.dropdownPage = page;
         state.dropdownHasMore = page < total_pages;
       })
       .addCase(fetchWarehousesDropdown.rejected, (state) => {
-        state.dropdownLoading = false;
+        state.loading = false;
       })
       .addCase(createWarehouse.fulfilled, (state, action) => {
         if (action.payload) state.list.unshift(action.payload);
@@ -147,15 +160,15 @@ const warehouseSlice = createSlice({
   },
 });
 
-export const { clearCurrentWarehouse } = warehouseSlice.actions;
+export const { clearCurrentWarehouse, clearWarehousesList, resetWarehouseDropdown } = warehouseSlice.actions;
 export const showWarehouses = (state) => state.warehouse.list;
 export const showWarehousesTotal = (state) => state.warehouse.totalRecords;
 export const showWarehousesLoading = (state) => state.warehouse.loading;
 export const showWarehousesSummary = (state) => state.warehouse.summary;
 export const showCurrentWarehouse = (state) => state.warehouse.current;
-export const showCurrentWarehouseLoading = (state) => state.warehouse.currentLoading;
+export const showCurrentWarehouseLoading = (state) => state.warehouse.loading;
 export const showWarehouseDropdownOptions = (state) => state.warehouse.dropdownOptions;
 export const showWarehouseDropdownPage = (state) => state.warehouse.dropdownPage;
 export const showWarehouseDropdownHasMore = (state) => state.warehouse.dropdownHasMore;
-export const showWarehouseDropdownLoading = (state) => state.warehouse.dropdownLoading;
+export const showWarehouseDropdownLoading = (state) => state.warehouse.loading;
 export default warehouseSlice.reducer;

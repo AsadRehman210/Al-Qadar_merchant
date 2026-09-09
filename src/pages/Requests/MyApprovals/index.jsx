@@ -6,28 +6,32 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { LuCalendarCheck, LuHandCoins, LuReceipt, LuClipboardList, LuBanknote, LuGift } from "react-icons/lu";
 import { APPROVAL_STATUS_BADGE } from "global/approvalEngine";
 import { checkRoleAuth } from "global/helper";
-import { rafeeqi_role_ids } from "global/rafeeqiRoles";
+import { alqadar_role_ids } from "global/alqadarRoles";
 import { LOAN_STATUS, EXPENSE_STATUS, RUN_STATUS, SP_STATUS } from "global/constant";
 import { APPROVAL_STATUS, requestTypeById } from "pages/Requests/requestsFakeData";
+import { SkeletonCards } from "components/Skeleton";
 import {
   showLastUpdated as requestUpdated,
   fetchRequests,
   showRequests,
+  showRequestsLoading,
 } from "store/slices/requestSlice";
 import {
   showLastUpdated as payrollUpdated,
   fetchPayrollRuns,
   showRuns,
+  showRunsLoading,
   fetchSpecialPayments,
   showSpecialPayments,
+  showSpecialPaymentsLoading,
 } from "store/slices/payrollBatchSlice";
-import { fetchLoans, showLoans } from "store/slices/loanSlice";
-import { fetchExpenses, showExpenses } from "store/slices/expenseSlice";
-import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
-import { fetchLeaves, showLeaves } from "store/slices/leaveSlice";
-import { fetchLeaveTypes, showLeaveTypes } from "store/slices/leaveTypeSlice";
+import { fetchLoans, showLoans, showLoansLoading } from "store/slices/loanSlice";
+import { fetchExpenses, showExpenses, showExpensesLoading } from "store/slices/expenseSlice";
+import { fetchEmployees, showEmployees, showEmployeesLoading } from "store/slices/employeeSlice";
+import { fetchLeaves, showLeaves, showLeavesLoading } from "store/slices/leaveSlice";
+import { fetchLeaveTypes, showLeaveTypes, showLeaveTypesLoading } from "store/slices/leaveTypeSlice";
 
-const { add_employee } = rafeeqi_role_ids;
+const { view_employee_request, approve_employee_request } = alqadar_role_ids;
 
 const TAB_CLASS =
   "min-w-[150px] whitespace-nowrap cursor-pointer py-3 px-5 rounded-lg h-11 flex justify-center items-center gap-2 font-medium text-sm text-slate-500 dark:text-white/70 transition-all outline-none data-[selected]:bg-[var(--color-teal-500)] data-[selected]:text-white data-[selected]:font-semibold hover:text-teal-700 hover:bg-teal-500/10";
@@ -151,6 +155,18 @@ const MyApprovals = () => {
   const specialPayments = useSelector(showSpecialPayments);
   const requests = useSelector(showRequests);
 
+  // This page is a union of six independent modules, so the "all clear" empty
+  // state is only truthful once every one of them has answered.
+  const loading =
+    useSelector(showLoansLoading) ||
+    useSelector(showExpensesLoading) ||
+    useSelector(showEmployeesLoading) ||
+    useSelector(showLeavesLoading) ||
+    useSelector(showLeaveTypesLoading) ||
+    useSelector(showRunsLoading) ||
+    useSelector(showSpecialPaymentsLoading) ||
+    useSelector(showRequestsLoading);
+
   useEffect(() => {
     dispatch(fetchLoans());
     dispatch(fetchExpenses());
@@ -174,7 +190,7 @@ const MyApprovals = () => {
   const { managerItems, hrItems } = collectItems(loans, expenses, leaves, runs, specialPayments, requests, employeesById, leaveTypesById);
   void tick;
 
-  if (!checkRoleAuth(add_employee)) return null;
+  if (!checkRoleAuth(view_employee_request) && !checkRoleAuth(approve_employee_request)) return null;
 
   const EmptyState = () => (
     <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-12 text-center">
@@ -208,14 +224,14 @@ const MyApprovals = () => {
           </TabList>
           <TabPanels className="mt-6">
             <TabPanel>
-              {managerItems.length === 0 ? <EmptyState /> : (
+              {loading ? <SkeletonCards count={4} columns="grid-cols-1 md:grid-cols-2" /> : managerItems.length === 0 ? <EmptyState /> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {managerItems.map((it) => <ApprovalCard key={`${it.module}-${it.id}`} item={it} onOpen={navigate} />)}
                 </div>
               )}
             </TabPanel>
             <TabPanel>
-              {hrItems.length === 0 ? <EmptyState /> : (
+              {loading ? <SkeletonCards count={4} columns="grid-cols-1 md:grid-cols-2" /> : hrItems.length === 0 ? <EmptyState /> : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {hrItems.map((it) => <ApprovalCard key={`${it.module}-${it.id}`} item={it} onOpen={navigate} />)}
                 </div>
