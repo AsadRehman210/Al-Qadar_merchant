@@ -30,6 +30,7 @@ import {
   deleteHoliday,
 } from "store/slices/holidaySlice";
 import { HOLIDAY_TYPE_BADGE } from "global/constant";
+import { AuditLine } from "components/AuditMeta";
 
 const { view_holiday, add_holiday, edit_holiday, delete_holiday } = alqadar_role_ids;
 
@@ -267,6 +268,7 @@ const HolidayCalendar = () => {
                         {h.recurring && <span className="ml-1">� {t("hrhub:recurring")}</span>}
                       </p>
                     </div>
+                    <AuditLine record={h} className="max-w-[180px]" />
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${HOLIDAY_TYPE_BADGE[h.type]}`}>{typeLabel(h.type)}</span>
                     {past && (
                       <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 dark:bg-white/10 dark:text-white/50">

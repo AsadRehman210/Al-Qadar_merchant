@@ -12,6 +12,7 @@ import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
 import { fetchPfPolicy, upsertPfPolicy, showPfPolicy, showPfPolicyLoading } from "store/slices/providentFundSlice";
 import { SkeletonDetail } from "components/Skeleton";
+import AuditMeta from "components/AuditMeta";
 
 const { edit_provident_fund } = alqadar_role_ids;
 
@@ -123,6 +124,9 @@ const PFPolicy = () => {
             <FormInput label={t("pf:min_service_months")} name="minServiceMonths" type="number" min={0} max={600} register={register} errors={errors} required />
             <FormInput label={t("pf:vesting_years")} name="vestingYears" type="number" min={0} max={50} register={register} errors={errors} required />
             <FormInput label={`${t("pf:interest_rate")} (% p.a.)`} name="interestRate" type="number" min={0} max={100} decimal decimalPlaces={2} register={register} errors={errors} required className="md:col-span-2" />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4 pt-2">
+            <AuditMeta record={policy} />
           </div>
           <div className="flex gap-3 justify-end pt-4 border-t border-slate-200 dark:border-white/20">
             {saved && <p className="text-emerald-600 text-sm self-center">✓ {t("pf:policy_saved")}</p>}

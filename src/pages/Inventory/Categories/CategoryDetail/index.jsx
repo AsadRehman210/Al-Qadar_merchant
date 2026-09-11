@@ -114,6 +114,8 @@ const CategoryDetail = () => {
             <InfoRow label={t("product:category_name")} value={row.name} />
             <InfoRow label={t("product:created_at")} value={formatTs(row.createdAt)} />
             <InfoRow label={t("product:updated_at")} value={formatTs(row.updatedAt)} />
+            <InfoRow label={t("created_by")} value={row.createdByName} />
+            <InfoRow label={t("updated_by")} value={row.updatedByName} />
           </div>
 
           <div className={cardClass}>

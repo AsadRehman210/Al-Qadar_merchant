@@ -12,6 +12,7 @@ import { alqadar_role_ids } from "global/alqadarRoles";
 import { FIELD_DEFS, requestTypeById } from "../requestsFakeData";
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import {
+import AuditMeta from "components/AuditMeta";
   fetchRequestById,
   showCurrentRequest,
   showCurrentRequestLoading,
@@ -213,6 +214,7 @@ const RequestDetail = () => {
                   <p className="text-xs text-slate-500 dark:text-white/60">{t("requests:manager")}</p>
                   <p className="font-medium text-slate-800 dark:text-white">{managerName}</p>
                 </div>
+                <AuditMeta record={req} />
                 {detailEntries.map(([k, v]) => (
                   <div key={k} className={k === "reason" || k === "purpose" ? "sm:col-span-2" : ""}>
                     <p className="text-xs text-slate-500 dark:text-white/60">{DETAIL_LABELS[k] ? t(DETAIL_LABELS[k]) : k}</p>

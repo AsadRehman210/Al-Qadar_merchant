@@ -13,6 +13,7 @@ import TableState from "components/TableState";
 import Table from "components/Table";
 import { tableRows } from "global/constant";
 import { deleteSalesCustomer } from "store/slices/salesCustomerSlice";
+import { labelOf } from "components/AuditMeta";
 
 const CustomersTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, totalPages, onDeleted }) => {
   const { t } = useTranslation();
@@ -71,13 +72,19 @@ const CustomersTable = ({ data, loading, page = 1, setPage, selRows, setSelRows,
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("customers:status")}
                 </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("created_by")}
+                </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("updated_by")}
+                </th>
                 <th className="w-[140px] px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">
                   {t("customers:actions")}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <TableState loading={loading} data={list} colSpan={7}>
+              <TableState loading={loading} data={list} colSpan={9}>
                 {list.map((row) => (
                   <tr
                     key={row.id}
@@ -96,6 +103,12 @@ const CustomersTable = ({ data, loading, page = 1, setPage, selRows, setSelRows,
                       <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getStatusClass(row.status)}`}>
                         {row.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                      {labelOf(row, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                      {labelOf(row, "updated") || "—"}
                     </td>
                     <td className="px-4 py-4 align-middle pr-6">
                       <div className="flex items-center gap-2">

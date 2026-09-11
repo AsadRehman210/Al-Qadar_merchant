@@ -27,6 +27,7 @@ import {
   deleteAnnouncement,
 } from "store/slices/announcementSlice";
 import { ANN_CATEGORY_BADGE } from "global/constant";
+import { AuditLine } from "components/AuditMeta";
 
 const { view_announcement, add_announcement, delete_announcement } = alqadar_role_ids;
 
@@ -210,6 +211,7 @@ const Announcements = () => {
                   </div>
                   <h3 className="text-lg font-bold text-slate-800 dark:text-white mt-2">{a.title}</h3>
                   <p className="text-sm text-slate-600 dark:text-white/70 mt-1.5 leading-relaxed">{a.body}</p>
+                  <AuditLine record={a} className="mt-2" />
                   <p className="text-xs text-slate-400 dark:text-white/40 mt-3">
                     {t("hrhub:posted_by")} <span className="font-medium text-slate-500 dark:text-white/60">{t("hrhub:hr_department", "HR Department")}</span> � {a.createdAt ? dayjs(a.createdAt).format("DD MMM YYYY") : ""}
                   </p>

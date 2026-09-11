@@ -16,6 +16,7 @@ import FinancePage from "../FinancePage";
 import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 import { useListFilters } from "hooks/useListFilters";
+import { labelOf } from "components/AuditMeta";
 
 const { view_finance_expense, add_finance_expense } = alqadar_role_ids;
 
@@ -85,7 +86,13 @@ const FinanceExpenses = () => {
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("description")}</th>
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:account_name")}</th>
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:bank_name")}</th>
-                    <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">{t("finance:amount")}</th>
+                    <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:amount")}</th>
+                  <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                    {t("created_by")}
+                  </th>
+                  <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                    {t("updated_by")}
+                  </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -99,8 +106,14 @@ const FinanceExpenses = () => {
                       <td className="px-4 py-4 align-middle max-w-[200px] truncate">{row.description}</td>
                       <td className="px-4 py-4 align-middle text-xs">{row.expenseAccountCode} — {row.expenseAccountName}</td>
                       <td className="px-4 py-4 align-middle text-xs">{row.bankAccountName}</td>
-                      <td className="px-4 py-4 align-middle text-end tabular-nums pr-6">
+                      <td className="px-4 py-4 align-middle text-end tabular-nums">
                         {formatAmount(row.amount)} {row.currency}
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                        {labelOf(row, "created") || "—"}
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                        {labelOf(row, "updated") || "—"}
                       </td>
                     </tr>
                   ))}

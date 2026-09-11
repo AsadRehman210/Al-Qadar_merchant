@@ -441,6 +441,9 @@ const AssetDetail = () => {
                     { label: t("asset:useful_life"),     value: asset.usefulLifeYears ? `${asset.usefulLifeYears} ${t("asset:years")}` : "�" },
                     { label: t("asset:salvage_value"),   value: fmt(asset.salvageValue, asset.currency) },
                     { label: t("asset:currency"),        value: asset.currency || "SAR" },
+                    { label: t("created_by"),            value: asset.createdByName },
+                    { label: t("updated_by"),            value: asset.updatedByName },
+                    ...(asset.lastAuditStatus ? [{ label: t("asset:last_audit_status"), value: asset.lastAuditStatus }] : []),
                   ].map((f) => (
                     <div key={f.label}>
                       <dt className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase">{f.label}</dt>

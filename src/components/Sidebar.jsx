@@ -8,7 +8,7 @@ import { showSidebar, toggleSidebar } from "store/slices/headerSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { IoClose } from "react-icons/io5";
 import { menuSections } from "global/constant";
-import { checkRoleAuth, hrefViewPermission } from "global/helper";
+import { checkRoleAuth, hrefViewPermission, tenantLogoSrc, tenantDisplayName } from "global/helper";
 import { logoutErp, showStatus } from "store/slices/authSlice";
 import { showUserData } from "store/slices/uniqueSlice";
 import { toast } from "react-toastify";
@@ -272,13 +272,13 @@ export default function Sidebar() {
             to="/dashboard"
             onClick={() => closeAll(true)}
             className="relative h-10 w-10 shrink-0 overflow-hidden rounded-xl ring-1 ring-gray-200 dark:ring-gray-700 hover:ring-teal-500/40 transition-all mb-3"
-            title={userData?.organizationData?.name}
+            title={tenantDisplayName(userData)}
           >
             <ImageWithFallback
-              src={userData?.organizationData?.primary_logo}
+              src={tenantLogoSrc(userData)}
               className="h-full w-full object-contain p-1 !bg-primary/10"
               fallbackSrc={Logo}
-              alt={userData?.organizationData?.name}
+              alt={tenantDisplayName(userData)}
             />
           </Link>
 

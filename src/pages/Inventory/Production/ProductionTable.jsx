@@ -13,6 +13,7 @@ import TableState from "components/TableState";
 import Table from "components/Table";
 import { tableRows } from "global/constant";
 import { deleteProductionOrder } from "store/slices/productionSlice";
+import { labelOf } from "components/AuditMeta";
 
 const fmtNum = (n) => (n == null || n === "") ? "—" : Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
 
@@ -84,13 +85,19 @@ const ProductionTable = ({ data, loading, page = 1, setPage, selRows, setSelRows
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("production:batch_unit_cost")}
                 </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("created_by")}
+                </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("updated_by")}
+                </th>
                 <th className="w-[160px] px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">
                   {t("product:actions")}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <TableState loading={loading} data={list} colSpan={7}>
+              <TableState loading={loading} data={list} colSpan={9}>
                 {list.map((row) => (
                   <tr
                     key={row.id}
@@ -121,6 +128,12 @@ const ProductionTable = ({ data, loading, page = 1, setPage, selRows, setSelRows
                     </td>
                     <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 tabular-nums">
                       {fmtNum(row.unitCost)}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                      {labelOf(row, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                      {labelOf(row, "updated") || "—"}
                     </td>
                     <td className="px-4 py-4 align-middle pr-6">
                       <div className="flex items-center gap-2">

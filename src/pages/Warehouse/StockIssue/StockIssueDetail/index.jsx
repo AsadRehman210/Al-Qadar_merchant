@@ -8,6 +8,7 @@ import Button from "components/Button";
 import ActionPopup from "components/ActionPopup";
 import { SkeletonDetail } from "components/Skeleton";
 import {
+import AuditMeta from "components/AuditMeta";
   fetchStockIssueById,
   clearCurrentStockIssue,
   reverseStockIssue,
@@ -137,6 +138,7 @@ const StockIssueDetail = () => {
           <Field label={t("issued_to")} value={issue.issuedTo} />
           <Field label={t("issued_by")} value={issue.issuedBy || "—"} />
           <Field label={t("reference")} value={issue.reference || "—"} />
+          <AuditMeta record={issue} />
           {status === "Reversed" && (
             <Field
               label={t("reversed_at")}

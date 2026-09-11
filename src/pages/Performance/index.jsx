@@ -10,6 +10,7 @@ import { alqadar_role_ids } from "global/alqadarRoles";
 import { useListFilters } from "hooks/useListFilters";
 import { getAppraisals, APPRAISAL_STATUS_OPTS, CYCLE_OPTS } from "./performanceFakeData";
 import { statusColor, ratingLabelKey, weightedScore } from "./performanceHelpers";
+import { labelOf } from "components/AuditMeta";
 
 const { view_performance, add_performance } = alqadar_role_ids;
 
@@ -119,12 +120,14 @@ const Performance = () => {
                   <th className="px-4 py-3">{t("performance:col_score")}</th>
                   <th className="px-4 py-3">{t("performance:col_rating")}</th>
                   <th className="px-4 py-3">{t("performance:col_status")}</th>
+                  <th className="px-4 py-3">{t("created_by")}</th>
+                  <th className="px-4 py-3">{t("updated_by")}</th>
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 ? (
-                  <tr><td colSpan={9} className="text-center py-16 text-slate-400">{t("performance:no_appraisals")}</td></tr>
+                  <tr><td colSpan={11} className="text-center py-16 text-slate-400">{t("performance:no_appraisals")}</td></tr>
                 ) : filtered.map((a) => {
                   const ws = weightedScore(a.kpis);
                   const labelKey = ratingLabelKey(a.overallRating);
@@ -145,6 +148,12 @@ const Performance = () => {
                         ) : <span className="text-slate-300 text-xs">{t("performance:not_rated_yet")}</span>}
                       </td>
                       <td className="px-4 py-3"><span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor(a.status)}`}>{a.status}</span></td>
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap max-w-[140px] truncate" title={labelOf(a, "created") || ""}>
+                        {labelOf(a, "created") || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap max-w-[140px] truncate" title={labelOf(a, "updated") || ""}>
+                        {labelOf(a, "updated") || "—"}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {checkRoleAuth(add_performance) && EDITABLE_STATUSES.includes(a.status) && (

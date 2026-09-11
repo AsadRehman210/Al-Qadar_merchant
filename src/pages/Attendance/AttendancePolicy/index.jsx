@@ -16,6 +16,7 @@ import {
 } from "store/slices/attendancePolicySlice";
 import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { labelOf } from "components/AuditMeta";
 
 const { view_attendance_policy, add_attendance_policy, edit_attendance_policy } = alqadar_role_ids;
 
@@ -167,6 +168,12 @@ const AttendancePolicyOverview = () => {
                     <th className="px-4 py-3 text-start font-semibold text-white/95">
                       {t("attendance:end_date")}
                     </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("created_by")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("updated_by")}
+                    </th>
                     <th className="px-4 py-3 text-start font-semibold text-white/95 last:pr-6 last:rounded-tr-xl">
                       {t("actions")}
                     </th>
@@ -178,6 +185,12 @@ const AttendancePolicyOverview = () => {
                       <td className="px-4 py-3 pl-6 font-medium text-slate-900 dark:text-white">{policy.name}</td>
                       <td className="px-4 py-3 text-slate-600 dark:text-white/70">{policy.implementedDate ? new Date(policy.implementedDate).toLocaleDateString() : "-"}</td>
                       <td className="px-4 py-3 text-slate-600 dark:text-white/70">{policy.endDate ? new Date(policy.endDate).toLocaleDateString() : "-"}</td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(policy, "created") || ""}>
+                        {labelOf(policy, "created") || "—"}
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(policy, "updated") || ""}>
+                        {labelOf(policy, "updated") || "—"}
+                      </td>
                       <td className="px-4 py-3 pr-6">
                         <button
                           type="button"

@@ -20,6 +20,7 @@ import {
 } from "store/slices/stockIssueSlice";
 import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { labelOf } from "components/AuditMeta";
 
 const { view_warehouse_issue, add_warehouse_issue } = alqadar_role_ids;
 
@@ -137,6 +138,8 @@ const StockIssue = () => {
                 <th className="px-4 py-3">{t("issued_to")}</th>
                 <th className="px-4 py-3">{t("items")}</th>
                 <th className="px-4 py-3">{t("issued_by")}</th>
+                <th className="px-4 py-3">{t("created_by", { ns: "translation" })}</th>
+                <th className="px-4 py-3">{t("updated_by", { ns: "translation" })}</th>
                 <th className="px-4 py-3 text-end">{t("actions", { ns: "translation", defaultValue: "Actions" })}</th>
               </tr>
             </thead>
@@ -144,7 +147,7 @@ const StockIssue = () => {
               {loading ? (
                 Array.from({ length: 6 }).map((_, r) => (
                   <tr key={r} className="border-b border-slate-50 dark:border-white/5">
-                    {Array.from({ length: 9 }).map((__, c) => (
+                    {Array.from({ length: 11 }).map((__, c) => (
                       <td key={c} className="px-4 py-3">
                         <Block className="h-4 w-full max-w-[120px]" />
                       </td>
@@ -153,7 +156,7 @@ const StockIssue = () => {
                 ))
               ) : issues.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-12 text-slate-400">
+                  <td colSpan={11} className="text-center py-12 text-slate-400">
                     <FiLogOut size={32} className="mx-auto mb-2 opacity-40" />
                     {t("no_issues")}
                   </td>
@@ -181,6 +184,12 @@ const StockIssue = () => {
                     <td className="px-4 py-3 text-slate-600 dark:text-white/70">{i.issuedTo}</td>
                     <td className="px-4 py-3 text-slate-500">{i.items?.length}</td>
                     <td className="px-4 py-3 text-slate-500">{i.issuedBy || "—"}</td>
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap max-w-[140px] truncate" title={labelOf(i, "created") || ""}>
+                      {labelOf(i, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap max-w-[140px] truncate" title={labelOf(i, "updated") || ""}>
+                      {labelOf(i, "updated") || "—"}
+                    </td>
                     <td className="px-4 py-3 text-end" onClick={(e) => e.stopPropagation()}>
                       <button
                         type="button"

@@ -191,6 +191,8 @@ const WarehouseDetail = () => {
                 <InfoRow label={t("capacity")} value={`${warehouse.capacity?.toLocaleString()} ${warehouse.unit}`} />
                 <InfoRow label={t("status")}   value={warehouse.status} />
                 {warehouse.description && <InfoRow label={t("description")} value={warehouse.description} />}
+                <InfoRow label={t("created_by")} value={warehouse.createdByName} />
+                <InfoRow label={t("updated_by")} value={warehouse.updatedByName} />
               </div>
               <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-6">
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-4">{t("quick_actions")}</h3>

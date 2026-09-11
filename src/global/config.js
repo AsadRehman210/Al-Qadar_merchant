@@ -12,6 +12,7 @@ export const ERP_BASE_URL = `${import.meta.env.VITE_ERP_BASE_URL}/api`;
 // object below so the two unrelated backends' paths never get confused.
 export const erpUrls = {
   login: "/auth/login",
+  me: "/auth/me",
   logout: "/auth/logout",
   forgotPassword: "/auth/forgot-password",
   verifyOtp: "/auth/verify-otp",
@@ -70,6 +71,7 @@ export const erpUrls = {
   assets: "/asset",
   assetRequests: "/asset-request",
   assetAudits: "/asset-audit",
+  assetPurchases: "/asset-purchase",
 
   hrAnalytics: "/analytics/hr",
   inventoryAnalytics: "/analytics/inventory",

@@ -22,6 +22,7 @@ import {
   showLeaveTypesLoading,
 } from "store/slices/leaveTypeSlice";
 import { leaveApplicableGenderOptions, activeInactiveOptions } from "global/constant";
+import { labelOf } from "components/AuditMeta";
 
 const { view_leave_type, add_leave_type, edit_leave_type, delete_leave_type } = alqadar_role_ids;
 
@@ -200,7 +201,7 @@ const LeaveTypes = () => {
             <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="bg-[var(--color-teal-500)]">
-                  {[t("leave:type_name"), t("leave:days_per_year"), t("leave:carry_forward"), t("leave:min_notice"), t("leave:max_at_once"), t("leave:gender"), t("leave:paid_leave"), t("leave:doc_required"), t("status"), t("leave:actions")].map((h) => (
+                  {[t("leave:type_name"), t("leave:days_per_year"), t("leave:carry_forward"), t("leave:min_notice"), t("leave:max_at_once"), t("leave:gender"), t("leave:paid_leave"), t("leave:doc_required"), t("status"), t("created_by"), t("updated_by"), t("leave:actions")].map((h) => (
                     <th key={h} className="px-4 py-4 text-start font-semibold text-white/95 whitespace-nowrap first:pl-6">{h}</th>
                   ))}
                 </tr>
@@ -228,6 +229,12 @@ const LeaveTypes = () => {
                       <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${type.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
                         {type.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(type, "created") || ""}>
+                      {labelOf(type, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(type, "updated") || ""}>
+                      {labelOf(type, "updated") || "—"}
                     </td>
                     <td className="px-4 py-4 pr-6">
                       <div className="flex gap-2 text-slate-500 dark:text-white/70">

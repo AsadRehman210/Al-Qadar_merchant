@@ -16,6 +16,7 @@ const UploadFilePreview = ({
   trigger,
   defaultValue,
   fileType = "images", // "images", "pdf", or "both"
+  maxSizeBytes,
 }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [view, setView] = useState(null);
@@ -84,6 +85,13 @@ const UploadFilePreview = ({
           : "images (PNG, JPG, JPEG) and PDF files";
       toast.error(`Please select only ${allowedTypes}.`);
       event.target.value = ""; // Clear the input
+      return;
+    }
+
+    if (maxSizeBytes && file.size > maxSizeBytes) {
+      const mb = Math.round(maxSizeBytes / (1024 * 1024));
+      toast.error(t("logo_too_large", { defaultValue: "File must be {{size}} MB or smaller.", size: mb }));
+      event.target.value = "";
       return;
     }
 

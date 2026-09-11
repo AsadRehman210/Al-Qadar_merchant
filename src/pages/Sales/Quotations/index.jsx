@@ -15,9 +15,9 @@ import { useListFilters } from "hooks/useListFilters";
 import { tableRows, quotationStatusBadge as STATUS_BADGE, quotationStatusFilterOptions } from "global/constant";
 import { fetchQuotations, deleteQuotation, showQuotations, showQuotationsTotal, showQuotationsLoading, clearQuotationsList } from "store/slices/quotationSlice";
 import QuotationPreviewModal from "./QuotationPreviewModal";
-import dayjs from "dayjs";
-import { checkRoleAuth } from "global/helper";
+import { checkRoleAuth, isQuotationExpiringSoon } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { labelOf } from "components/AuditMeta";
 
 const { view_sales_quotation, add_sales_quotation, edit_sales_quotation, delete_sales_quotation } = alqadar_role_ids;
 
@@ -73,7 +73,7 @@ const Quotations = () => {
     setRowToDelete(null);
   };
 
-  const isExpiring = (d) => d && dayjs(d).diff(dayjs(), "day") <= 7 && dayjs(d).isAfter(dayjs());
+  const isExpiring = (d) => isQuotationExpiringSoon(d);
 
   return (
     <div className="relative min-h-[60vh] overflow-hidden">
@@ -119,19 +119,28 @@ const Quotations = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[var(--color-teal-500)]">
-                  {[t("sales:quote_number"), t("sales:customer"), t("sales:date"), t("sales:valid_until"), t("sales:warehouse"), t("sales:total"), t("sales:status"), ""].map((h) => (
+                  {[t("sales:quote_number"), t("sales:customer"), t("sales:date"), t("sales:valid_until"), t("sales:warehouse"), t("sales:total"), t("sales:status"), t("created_by"), t("updated_by"), ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-start font-semibold text-white/90 text-xs">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <TableState loading={loading} data={rows} colSpan={8}>
+                <TableState loading={loading} data={rows} colSpan={10}>
                 {rows.map((r) => (
                   <tr key={r.id} className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer"
                     onClick={() => navigate(`/quotation/detail/${r.id}`)}>
-                    <td className="px-4 py-3 font-mono font-medium text-teal-600">{r.quoteNumber}</td>
+                    <td className="px-4 py-3 font-mono font-medium text-teal-600">
+                      {r.quoteNumber}
+                      {(Number(r.taxAmount) || 0) > 0 && (
+                        <p className={`text-[11px] font-normal mt-1 ${r.taxRecoverable === false ? "text-slate-400 dark:text-white/40" : "text-teal-600 dark:text-teal-400"}`}>
+                          {r.taxRecoverable === false
+                            ? t("sales:tax_non_recoverable")
+                            : t("sales:tax_recoverable_tag")}
+                        </p>
+                      )}
+                    </td>
                     <td className="px-4 py-3">{r.customerName}</td>
-                    <td className="px-4 py-3 text-xs text-slate-500">{String(r.date).slice(0, 10)}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500">{r.createdAt ? String(r.createdAt).slice(0, 10) : "—"}</td>
                     <td className="px-4 py-3 text-xs">
                       <span className={isExpiring(r.validUntil) ? "text-amber-600 font-medium" : "text-slate-500"}>{r.validUntil ? String(r.validUntil).slice(0, 10) : "—"}</span>
                     </td>
@@ -139,6 +148,12 @@ const Quotations = () => {
                     <td className="px-4 py-3 font-semibold tabular-nums">{r.currency} {fmt(r.total)}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_BADGE[r.status] || ""}`}>{r.status}</span>
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(r, "created") || ""}>
+                      {labelOf(r, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(r, "updated") || ""}>
+                      {labelOf(r, "updated") || "—"}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>

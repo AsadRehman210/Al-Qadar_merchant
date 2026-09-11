@@ -13,6 +13,7 @@ import ImageWithFallback from "components/ImageWithFallback";
 import Logo from "assets/images/rafeeqi_logo_pdf.png";
 import Stamp from "assets/images/Rafeeqi_Stamp.jpeg";
 import { useTranslation } from "react-i18next";
+import { tenantLogoSrc } from "global/helper";
 
 export default function TravelDocument({ data, documentRef, className }) {
   const { t, i18n } = useTranslation();
@@ -149,7 +150,7 @@ export default function TravelDocument({ data, documentRef, className }) {
             <div className="flex items-center justify-between mb-2">
               <div className="w-32">
                 <ImageWithFallback
-                  src={userData?.organizationData?.primary_logo}
+                  src={tenantLogoSrc(userData)}
                   className="h-16 object-contain"
                   fallbackSrc={Logo}
                 />
@@ -713,7 +714,7 @@ export default function TravelDocument({ data, documentRef, className }) {
               </p>
               <div className="flex justify-center mt-2">
                 <ImageWithFallback
-                  src={userData?.organizationData?.primary_logo}
+                  src={tenantLogoSrc(userData)}
                   className="h-6 object-contain opacity-50"
                   fallbackSrc={Logo}
                 />

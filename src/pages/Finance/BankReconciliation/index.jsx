@@ -8,6 +8,7 @@ import SelectDropdown from "components/SelectDropdown";
 import FormInput from "components/FormInput";
 import Button from "components/Button";
 import FinancePage from "../FinancePage";
+import { labelOf } from "components/AuditMeta";
 import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { financeReconciliationStatusBadge, tableRows } from "global/constant";
@@ -389,6 +390,12 @@ const BankReconciliation = () => {
                     <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:recon_book_balance")}</th>
                     <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:recon_difference")}</th>
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("product:status")}</th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("created_by")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("updated_by")}
+                    </th>
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md w-24" />
                   </tr>
                 </thead>
@@ -404,6 +411,12 @@ const BankReconciliation = () => {
                       </td>
                       <td className="px-4 py-4 align-middle">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${financeReconciliationStatusBadge[s.status] || ""}`}>{s.status}</span>
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(s, "created") || ""}>
+                        {labelOf(s, "created") || "—"}
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(s, "updated") || ""}>
+                        {labelOf(s, "updated") || "—"}
                       </td>
                       <td className="px-4 py-4 align-middle pr-6">
                         {s.status === "Open" && checkRoleAuth(add_finance_reconciliation) && (

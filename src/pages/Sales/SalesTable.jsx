@@ -15,6 +15,7 @@ import TableState from "components/TableState";
 import Table from "components/Table";
 import { tableRows, salePaymentStatusBadge, saleDeliveryStatusBadge } from "global/constant";
 import { deleteSaleInvoice } from "store/slices/saleInvoiceSlice";
+import { labelOf } from "components/AuditMeta";
 
 const SalesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, totalPages, onDeleted }) => {
   const { t } = useTranslation();
@@ -71,13 +72,19 @@ const SalesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("sales:delivery_status")}
                 </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("created_by")}
+                </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("updated_by")}
+                </th>
                 <th className="w-[180px] px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">
                   {t("customers:actions")}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <TableState loading={loading} data={list} colSpan={9}>
+              <TableState loading={loading} data={list} colSpan={11}>
                 {list.map((row) => (
                   <tr
                     key={row.id}
@@ -85,6 +92,13 @@ const SalesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
                   >
                     <td className="px-4 py-4 align-middle text-slate-700 dark:text-white/90 pl-6 font-semibold">
                       {row.invoiceNumber}
+                      {(Number(row.taxAmount) || 0) > 0 && (
+                        <p className={`text-[11px] font-normal mt-1 ${row.taxRecoverable === false ? "text-slate-400 dark:text-white/40" : "text-teal-600 dark:text-teal-400"}`}>
+                          {row.taxRecoverable === false
+                            ? t("sales:tax_non_recoverable")
+                            : t("sales:tax_recoverable_tag")}
+                        </p>
+                      )}
                     </td>
                     <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90">{row.customerName}</td>
                     <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90">
@@ -118,6 +132,12 @@ const SalesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
                       <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${saleDeliveryStatusBadge[row.deliveryStatus] || saleDeliveryStatusBadge.Pending}`}>
                         {row.deliveryStatus || "Pending"}
                       </span>
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                      {labelOf(row, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                      {labelOf(row, "updated") || "—"}
                     </td>
                     <td className="px-4 py-4 align-middle pr-6">
                       <div className="flex items-center gap-2">

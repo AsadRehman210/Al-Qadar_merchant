@@ -14,6 +14,7 @@ import { tableRows } from "global/constant";
 import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
 import { deleteRole } from "store/slices/roleSlice";
+import { labelOf } from "components/AuditMeta";
 
 const { edit_role, delete_role } = alqadar_role_ids;
 
@@ -57,11 +58,17 @@ const RolesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
               <th className="px-4 py-4 text-start font-semibold text-white/95">{t("permissions")}</th>
               <th className="px-4 py-4 text-center font-semibold text-white/95">{t("users")}</th>
               <th className="px-4 py-4 text-start font-semibold text-white/95">{t("status")}</th>
+              <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                {t("created_by")}
+              </th>
+              <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                {t("updated_by")}
+              </th>
               <th className="px-4 py-4 text-start font-semibold text-white/95 pr-6 rounded-tr-md">{t("actions")}</th>
             </tr>
           </thead>
           <tbody>
-            <TableState loading={loading} data={list} colSpan={5}>
+            <TableState loading={loading} data={list} colSpan={7}>
               {list.map((row) => (
                 <tr
                   key={row.id}
@@ -89,7 +96,13 @@ const RolesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows, tot
                       {row.status === "active" ? t("active") : t("inactive")}
                     </span>
                   </td>
-                  <td className="px-4 py-4 align-middle pr-6">
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                    {labelOf(row, "created") || "—"}
+                  </td>
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                    {labelOf(row, "updated") || "—"}
+                  </td>
+                    <td className="px-4 py-4 align-middle pr-6">
                     <div className="flex items-center gap-3">
                       {checkRoleAuth(edit_role) && (
                         <button

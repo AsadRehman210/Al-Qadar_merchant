@@ -354,6 +354,10 @@ const ExitDetail = () => {
                 <span className="font-medium text-slate-800 dark:text-white">{exit.noticePeriodDays}</span>
                 <span className="text-slate-500 dark:text-white/50">{t("offboarding:reason")}</span>
                 <span className="font-medium text-slate-800 dark:text-white col-span-1">{exit.reason || "—"}</span>
+                <span className="text-slate-500 dark:text-white/50">{t("created_by")}</span>
+                <span className="font-medium text-slate-800 dark:text-white">{exit.createdByName || "—"}</span>
+                <span className="text-slate-500 dark:text-white/50">{t("updated_by")}</span>
+                <span className="font-medium text-slate-800 dark:text-white">{exit.updatedByName || "—"}</span>
               </div>
             </div>
 

@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 import SelectDropdown from "components/SelectDropdown";
 import { tableRows } from "global/constant";
 import SalarySlipPopup from "./SalarySlipPopup";
+import { labelOf } from "components/AuditMeta";
 
 const fmtMonth = (m) => (m ? dayjs(`${m}-01`).format("MMMM YYYY") : "-");
 
@@ -83,7 +84,7 @@ const SalaryTable = ({
   };
   const closeSlip = () => setSlipRow(null);
 
-  const colCount = showEmployeeColumn ? 8 : 7;
+  const colCount = showEmployeeColumn ? 10 : 9;
 
   return (
     <>
@@ -118,6 +119,12 @@ const SalaryTable = ({
                 </th>
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("salary:status")}
+                </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("created_by")}
+                </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("updated_by")}
                 </th>
                 <th className="w-[80px] px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-2xl">
                   {t("salary:actions")}
@@ -172,7 +179,13 @@ const SalaryTable = ({
                           {line.paymentStatus || "Pending"}
                         </span>
                       </td>
-                      <td className="px-4 py-4 align-middle pr-6">
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(record, "created") || ""}>
+                        {labelOf(record, "created") || "—"}
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(record, "updated") || ""}>
+                        {labelOf(record, "updated") || "—"}
+                      </td>
+                    <td className="px-4 py-4 align-middle pr-6">
                         <button
                           type="button"
                           onClick={() => openSlip(record)}

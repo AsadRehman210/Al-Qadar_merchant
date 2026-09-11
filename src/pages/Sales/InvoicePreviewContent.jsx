@@ -1,12 +1,15 @@
 import { forwardRef } from "react";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { lineTotal } from "global/helper";
+import { lineTotal, tenantLetterhead } from "global/helper";
+import { showUserData } from "store/slices/uniqueSlice";
 
 const InvoicePreviewContent = forwardRef(function InvoicePreviewContent(
   { invoice },
   ref,
 ) {
   const { t } = useTranslation();
+  const letter = tenantLetterhead(useSelector(showUserData));
   const formatAmount = (v) => (parseFloat(v) || 0).toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -30,13 +33,15 @@ const InvoicePreviewContent = forwardRef(function InvoicePreviewContent(
           <div>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center font-bold text-sm">
-                R
+                {letter.initial}
               </div>
-              <span className="text-lg font-semibold tracking-tight">Rafeeqi</span>
+              <span className="text-lg font-semibold tracking-tight">{letter.companyName}</span>
             </div>
-            <p className="text-[10px] text-white/90 max-w-[200px] leading-relaxed">
-              {t("salary:company_address")}
-            </p>
+            <div className="text-[10px] text-white/90 max-w-[220px] leading-relaxed space-y-0.5">
+              {letter.address ? <p>{letter.address}</p> : null}
+              {letter.contact ? <p>{letter.contact}</p> : null}
+              {letter.taxNumber ? <p>{letter.taxNumber}</p> : null}
+            </div>
           </div>
           <div className="text-right">
             <h1 className="text-lg font-bold uppercase tracking-wider">

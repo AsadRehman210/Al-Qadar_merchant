@@ -111,6 +111,8 @@ const DesignationDetail = () => {
               <InfoRow label={t("designation:department")} value={departmentName} />
               <InfoRow label={t("designation:grade")} value={des.grade} />
               <InfoRow label={t("designation:created_at")} value={des.createdAt ? new Date(des.createdAt).toLocaleDateString() : null} />
+              <InfoRow label={t("created_by")} value={des.createdByName} />
+              <InfoRow label={t("updated_by")} value={des.updatedByName} />
             </div>
           </div>
 

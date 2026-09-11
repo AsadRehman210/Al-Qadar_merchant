@@ -6,14 +6,14 @@ import { FiArrowLeft, FiArrowRight, FiCheck, FiX, FiRefreshCw } from "react-icon
 import { HiOutlineArrowDownTray } from "react-icons/hi2";
 import { FaRegEdit } from "react-icons/fa";
 import Button from "components/Button";
+import SelectDropdown from "components/SelectDropdown";
 import { toast } from "react-toastify";
 import { fetchQuotationById, updateQuotationStatus, showCurrentQuotation, showCurrentQuotationLoading, clearCurrentQuotation } from "store/slices/quotationSlice";
 import QuotationPreviewModal from "../QuotationPreviewModal";
-import dayjs from "dayjs";
 import { SkeletonDetail } from "components/Skeleton";
-import { checkRoleAuth, lineTotal, lineProfit, computeInvoiceProfit } from "global/helper";
+import { checkRoleAuth, lineTotal, lineProfit, computeInvoiceProfit, isQuotationExpired } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
-import { quotationStatusBadge as STATUS_BADGE, quotationStatusList } from "global/constant";
+import { quotationStatusBadge as STATUS_BADGE, quotationStatusOptions } from "global/constant";
 
 
 const { status_sales_quotation } = alqadar_role_ids;
@@ -64,8 +64,8 @@ const QuotationDetail = () => {
     );
   }
 
-  const canConvert = !["Converted", "Rejected", "Expired"].includes(quote.status);
-  const isExpired  = quote.validUntil && dayjs(quote.validUntil).isBefore(dayjs());
+  const isExpired = isQuotationExpired(quote.validUntil);
+  const canConvert = !isExpired && !["Converted", "Rejected", "Expired"].includes(quote.status);
   const lines = quote.lines || [];
   const totalProfit = computeInvoiceProfit(lines);
   // "Different per product" mode leaves a real (non-null) taxPercent
@@ -110,7 +110,7 @@ const QuotationDetail = () => {
                 <span className="px-2 py-0.5 rounded-full text-xs bg-rose-100 text-rose-600">Expired</span>
               )}
             </div>
-            <p className="text-mutedForeground text-sm mt-1">{quote.customerName} · {quote.date}</p>
+            <p className="text-mutedForeground text-sm mt-1">{quote.customerName} · {quote.createdAt ? String(quote.createdAt).slice(0, 10) : "—"}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -168,13 +168,18 @@ const QuotationDetail = () => {
 
         {/* Status edit */}
         {checkRoleAuth(status_sales_quotation) && showStatusEdit && (
-          <div className="mb-5 p-4 rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-500/10 flex items-end gap-3">
-            <div>
-              <label className="text-xs font-medium text-linkText block mb-1">{t("sales:status")}</label>
-              <select value={newStatus} onChange={(e) => setNewStatus(e.target.value)}
-                className="h-9 rounded-lg border border-slate-200 dark:border-white/20 bg-white dark:bg-white/10 px-3 text-sm focus:outline-0">
-                {quotationStatusList.map((s) => <option key={s}>{s}</option>)}
-              </select>
+          <div className="mb-5 p-4 rounded-2xl border border-blue-200 bg-blue-50 dark:bg-blue-500/10 flex flex-wrap items-end gap-3">
+            <div className="w-44">
+              <SelectDropdown
+                label={t("sales:status")}
+                labelClass="!text-xs"
+                data={quotationStatusOptions}
+                selected={{ id: newStatus, title: newStatus }}
+                setSelected={(o) => setNewStatus(o?.id || newStatus)}
+                valueKey="id"
+                hideClear
+                classes="!h-9 !rounded-lg"
+              />
             </div>
             <button type="button" onClick={handleStatusSave} className="h-9 px-3 rounded-lg bg-teal-500 text-white text-sm font-semibold"><FiCheck className="h-4 w-4" /></button>
             <button type="button" onClick={() => setShowStatusEdit(false)} className="h-9 px-3 rounded-lg bg-slate-200 dark:bg-white/20 text-slate-600 dark:text-white text-sm"><FiX className="h-4 w-4" /></button>
@@ -201,12 +206,19 @@ const QuotationDetail = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 text-sm mb-7">
             {[
               { label: t("sales:customer"),     value: quote.customerName },
-              { label: t("sales:date"),         value: quote.date },
-              { label: t("sales:valid_until"),  value: quote.validUntil || "—" },
+              { label: t("sales:date"),         value: quote.createdAt ? String(quote.createdAt).slice(0, 10) : "—" },
+              { label: t("sales:valid_until"),  value: quote.validUntil ? String(quote.validUntil).slice(0, 10) : "—" },
               { label: t("sales:warehouse"),    value: quote.warehouseName || "—" },
               { label: t("sales:currency"),     value: quote.currency },
               { label: t("sales:tax_percent"),  value: `${quote.taxPercent}%` },
-              { label: t("sales:created_by"),   value: quote.createdBy || "—" },
+              {
+                label: t("sales:tax_type"),
+                value: quote.taxRecoverable === false
+                  ? t("sales:tax_recoverable_no")
+                  : t("sales:tax_recoverable_yes"),
+              },
+              { label: t("sales:created_by"),   value: quote.createdByName },
+              { label: t("sales:updated_by"),   value: quote.updatedByName },
             ].map((f) => (
               <div key={f.label}>
                 <p className="text-xs font-medium text-slate-400 uppercase">{f.label}</p>

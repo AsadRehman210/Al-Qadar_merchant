@@ -23,6 +23,7 @@ import { fetchDepartments, showDepartments } from "store/slices/departmentSlice"
 import JobStatusMenu from "./JobStatusMenu";
 import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { AuditLine } from "components/AuditMeta";
 
 const { view_recruitment, add_recruitment, edit_recruitment } = alqadar_role_ids;
 
@@ -134,14 +135,14 @@ const Recruitment = () => {
                 <span className="text-xs text-slate-400 font-mono">{job.jobCode}</span>
               </div>
               <h3 className="font-semibold text-slate-900 dark:text-white mb-1">{job.title}</h3>
-              <p className="text-sm text-slate-500 mb-1">{job.departmentName} ù {job.experience}</p>
-              <p className="text-xs text-slate-400 mb-3">Deadline: {job.deadline ? job.deadline.slice(0, 10) : "ù"}</p>
+              <p className="text-sm text-slate-500 mb-1">{job.departmentName} ÔøΩ {job.experience}</p>
+              <p className="text-xs text-slate-400 mb-3">Deadline: {job.deadline ? job.deadline.slice(0, 10) : "ÔøΩ"}</p>
 
               <div className="flex items-center justify-between py-2 border-t border-slate-100 dark:border-white/10 mb-3">
                 <div className="text-center"><p className="text-xs text-slate-400">Openings</p><p className="font-bold text-slate-900 dark:text-white">{job.openings}</p></div>
                 <div className="text-center"><p className="text-xs text-slate-400">Applied</p><p className="font-bold text-slate-900 dark:text-white">{job.candidateCount}</p></div>
                 <div className="text-center"><p className="text-xs text-slate-400">Hired</p><p className="font-bold text-emerald-600">{job.hiredCount}</p></div>
-                <div className="text-center"><p className="text-xs text-slate-400">Salary</p><p className="text-xs font-medium text-teal-600">{job.salaryMin?.toLocaleString()}ù{job.salaryMax?.toLocaleString()} {job.currency}</p></div>
+                <div className="text-center"><p className="text-xs text-slate-400">Salary</p><p className="text-xs font-medium text-teal-600">{job.salaryMin?.toLocaleString()}ÔøΩ{job.salaryMax?.toLocaleString()} {job.currency}</p></div>
               </div>
 
               <div className="flex gap-2">

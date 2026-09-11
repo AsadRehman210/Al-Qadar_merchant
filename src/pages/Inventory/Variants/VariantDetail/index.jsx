@@ -16,6 +16,7 @@ import { fetchProductById, showCurrentProduct, clearCurrentProduct } from "store
 import { fetchStock, showStock, clearStockHistory } from "store/slices/stockSlice";
 import { fetchStockBatches, showStockBatches, showStockBatchesTotal, showStockBatchesLoading, clearStockBatchesList } from "store/slices/stockBatchSlice";
 import { SkeletonDetail } from "components/Skeleton";
+import AuditMeta from "components/AuditMeta";
 
 const formatTs = (iso) => {
   if (!iso) return "—";
@@ -253,6 +254,7 @@ const VariantDetail = () => {
               {formatTs(row.updatedAt)}
             </p>
           </div>
+          <AuditMeta record={row} />
         </div>
 
         <div className={`${panelClass} mt-6`}>

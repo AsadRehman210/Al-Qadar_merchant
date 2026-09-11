@@ -101,6 +101,8 @@ const UserDetail = () => {
         <Row label={t("mobile_number")} value={user.phone} />
         <Row label={t("role")} value={user.roleName} />
         <Row label={t("status")} value={user.status === "active" ? t("active") : t("inactive")} />
+        <Row label={t("created_by")} value={user.createdByName} />
+        <Row label={t("updated_by")} value={user.updatedByName} />
       </div>
 
       <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-3xl p-7">

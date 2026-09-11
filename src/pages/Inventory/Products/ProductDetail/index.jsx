@@ -10,6 +10,7 @@ import { fetchVariants, showVariants, showVariantsLoading } from "store/slices/v
 import { fetchStock, showStock, showStockLoading } from "store/slices/stockSlice";
 import { SkeletonDetail } from "components/Skeleton";
 import TableState from "components/TableState";
+import AuditMeta from "components/AuditMeta";
 
 const formatTs = (iso) => {
   if (!iso) return "—";
@@ -149,6 +150,7 @@ const ProductDetail = () => {
               {formatTs(product.updatedAt)}
             </p>
           </div>
+          <AuditMeta record={product} />
         </div>
 
         <div className={`${panelClass} mt-6`}>

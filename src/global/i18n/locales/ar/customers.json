@@ -137,6 +137,7 @@
   "note_date": "التاريخ",
   "note_text": "الملاحظة",
   "created_by": "أنشأ بواسطة",
+  "updated_by": "عُدّل بواسطة",
   "from_date": "من تاريخ",
   "to_date": "إلى تاريخ",
   "date_range": "نطاق التاريخ",

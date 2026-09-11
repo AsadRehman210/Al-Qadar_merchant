@@ -117,6 +117,8 @@ export const alqadar_role_ids = {
   ...crud("asset-request"),
   approve_asset_request: "asset-request.approve",
   ...crud("asset-audit"),
+  ...crud("asset-purchase"),
+  status_asset_purchase: "asset-purchase.status",
 
   // Analytics
   view_analytics_hr: "analytics-hr.view",
@@ -216,6 +218,10 @@ export const alqadar_roles = [
       [alqadar_role_ids.approve_asset_request, "Approve Asset Request", "approve_asset_request"],
     ]),
     grp("Asset Audits", "sidebar_asset_audits", crudRows("asset-audit", "Asset Audit")),
+    grp("Asset Purchases", "sidebar_asset_purchases", [
+      ...crudRows("asset-purchase", "Asset Purchase"),
+      [alqadar_role_ids.status_asset_purchase, "Post Asset Purchase", "status_asset_purchase"],
+    ]),
   ]),
   section("Products & Inventory", "sidebar_products_inventory", [
     grp("Products", "sidebar_products", [

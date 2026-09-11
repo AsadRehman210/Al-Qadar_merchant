@@ -24,6 +24,7 @@ import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { leaveStatusBadge } from "global/constant";
 import { SkeletonDetail } from "components/Skeleton";
+import AuditMeta from "components/AuditMeta";
 
 const { view_leave, approve_leave } = alqadar_role_ids;
 
@@ -339,6 +340,7 @@ const LeaveDetail = () => {
           <Field label={t("leave:handover_to")} value={employeesById[item.handoverToEmployeeId] ? `${employeesById[item.handoverToEmployeeId].first_name || ""} ${employeesById[item.handoverToEmployeeId].last_name || ""}`.trim() : ""} />
           <Field label={t("leave:emergency_contact")} value={item.emergencyContact} />
           <Field label={t("leave:status")} value={item.status} />
+          <AuditMeta record={item} />
           <div className="lg:col-span-3">
             <Field label={t("leave:reason")} value={item.reason} />
           </div>

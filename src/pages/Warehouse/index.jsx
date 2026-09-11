@@ -15,6 +15,7 @@ import { useListFilters } from "hooks/useListFilters";
 import { SkeletonCards } from "components/Skeleton";
 import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { AuditLine } from "components/AuditMeta";
 
 const { view_warehouse, add_warehouse, edit_warehouse, delete_warehouse, view_warehouse_transfer } = alqadar_role_ids;
 
@@ -170,6 +171,7 @@ const Warehouse = () => {
             <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">{wh.name}</h3>
             <p className="text-xs text-slate-500 dark:text-white/50 mb-1 truncate">{wh.location}</p>
             <p className="text-xs text-slate-400">Manager: {wh.manager}</p>
+            <AuditLine record={wh} className="mt-2" />
             <div className="mt-4 pt-4 border-t border-slate-100 dark:border-white/10 flex items-center justify-between">
               <span className="text-xs text-slate-400">{wh.capacity?.toLocaleString()} {wh.unit} capacity</span>
               <div className="flex items-center gap-2">

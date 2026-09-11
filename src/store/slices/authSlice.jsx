@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { urls, erpUrls } from "global/config";
 import { formatDropdownData } from "global/helper";
 import { postRequestMethod, getRequestMethod } from "api";
-import { erpPost } from "api/erpClient";
+import { erpGet, erpPost } from "api/erpClient";
 import { addUserData, addUserRoles, addToken, clearUserData } from "./uniqueSlice";
 import i18n from "i18next";
 
@@ -29,6 +29,23 @@ export const loginErp = createAsyncThunk(
 // there beyond confirming the token is still valid; the actual sign-out is
 // clearing the token/userData locally, done unconditionally by the caller
 // regardless of whether this API call itself succeeds or fails.
+export const refreshSession = createAsyncThunk(
+  "auth/refreshSession",
+  async (_arg, { dispatch, rejectWithValue }) => {
+    const response = await erpGet(erpUrls.me);
+    if (!response?.success) {
+      return rejectWithValue(response?.message || "Session refresh failed");
+    }
+    const account = response.result?.account;
+    if (!account) {
+      return rejectWithValue(response?.message || "Session refresh failed");
+    }
+    dispatch(addUserData(account));
+    dispatch(addUserRoles(account.permissions || []));
+    return account;
+  },
+);
+
 export const logoutErp = createAsyncThunk(
   "auth/logoutErp",
   async (_arg, { dispatch, rejectWithValue }) => {

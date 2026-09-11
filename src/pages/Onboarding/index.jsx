@@ -32,6 +32,7 @@ import {
   toggleOnboardingTask,
 } from "store/slices/onboardingSlice";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { AuditLine } from "components/AuditMeta";
 
 const { view_onboarding, edit_onboarding, view_onboarding_template } = alqadar_role_ids;
 
@@ -195,14 +196,14 @@ const Onboarding = () => {
                   <div className="flex items-start justify-between gap-3">
                     <Link to={`/employees/details/${o.employeeId}`} className="flex items-center gap-3 min-w-0 group">
                       <div className="h-11 w-11 rounded-xl bg-teal-50 dark:bg-teal-500/15 text-teal-700 dark:text-teal-300 flex items-center justify-center font-bold shrink-0">
-                        {(o.employeeName || "ù").split(" ").map((n) => n[0]).join("").slice(0, 2)}
+                        {(o.employeeName || "ÔøΩ").split(" ").map((n) => n[0]).join("").slice(0, 2)}
                       </div>
                       <div className="min-w-0">
                         <p className="font-bold text-slate-800 dark:text-white truncate group-hover:text-teal-600 dark:group-hover:text-teal-300">
-                          {o.employeeName || "ù"}
+                          {o.employeeName || "ÔøΩ"}
                         </p>
                         <p className="text-xs text-slate-500 dark:text-white/50 flex items-center gap-1.5">
-                          <LuBriefcase className="h-3.5 w-3.5" /> {o.position} ù {o.department}
+                          <LuBriefcase className="h-3.5 w-3.5" /> {o.position} ÔøΩ {o.department}
                         </p>
                       </div>
                     </Link>
@@ -211,6 +212,7 @@ const Onboarding = () => {
                     </span>
                   </div>
 
+                  <AuditLine record={o} className="mt-2" />
                   <p className="text-xs text-slate-500 dark:text-white/50 flex items-center gap-1.5 mt-2">
                     <LuCalendarDays className="h-3.5 w-3.5" /> {joiningBadge(t, o.joiningDate)}
                   </p>
@@ -222,7 +224,7 @@ const Onboarding = () => {
                         {t("hrhub:required_progress", { done: p.requiredDone, total: p.requiredTotal })}
                         {p.optionalTotal > 0 && (
                           <span className="text-slate-400 dark:text-white/40">
-                            {" ù "}
+                            {" ÔøΩ "}
                             {t("hrhub:optional_progress", { done: p.optionalDone, total: p.optionalTotal })}
                           </span>
                         )}

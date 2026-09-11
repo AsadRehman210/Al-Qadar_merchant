@@ -17,6 +17,7 @@ import {
 } from "store/slices/financeSlice";
 import { SkeletonDetail } from "components/Skeleton";
 import { financePayableStatusBadge as STATUS_BADGE } from "global/constant";
+import AuditMeta from "components/AuditMeta";
 
 const { view_finance_payable, edit_finance_payable } = alqadar_role_ids;
 
@@ -125,6 +126,7 @@ const BillDetail = () => {
               <p className="text-xs text-mutedForeground">{t("contact")}</p>
               <p className="font-medium">{bill.vendorContact || "—"}</p>
             </div>
+            <AuditMeta record={bill} />
           </div>
 
           <table className="w-full text-sm mb-6">

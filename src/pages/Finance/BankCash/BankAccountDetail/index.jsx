@@ -19,6 +19,7 @@ import {
 import FinancePage from "../../FinancePage";
 import { SkeletonCards, SkeletonDetail, SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
+import AuditMeta from "components/AuditMeta";
 
 const { view_finance_bank, add_finance_bank } = alqadar_role_ids;
 
@@ -102,6 +103,9 @@ const BankAccountDetail = () => {
               <p className="text-sm text-mutedForeground mt-1">
                 {account.type} � {t("finance:bank_ledger_hint")}
               </p>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <AuditMeta record={account} />
+              </div>
             </div>
             )}
             <Button

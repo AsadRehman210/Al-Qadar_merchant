@@ -26,6 +26,7 @@ const DEFAULT_SALE_FORM = {
   receiverName: "",
   products: [defaultLine()],
   taxPercent: 0,
+  taxRecoverable: "yes",
   shippingAddress: "",
   deliveryDate: "",
   notes: "",
@@ -79,6 +80,7 @@ const AddSaleInvoice = () => {
         reset({
           ...DEFAULT_SALE_FORM,
           ...inv,
+          taxRecoverable: inv.taxRecoverable === false ? "no" : "yes",
           deliveryDate: inv.deliveryDate ? new Date(inv.deliveryDate).toISOString().slice(0, 10) : "",
           products: inv.products?.length > 0 ? inv.products.map((l) => ({ ...defaultLine(), ...l })) : [defaultLine()],
         });
@@ -106,6 +108,7 @@ const AddSaleInvoice = () => {
       customerId: fromQuotation.customerId,
       warehouseId: fromQuotation.warehouseId,
       taxPercent: fromQuotation.taxPercent ?? 0,
+      taxRecoverable: fromQuotation.taxRecoverable === false ? "no" : "yes",
       notes: fromQuotation.notes || "",
       currency: fromQuotation.currency || "SAR",
       products: fromQuotation.lines?.length
@@ -148,6 +151,7 @@ const AddSaleInvoice = () => {
       return;
     }
     const { invoiceNumber, date, ...rest } = data;
+    rest.taxRecoverable = rest.taxRecoverable !== "no";
     try {
       if (id) {
         // Product edits are frozen once Delivered or Cancelled. Pending and

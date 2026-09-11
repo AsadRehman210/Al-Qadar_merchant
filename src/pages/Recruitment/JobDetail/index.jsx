@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router";
+import { useTranslation } from "react-i18next";
 import { TabGroup, TabList, Tab, TabPanels, TabPanel } from "@headlessui/react";
 import { FiArrowLeft, FiEdit2, FiBriefcase, FiUsers, FiList, FiPlus, FiAlertCircle, FiArrowRight } from "react-icons/fi";
 import { toast } from "react-toastify";
@@ -166,6 +167,7 @@ const HireForm = ({ candidate, onDone, onCancel }) => {
 };
 
 const JobDetail = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { id } = useParams();
@@ -281,6 +283,8 @@ const JobDetail = () => {
                 <InfoRow label="Salary" value={`${job.salaryMin?.toLocaleString()} ? ${job.salaryMax?.toLocaleString()} ${job.currency}`} />
                 <InfoRow label="Deadline" value={job.deadline ? job.deadline.slice(0, 10) : null} />
                 <InfoRow label="Posted" value={job.createdAt ? job.createdAt.slice(0, 10) : null} />
+                <InfoRow label={t("created_by")} value={job.createdByName} />
+                <InfoRow label={t("updated_by")} value={job.updatedByName} />
               </div>
               <div className="space-y-4">
                 <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-6">

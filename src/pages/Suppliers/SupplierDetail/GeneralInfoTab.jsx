@@ -61,6 +61,14 @@ const GeneralInfoTab = ({ supplier }) => {
                 : null
             }
           />
+          <Field
+            label={t("created_by")}
+            value={supplier.createdByName}
+          />
+          <Field
+            label={t("updated_by")}
+            value={supplier.updatedByName}
+          />
           <div>
             <p className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase">
               {t("suppliers:status")}

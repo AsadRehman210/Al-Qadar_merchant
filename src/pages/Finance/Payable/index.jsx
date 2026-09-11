@@ -21,6 +21,7 @@ import {
   showPayablesLoading,
 } from "store/slices/purchaseInvoiceSlice";
 import FinancePage from "../FinancePage";
+import { labelOf } from "components/AuditMeta";
 
 const { view_finance_payable } = alqadar_role_ids;
 
@@ -80,11 +81,17 @@ const Payable = () => {
                   <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:reference")}</th>
                   <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("purchase:date")}</th>
                   <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:balance_due")}</th>
-                  <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">{t("finance:refund_due", { defaultValue: "Refund due" })}</th>
+                  <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:refund_due", { defaultValue: "Refund due" })}</th>
+                  <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                    {t("created_by")}
+                  </th>
+                  <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                    {t("updated_by")}
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <TableState loading={loading} data={rows} colSpan={5}>
+                <TableState loading={loading} data={rows} colSpan={7}>
                   {rows.map((row) => {
                     const isOpening = row.source === "opening" || String(row.id || "").startsWith("opening-");
                     return (
@@ -99,6 +106,8 @@ const Payable = () => {
                             <Link to={`/suppliers/detail/${row.supplierId}`} className="hover:underline">
                               {t("finance:opening_balance", { defaultValue: row.invoiceNumber || "Opening balance" })}
                             </Link>
+                          ) : row.source === "asset_purchase" ? (
+                            <Link to={`/assets/purchases/detail/${row.id}`} className="hover:underline">{row.invoiceNumber}</Link>
                           ) : (
                             <Link to={`/purchases/detail/${row.id}`} className="hover:underline">{row.invoiceNumber}</Link>
                           )}
@@ -107,8 +116,14 @@ const Payable = () => {
                         <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold">
                           {(Number(row.balanceDue) || 0) > 0 ? `${formatAmount(row.balanceDue)} ${row.currency}` : "—"}
                         </td>
-                        <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold text-amber-600 dark:text-amber-400 pr-6">
+                        <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                           {(Number(row.refundDue) || 0) > 0 ? `${formatAmount(row.refundDue)} ${row.currency}` : "—"}
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                          {labelOf(row, "created") || "—"}
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                          {labelOf(row, "updated") || "—"}
                         </td>
                       </tr>
                     );

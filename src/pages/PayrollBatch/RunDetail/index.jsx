@@ -24,6 +24,7 @@ import { fetchDepartments, showDepartments } from "store/slices/departmentSlice"
 import { SkeletonDetail } from "components/Skeleton";
 import { checkRoleAuth, formatAmount } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import AuditMeta from "components/AuditMeta";
 
 const { view_payroll_run, edit_payroll_run, process_payroll_run } = alqadar_role_ids;
 
@@ -226,6 +227,9 @@ const RunDetail = () => {
               <p className={`font-bold text-sm ${c.cls}`}>{c.value}</p>
             </div>
           ))}
+        </div>
+        <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-4 grid sm:grid-cols-2 gap-4">
+          <AuditMeta record={run} />
         </div>
 
         {/* Approval trail */}

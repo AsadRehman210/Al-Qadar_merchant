@@ -1,10 +1,13 @@
 import { forwardRef } from "react";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { lineTotal } from "global/helper";
+import { lineTotal, tenantLetterhead } from "global/helper";
+import { showUserData } from "store/slices/uniqueSlice";
 
 const PurchaseInvoicePreviewContent = forwardRef(
   function PurchaseInvoicePreviewContent({ invoice }, ref) {
     const { t } = useTranslation();
+    const letter = tenantLetterhead(useSelector(showUserData));
     const formatAmount = (v) =>
       (parseFloat(v) || 0).toLocaleString(undefined, {
         minimumFractionDigits: 2,
@@ -45,20 +48,22 @@ const PurchaseInvoicePreviewContent = forwardRef(
               <div>
                 <div className="flex items-center gap-2.5 mb-2">
                   <div className="w-10 h-10 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center font-bold text-base ring-1 ring-white/20">
-                    R
+                    {letter.initial}
                   </div>
                   <div>
                     <span className="text-xl font-bold tracking-tight block leading-none">
-                      Rafeeqi
+                      {letter.companyName}
                     </span>
                     <span className="text-[9px] uppercase tracking-[0.2em] text-white/70 mt-1 block">
                       {t("purchase:purchase_invoice")}
                     </span>
                   </div>
                 </div>
-                <p className="text-[10px] text-white/85 max-w-[220px] leading-relaxed">
-                  {t("salary:company_address")}
-                </p>
+                <div className="text-[10px] text-white/85 max-w-[220px] leading-relaxed space-y-0.5">
+                  {letter.address ? <p>{letter.address}</p> : null}
+                  {letter.contact ? <p>{letter.contact}</p> : null}
+                  {letter.taxNumber ? <p>{letter.taxNumber}</p> : null}
+                </div>
               </div>
               <div className="text-right shrink-0">
                 <div className="inline-block px-3 py-1 rounded-lg bg-white/15 ring-1 ring-white/20 mb-2">

@@ -132,6 +132,14 @@ const DepartmentDetail = () => {
             label={t("department:employee_count")}
             value={dept.employeeCount}
           />
+          <DetailField
+            label={t("created_by")}
+            value={dept.createdByName}
+          />
+          <DetailField
+            label={t("updated_by")}
+            value={dept.updatedByName}
+          />
           <div className="md:col-span-2 lg:col-span-3">
             <DetailField
               label={t("department:description")}

@@ -23,6 +23,7 @@ import {
 } from "store/slices/onboardingSlice";
 import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { labelOf } from "components/AuditMeta";
 
 const { view_onboarding_template, add_onboarding_template, edit_onboarding_template, delete_onboarding_template } = alqadar_role_ids;
 
@@ -142,13 +143,13 @@ const TaskTemplates = () => {
             <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="bg-[var(--color-teal-500)]">
-                  {[t("hrhub:order"), t("hrhub:task_label"), t("hrhub:task_category"), t("hrhub:task_required"), t("status"), t("leave:actions")].map((h) => (
+                  {[t("hrhub:order"), t("hrhub:task_label"), t("hrhub:task_category"), t("hrhub:task_required"), t("status"), t("created_by"), t("updated_by"), t("leave:actions")].map((h) => (
                     <th key={h} className="px-4 py-4 text-start font-semibold text-white/95 whitespace-nowrap first:pl-6">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {loading && <TableState loading data={[]} colSpan={6} />}
+                {loading && <TableState loading data={[]} colSpan={8} />}
                 {!loading && list.map((tpl, idx) => (
                   <tr key={tpl.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10">
                     <td className="px-4 py-4 pl-6">
@@ -190,6 +191,12 @@ const TaskTemplates = () => {
                           {tpl.active ? t("active") : t("inactive")}
                         </span>
                       )}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(tpl, "created") || ""}>
+                      {labelOf(tpl, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(tpl, "updated") || ""}>
+                      {labelOf(tpl, "updated") || "—"}
                     </td>
                     <td className="px-4 py-4 pr-6">
                       <div className="flex gap-2 text-slate-500 dark:text-white/70">

@@ -11,6 +11,7 @@ import { erpGet, buildQuery } from "api/erpClient";
 import { erpUrls } from "global/config";
 import {
   salesTaxModeOptions,
+  salesTaxRecoverableOptions,
   invoiceTemplateOptions,
   salePaymentStatusOptions,
   paidUnpaidOptions,
@@ -169,6 +170,11 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
   // in "different" mode each line carries its own explicit override. The
   // backend computes totals with the exact same fallback rule.
   const [taxMode, setTaxMode] = useState(salesTaxModeOptions[0]);
+  const [selTaxRecoverable, setSelTaxRecoverable] = useState(salesTaxRecoverableOptions[0]);
+  const taxRecoverableValue = watch("taxRecoverable");
+  useEffect(() => {
+    setSelTaxRecoverable(taxRecoverableValue === "no" ? salesTaxRecoverableOptions[1] : salesTaxRecoverableOptions[0]);
+  }, [taxRecoverableValue]);
 
   // Editing an existing invoice that already carries per-line overrides
   // (saved earlier in "different" mode) — detect that once the real lines
@@ -346,6 +352,28 @@ const SaleInvoiceForm = ({ isEdit = false, currentDeliveryStatus = null, lockPro
                 defaultValue: "Product, quantity and price are locked from the quotation — only each line's batch can be changed here.",
               })}
             </p>
+          )}
+          {!linesLocked && (
+            <div className="flex-1 min-w-[220px] max-w-xs">
+              <SelectDropdown
+                label={t("sales:tax_type")}
+                data={salesTaxRecoverableOptions}
+                selected={selTaxRecoverable}
+                setSelected={(o) => {
+                  const val = o?.id ?? "yes";
+                  setSelTaxRecoverable(o || salesTaxRecoverableOptions[0]);
+                  setValue("taxRecoverable", val, { shouldValidate: true });
+                }}
+                name="taxRecoverable"
+                register={register}
+                setValue={setValue}
+                trigger={trigger}
+                valueKey="id"
+                hideClear
+                disabled={lockProductFields}
+                classes="!rounded-md"
+              />
+            </div>
           )}
           {!linesLocked && !lockProductFields && (
             <>

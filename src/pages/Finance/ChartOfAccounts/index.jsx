@@ -18,6 +18,7 @@ import FinancePage from "../FinancePage";
 import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 import { useListFilters } from "hooks/useListFilters";
+import { labelOf } from "components/AuditMeta";
 
 const { view_finance_coa, add_finance_coa } = alqadar_role_ids;
 
@@ -100,6 +101,12 @@ const ChartOfAccounts = () => {
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:coa_sub_type")}</th>
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:coa_parent")}</th>
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("product:status")}</th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("created_by")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("updated_by")}
+                    </th>
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md w-[80px]">{t("product:actions")}</th>
                   </tr>
                 </thead>
@@ -122,6 +129,12 @@ const ChartOfAccounts = () => {
                         <td className="px-4 py-4 align-middle text-xs text-slate-500 dark:text-white/60">{parentAcc ? `${parentAcc.code} — ${parentAcc.name}` : "—"}</td>
                         <td className="px-4 py-4 align-middle">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${row.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{row.status}</span>
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                          {labelOf(row, "created") || "—"}
+                        </td>
+                        <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                          {labelOf(row, "updated") || "—"}
                         </td>
                         <td className="px-4 py-4 align-middle pr-6">
                           {checkRoleAuth(add_finance_coa) && (

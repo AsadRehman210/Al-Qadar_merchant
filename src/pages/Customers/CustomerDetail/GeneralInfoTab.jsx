@@ -28,6 +28,8 @@ const GeneralInfoTab = ({ customer }) => {
       label: t("customers:opening_balance"),
       value: `${(parseFloat(customer.openingBalance) || 0).toLocaleString()} SAR`,
     },
+    { label: t("created_by"), value: customer.createdByName },
+    { label: t("updated_by"), value: customer.updatedByName },
   ];
 
   return (

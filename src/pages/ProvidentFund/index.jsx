@@ -14,6 +14,7 @@ import { tableRows, pfStatusFilterOptions } from "global/constant";
 import { checkRoleAuth, formatAmount } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
 import { useListFilters } from "hooks/useListFilters";
+import { labelOf } from "components/AuditMeta";
 import {
   fetchPfPolicy,
   fetchAllPfAccounts,
@@ -145,13 +146,13 @@ const ProvidentFund = () => {
             <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="bg-[var(--color-teal-500)]">
-                  {[t("pf:employee"), t("pf:pf_account"), t("pf:total_contributions"), t("pf:withdrawn"), t("pf:balance"), t("pf:status"), ""].map((h) => (
+                  {[t("pf:employee"), t("pf:pf_account"), t("pf:total_contributions"), t("pf:withdrawn"), t("pf:balance"), t("pf:status"), t("created_by"), t("updated_by"), ""].map((h) => (
                     <th key={h} className="px-3 py-4 text-start font-semibold text-white/95 whitespace-nowrap first:pl-5">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <TableState loading={loading} data={list} colSpan={7}>
+                <TableState loading={loading} data={list} colSpan={9}>
                 {list.map((r) => (
                   <tr key={r.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10">
                     <td className="px-3 py-4 pl-5">
@@ -168,6 +169,12 @@ const ProvidentFund = () => {
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${r.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
                         {r.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(r, "created") || ""}>
+                      {labelOf(r, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(r, "updated") || ""}>
+                      {labelOf(r, "updated") || "—"}
                     </td>
                     <td className="px-3 py-4 pr-5">
                       <Link to={`/provident-fund/details/${r.employeeId}`} className="text-teal-600 hover:text-teal-700">

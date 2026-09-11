@@ -159,6 +159,8 @@ const AttendancePolicyDetail = () => {
               <InfoRow label={t("attendance:implemented_date")} value={policy.implementedDate ? new Date(policy.implementedDate).toLocaleDateString() : null} />
               <InfoRow label={t("attendance:end_date")} value={policy.endDate ? new Date(policy.endDate).toLocaleDateString() : t("attendance:current_policy")} />
               <InfoRow label={t("attendance:policy_salary_days_label")} value={policy.salaryCalculationDays} />
+              <InfoRow label={t("created_by")} value={policy.createdByName} />
+              <InfoRow label={t("updated_by")} value={policy.updatedByName} />
             </div>
           </div>
         </div>

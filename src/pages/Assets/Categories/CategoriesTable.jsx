@@ -13,6 +13,7 @@ import { tableRows } from "global/constant";
 import { deleteAssetCategory } from "store/slices/assetSlice";
 import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
+import { labelOf } from "components/AuditMeta";
 
 const getStatusClass = (status) =>
   status === "Active"
@@ -65,6 +66,12 @@ const CategoriesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("asset:status")}
                 </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("created_by")}
+                </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("updated_by")}
+                </th>
                 <th className="w-[140px] px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-2xl">
                   {t("product:actions")}
                 </th>
@@ -103,7 +110,13 @@ const CategoriesTable = ({ data, loading, page = 1, setPage, selRows, setSelRows
                         : t("asset:inactive")}
                     </span>
                   </td>
-                  <td className="px-4 py-4 align-middle pr-6">
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                    {labelOf(row, "created") || "—"}
+                  </td>
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                    {labelOf(row, "updated") || "—"}
+                  </td>
+                    <td className="px-4 py-4 align-middle pr-6">
                     <div className="flex items-center gap-2">
                       <Link
                         to={`/assets-categories/detail/${row.id}`}

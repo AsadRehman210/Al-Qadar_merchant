@@ -6,6 +6,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import SelectDropdown from "components/SelectDropdown";
 import TableState from "components/TableState";
 import { tableRows, leaveStatusBadge } from "global/constant";
+import { labelOf } from "components/AuditMeta";
 
 // No PUT/DELETE endpoint exists for leave requests on the backend — only
 // apply/approve/reject/cancel — so Edit/Delete row actions were removed
@@ -31,6 +32,8 @@ const LeaveTable = ({ data = [], loading, page = 1, setPage, selRows, setSelRows
                   t("leave:days"),
                   t("leave:applied_via"),
                   t("leave:status"),
+                  t("created_by"),
+                  t("updated_by"),
                   t("leave:actions"),
                 ].map((h, i) => (
                   <th
@@ -43,7 +46,7 @@ const LeaveTable = ({ data = [], loading, page = 1, setPage, selRows, setSelRows
               </tr>
             </thead>
             <tbody>
-              <TableState loading={loading} data={list} colSpan={9}>
+              <TableState loading={loading} data={list} colSpan={11}>
               {list.map((row) => (
                 <tr
                   key={row.id}
@@ -81,7 +84,13 @@ const LeaveTable = ({ data = [], loading, page = 1, setPage, selRows, setSelRows
                       {row.status}
                     </span>
                   </td>
-                  <td className="px-4 py-4 pr-6">
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                    {labelOf(row, "created") || "—"}
+                  </td>
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                    {labelOf(row, "updated") || "—"}
+                  </td>
+                    <td className="px-4 py-4 pr-6">
                     <div className="flex items-center gap-2 text-slate-500 dark:text-white/70">
                       <Link to={`${baseUrl}/details/${row.id}`} title={t("view")} className="hover:text-teal-600">
                         <FiEye className="h-4 w-4" />

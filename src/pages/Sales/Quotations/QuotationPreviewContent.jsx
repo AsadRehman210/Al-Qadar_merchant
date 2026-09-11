@@ -1,12 +1,15 @@
 import { forwardRef } from "react";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { lineTotal, effectiveLineTaxPercent, formatAmount } from "global/helper";
+import { lineTotal, effectiveLineTaxPercent, formatAmount, tenantLetterhead } from "global/helper";
+import { showUserData } from "store/slices/uniqueSlice";
 
 const QuotationPreviewContent = forwardRef(function QuotationPreviewContent(
   { quote },
   ref,
 ) {
   const { t } = useTranslation();
+  const letter = tenantLetterhead(useSelector(showUserData));
 
   if (!quote) return null;
 
@@ -27,13 +30,15 @@ const QuotationPreviewContent = forwardRef(function QuotationPreviewContent(
           <div className="relative">
             <div className="flex items-center gap-2 mb-1">
               <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur flex items-center justify-center font-bold text-sm">
-                R
+                {letter.initial}
               </div>
-              <span className="text-lg font-semibold tracking-tight">Rafeeqi</span>
+              <span className="text-lg font-semibold tracking-tight">{letter.companyName}</span>
             </div>
-            <p className="text-[10px] text-white/90 max-w-[200px] leading-relaxed">
-              {t("salary:company_address")}
-            </p>
+            <div className="text-[10px] text-white/90 max-w-[220px] leading-relaxed space-y-0.5">
+              {letter.address ? <p>{letter.address}</p> : null}
+              {letter.contact ? <p>{letter.contact}</p> : null}
+              {letter.taxNumber ? <p>{letter.taxNumber}</p> : null}
+            </div>
           </div>
           <div className="relative text-right">
             <h1 className="text-lg font-bold uppercase tracking-[0.15em]">
@@ -43,7 +48,7 @@ const QuotationPreviewContent = forwardRef(function QuotationPreviewContent(
               {quote.quoteNumber}
             </p>
             <span className="inline-block mt-2 px-2.5 py-1 rounded-full text-[9px] font-semibold bg-white/20 backdrop-blur uppercase tracking-wide">
-              {t("sales:valid_until")}: {quote.validUntil || "—"}
+              {t("sales:valid_until")}: {quote.validUntil ? String(quote.validUntil).slice(0, 10) : "—"}
             </span>
           </div>
         </div>
@@ -60,7 +65,7 @@ const QuotationPreviewContent = forwardRef(function QuotationPreviewContent(
           <div className="text-right sm:text-left sm:ml-auto">
             <p className="text-[10px] text-slate-600">
               <span className="font-semibold text-slate-800">{t("sales:date")}: </span>
-              {quote.date || "—"}
+              {quote.createdAt ? String(quote.createdAt).slice(0, 10) : "—"}
             </p>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
 import { getAppraisalById, submitAppraisal, startReview, finalizeAppraisal } from "../performanceFakeData";
 import { statusColor, ratingLabelKey, ratingColor, weightedScore } from "../performanceHelpers";
+import AuditMeta from "components/AuditMeta";
 
 const { view_performance, edit_performance } = alqadar_role_ids;
 
@@ -149,6 +150,9 @@ const AppraisalDetail = () => {
                     <p className="text-sm font-semibold text-slate-900 dark:text-white">{value}</p>
                   </div>
                 ))}
+                <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-4 md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <AuditMeta record={appraisal} />
+                </div>
               </div>
               {appraisal.overallRating && (
                 <div className="bg-white dark:bg-white/10 rounded-2xl border border-slate-200 dark:border-white/20 p-6">

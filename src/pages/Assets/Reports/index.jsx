@@ -142,21 +142,26 @@ const AssetReports = () => {
         <div className="space-y-6">
           {/* Depreciation summary */}
           <div className={sectionCls}>
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t("asset:depreciation_report")}</h2>
-              <ExportButton
-                data={depreciationRows}
-                filename="asset-depreciation-report.xlsx"
-                title={t("asset:export_assets")}
-                columns={[
-                  { label: t("asset:asset_tag"), key: "assetTag" },
-                  { label: t("asset:asset_name"), key: "name" },
-                  { label: t("asset:category"), key: "categoryName" },
-                  { label: t("asset:purchase_cost"), value: (r) => fmt(r.cost) },
-                  { label: t("asset:accumulated_dep"), value: (r) => fmt(r.accDep) },
-                  { label: t("asset:book_value"), value: (r) => fmt(r.bookValue) },
-                ]}
-              />
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-slate-800 dark:text-white">{t("asset:depreciation_report")}</h2>
+                <p className="text-xs text-slate-400 dark:text-white/40 mt-1">{t("asset:post_depreciation_hint")}</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <ExportButton
+                  data={depreciationRows}
+                  filename="asset-depreciation-report.xlsx"
+                  title={t("asset:export_assets")}
+                  columns={[
+                    { label: t("asset:asset_tag"), key: "assetTag" },
+                    { label: t("asset:asset_name"), key: "name" },
+                    { label: t("asset:category"), key: "categoryName" },
+                    { label: t("asset:purchase_cost"), value: (r) => fmt(r.cost) },
+                    { label: t("asset:accumulated_dep"), value: (r) => fmt(r.accDep) },
+                    { label: t("asset:book_value"), value: (r) => fmt(r.bookValue) },
+                  ]}
+                />
+              </div>
             </div>
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-white/10">
               <table className="w-full text-sm">

@@ -8,7 +8,7 @@ import { useSelector } from "react-redux";
 import { showUserData } from "store/slices/uniqueSlice";
 import Logo from "assets/images/rafeeqi_logo_pdf.png";
 import { useTranslation } from "react-i18next";
-import { toTranslationKey } from "../global/helper";
+import { toTranslationKey, tenantLogoSrc } from "../global/helper";
 
 export default function TransferVoucher({
   data,
@@ -122,7 +122,7 @@ export default function TransferVoucher({
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none z-50 screen-watermark">
             <div style={{ transform: "rotate(45deg) scale(1.5)" }}>
               <ImageWithFallback
-                src={userData?.organizationData?.primary_logo}
+                src={tenantLogoSrc(userData)}
                 className="w-96 h-96"
                 fallbackSrc={Logo}
               />
@@ -137,7 +137,7 @@ export default function TransferVoucher({
               <div className="flex justify-between items-center border-b border-gray-200 pb-3 pt-1">
                 <div className="w-36">
                   <ImageWithFallback
-                    src={userData?.organizationData?.primary_logo}
+                    src={tenantLogoSrc(userData)}
                     className="w-full h-auto"
                     fallbackSrc={Logo}
                   />

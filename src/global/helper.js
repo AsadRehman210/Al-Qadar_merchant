@@ -112,6 +112,7 @@ const HREF_VIEW_PERMISSION = {
   "/assets/requests": "asset-request.view",
   "/assets/audits": "asset-audit.view",
   "/assets/reports": "asset.view",
+  "/assets/purchases": "asset-purchase.view",
   "/finance/coa": "finance-coa.view",
   "/finance/journal": "finance-journal.view",
   "/finance/ledger": "finance-ledger.view",
@@ -361,6 +362,29 @@ export const formatStatus = (id) => {
   }
 };
 
+export const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+export const LOGO_MAX_MB = 2;
+
+export const tenantLogoSrc = (userData) =>
+  userData?.tenant?.logoUrl || userData?.organizationData?.primary_logo || null;
+
+export const tenantDisplayName = (userData) =>
+  userData?.tenant?.companyName ||
+  userData?.tenant?.name ||
+  userData?.organizationData?.name ||
+  "";
+
+export const accountPayloadWithLogo = (fields, logoFile) => {
+  if (!(typeof File !== "undefined" && logoFile instanceof File)) return fields;
+  const fd = new FormData();
+  Object.entries(fields).forEach(([key, value]) => {
+    if (value === undefined) return;
+    fd.append(key, value === null ? "" : String(value));
+  });
+  fd.append("logo", logoFile);
+  return fd;
+};
+
 export const formatImageUrl = (url) => {
   // Return null/empty if url is not provided or invalid
   if (
@@ -372,18 +396,24 @@ export const formatImageUrl = (url) => {
     return null; // Return null instead of constructing invalid URL
   }
 
-  // Clean up BASE_URL and input URL
+  if (/^https?:\/\//i.test(url) || url.startsWith("blob:") || url.startsWith("data:")) {
+    return url;
+  }
+
+  const cleanedUrl = url.replace(/^\/+/, "");
+  if (!cleanedUrl || cleanedUrl.trim() === "") {
+    return null;
+  }
+
+  const erpOrigin = (import.meta.env.VITE_ERP_BASE_URL || "").replace(/\/+$/, "");
+  if (cleanedUrl.startsWith("uploads/") && erpOrigin) {
+    return `${erpOrigin}/${cleanedUrl}`;
+  }
+
   const cleanedBaseUrl = BASE_URL?.replace(/\/rafeeqi\/?$/, "").replace(
     /\/+$/,
     "",
   );
-  const cleanedUrl = url?.replace(/^\/+/, "");
-
-  // Final validation - ensure cleanedUrl is not empty
-  if (!cleanedUrl || cleanedUrl.trim() === "") {
-    // console.warn("formatImageUrl: URL path is empty after cleaning", { originalUrl: url, cleanedUrl });
-    return null; // Return null instead of BASE_URL only
-  }
 
   return `${cleanedBaseUrl}/${cleanedUrl}`;
 };
@@ -1061,8 +1091,37 @@ export const canCancelDelivery = (status) =>
 /** YYYY-MM-DD for date inputs from ISO/date strings. */
 export const toDateInput = (value) => (value ? String(value).slice(0, 10) : "");
 
+// A quote stays valid through the whole validUntil calendar day (until
+// 11:59:59 PM local). Date-only "2023-02-18" must not expire at midnight
+// at the start of that day.
+export const isQuotationExpired = (validUntil) => {
+  if (!validUntil) return false;
+  return moment(validUntil).endOf("day").isBefore(moment());
+};
+
+export const isQuotationExpiringSoon = (validUntil, days = 7) => {
+  if (!validUntil) return false;
+  const end = moment(validUntil).endOf("day");
+  if (!end.isAfter(moment())) return false;
+  return end.diff(moment(), "days") <= days;
+};
+
 /** Alias used across sales/customers/suppliers tables. */
 export const toIsoDate = (value) => toDateInput(value);
+
+/** Letterhead for sale/purchase/quotation prints — tenant Account, not the logged-in user. */
+export const tenantLetterhead = (userData) => {
+  const tenant = userData?.tenant && typeof userData.tenant === "object" ? userData.tenant : {};
+  const companyName = tenant.companyName || userData?.companyName || "";
+  return {
+    companyName: companyName || "—",
+    initial: (companyName || "?").trim().charAt(0).toUpperCase(),
+    address: [tenant.address, tenant.city, tenant.country].filter(Boolean).join(", "),
+    contact: [tenant.phone, tenant.email].filter(Boolean).join(" • "),
+    taxNumber: tenant.taxNumber ? String(tenant.taxNumber) : "",
+    logoUrl: tenant.logoUrl || null,
+  };
+};
 
 /** Locale amount formatting for invoice/tables (2 decimals). */
 export const formatAmount = (value, fractionDigits = 2) =>

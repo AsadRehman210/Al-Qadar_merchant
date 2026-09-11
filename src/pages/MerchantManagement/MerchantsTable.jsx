@@ -11,6 +11,7 @@ import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
 import { isMerchantExpired } from "./merchantFakeData";
 import Table from "components/Table";
+import { labelOf } from "components/AuditMeta";
 
 const { view_merchant_management, edit_merchant_management } = alqadar_role_ids;
 
@@ -33,11 +34,17 @@ const MerchantsTable = ({ data, loading, page = 1, setPage, selRows, setSelRows,
               <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("merchant:category")}</th>
               <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("merchant:linked_admin")}</th>
               <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("merchant:status")}</th>
+              <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                {t("created_by")}
+              </th>
+              <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                {t("updated_by")}
+              </th>
               <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">{t("merchant:actions")}</th>
             </tr>
           </thead>
           <tbody>
-            <TableState loading={loading} data={list} colSpan={6}>
+            <TableState loading={loading} data={list} colSpan={8}>
             {list.map((row) => (
               <tr key={row.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10 transition-colors last:[&_td]:border-b-0">
                 <td className="px-4 py-4 align-middle pl-6 font-mono text-xs font-semibold text-slate-500">{row.code}</td>
@@ -74,7 +81,13 @@ const MerchantsTable = ({ data, loading, page = 1, setPage, selRows, setSelRows,
                     )}
                   </div>
                 </td>
-                <td className="px-4 py-4 align-middle pr-6">
+                <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                  {labelOf(row, "created") || "—"}
+                </td>
+                <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                  {labelOf(row, "updated") || "—"}
+                </td>
+                    <td className="px-4 py-4 align-middle pr-6">
                   <div className="flex items-center gap-2">
                     {checkRoleAuth(view_merchant_management) && (
                       <button

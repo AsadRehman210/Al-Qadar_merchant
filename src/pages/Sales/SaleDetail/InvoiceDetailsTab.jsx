@@ -58,6 +58,22 @@ const InvoiceDetailsTab = ({
           label={t("sales:tax_amount")}
           value={`${formatAmount(taxAmt)} ${invoice.currency || "SAR"}`}
         />
+        <div>
+          <p className="text-xs font-semibold text-teal-700 dark:text-teal-400 uppercase tracking-wide mb-1">
+            {t("sales:tax_type")}
+          </p>
+          <span
+            className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+              invoice.taxRecoverable === false
+                ? "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-white/70 ring-1 ring-inset ring-slate-200 dark:ring-white/15"
+                : "bg-teal-100 text-teal-700 dark:bg-teal-500/20 dark:text-teal-300 ring-1 ring-inset ring-teal-200 dark:ring-teal-500/25"
+            }`}
+          >
+            {invoice.taxRecoverable === false
+              ? t("sales:tax_recoverable_no")
+              : t("sales:tax_recoverable_yes")}
+          </span>
+        </div>
         <DetailField
           label={t("sales:total")}
           value={`${formatAmount(invoice.total)} ${invoice.currency || "SAR"}`}
@@ -147,6 +163,14 @@ const InvoiceDetailsTab = ({
             {invoice.deliveryStatus || "Pending"}
           </span>
         </div>
+        <DetailField
+          label={t("sales:created_by")}
+          value={invoice.createdByName}
+        />
+        <DetailField
+          label={t("sales:updated_by")}
+          value={invoice.updatedByName}
+        />
       </div>
       <Table className="mt-8">
         <table className="w-full text-sm min-w-[1080px]">

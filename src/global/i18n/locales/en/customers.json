@@ -137,6 +137,7 @@
   "note_date": "Date",
   "note_text": "Note",
   "created_by": "Created By",
+  "updated_by": "Updated By",
   "from_date": "From date",
   "to_date": "To date",
   "date_range": "Date range",

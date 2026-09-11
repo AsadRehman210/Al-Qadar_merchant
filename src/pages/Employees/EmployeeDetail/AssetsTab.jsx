@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -9,11 +9,9 @@ import SelectDropdown from "components/SelectDropdown";
 import FormInput from "components/FormInput";
 import Button from "components/Button";
 import {
-  fetchAssets,
+  fetchAssetsByQuery,
   assignAsset,
   returnAsset,
-  showAssets,
-  showAssetsLoading,
 } from "store/slices/assetSlice";
 import { SkeletonCards, SkeletonList } from "components/Skeleton";
 
@@ -46,28 +44,49 @@ const AssetsTab = ({ data }) => {
   const [returnReason, setReturnReason] = useState("");
 
   const employeeId = data?.id;
-  const allAssets = useSelector(showAssets);
-  const isLoading = useSelector(showAssetsLoading);
+  const [assignedAssets, setAssignedAssets] = useState([]);
+  const [unassignedOptions, setUnassignedOptions] = useState([]);
+  const [historyAssets, setHistoryAssets] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadEmployeeAssets = async () => {
+    if (!employeeId) return;
+    setIsLoading(true);
+    try {
+      const [assigned, unassigned, history] = await Promise.all([
+        dispatch(fetchAssetsByQuery({ assignedToId: employeeId })).unwrap(),
+        dispatch(fetchAssetsByQuery({ unassignedOnly: true })).unwrap(),
+        dispatch(fetchAssetsByQuery({ historyEmployeeId: employeeId })).unwrap(),
+      ]);
+      setAssignedAssets(assigned || []);
+      setUnassignedOptions(
+        (unassigned || []).map((a) => ({ id: a.id, title: `${a.name} (${a.assetTag})` })),
+      );
+      setHistoryAssets(history || []);
+    } catch {
+      setAssignedAssets([]);
+      setUnassignedOptions([]);
+      setHistoryAssets([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    dispatch(fetchAssets({ limit: 500 }));
-  }, [dispatch]);
-
-  const assignedAssets = allAssets.filter((a) => a.assignedToId === employeeId);
-  const unassignedOptions = allAssets
-    .filter((a) => !a.assignedToId && a.status !== "Disposed")
-    .map((a) => ({ id: a.id, title: `${a.name} (${a.assetTag})` }));
+    loadEmployeeAssets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [employeeId, dispatch]);
 
   // Past assignments — an asset can vanish from `assignedAssets` once
   // returned, but the employee's history with it shouldn't disappear too.
   const pastAssignments = useMemo(
     () =>
-      allAssets.flatMap((asset) =>
+      historyAssets.flatMap((asset) =>
         (asset.assignmentHistory || [])
           .filter((h) => h.employeeId === employeeId && h.returnDate)
           .map((h) => ({ asset, entry: h })),
       ),
-    [allAssets, employeeId],
+    [historyAssets, employeeId],
   );
 
   const handleAssign = async () => {
@@ -78,6 +97,7 @@ const AssetsTab = ({ data }) => {
       setShowAssign(false);
       setAssetPick(null);
       setAssignNotes("");
+      await loadEmployeeAssets();
     } catch (message) {
       toast.error(message || t("employees:action_failed"));
     }
@@ -94,6 +114,7 @@ const AssetsTab = ({ data }) => {
       await dispatch(returnAsset({ id: assetId, data: { returnDate, notes: returnReason } })).unwrap();
       toast.success(t("employees:asset_returned"));
       setReturningId(null);
+      await loadEmployeeAssets();
     } catch (message) {
       toast.error(message || t("employees:action_failed"));
     }

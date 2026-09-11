@@ -173,6 +173,8 @@ const ProductionDetail = () => {
                 { label: t("production:total_other_cost"), value: fmtNum(order.totalOtherCost) },
                 { label: t("production:total_cost"), value: fmtNum(order.totalCost) },
                 { label: t("production:batch_unit_cost"), value: fmtNum(order.unitCost) },
+                { label: t("created_by"), value: order.createdByName },
+                { label: t("updated_by"), value: order.updatedByName },
                 ...(order.quarantineLotId
                   ? [
                       {

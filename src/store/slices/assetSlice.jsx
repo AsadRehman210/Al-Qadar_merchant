@@ -218,6 +218,17 @@ export const disposeAsset = createAsyncThunk(
   },
 );
 
+export const fetchAssetsByQuery = createAsyncThunk(
+  "asset/fetchAssetsByQuery",
+  async (params, { rejectWithValue }) => {
+    const query = buildQuery({ page: 1, limit: 200, ...params });
+    const response = await erpGet(`${erpUrls.assets}?${query}`);
+    if (isEmptyListResponse(response)) return [];
+    if (!response?.success) return rejectWithValue(response?.message);
+    return response.result || [];
+  },
+);
+
 // ─── Asset Requests ─────────────────────────────────────────────────────────
 export const fetchAssetRequests = createAsyncThunk(
   "asset/fetchAssetRequests",

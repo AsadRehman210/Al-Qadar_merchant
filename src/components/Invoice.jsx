@@ -4,7 +4,7 @@ import { showUserData } from "store/slices/uniqueSlice";
 import ImageWithFallback from "components/ImageWithFallback";
 import Logo from "assets/images/rafeeqi_logo_pdf.png";
 import moment from "moment-timezone";
-import { numberToWords } from "global/helper";
+import { numberToWords, tenantLogoSrc } from "global/helper";
 import Stamp from "assets/images/Rafeeqi_Stamp.jpeg";
 import { useTranslation } from "react-i18next";
 import { toTranslationKey } from "../global/helper";
@@ -61,7 +61,7 @@ export default function Invoice({ data, documentRef, className }) {
               <div className="flex items-center justify-between mb-2">
                 <div className="w-72">
                   <ImageWithFallback
-                    src={userData?.organizationData?.primary_logo}
+                    src={tenantLogoSrc(userData)}
                     className="h-32 object-contain"
                     fallbackSrc={Logo}
                   />

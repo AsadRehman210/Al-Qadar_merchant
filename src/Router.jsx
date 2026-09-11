@@ -4,7 +4,7 @@ import NotFound from "components/NotFound";
 import LoaderContainer from "components/LoaderContainer";
 import LayoutDashboard from "layout/LayoutDashboard";
 import LayoutStatic from "layout/LayoutStatic";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, lazy, useEffect, useRef } from "react";
 import { Routes, Route, Navigate, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "react-toastify/dist/ReactToastify.css";
@@ -15,7 +15,7 @@ import ToastWrapper from "./components/ToastWrapper";
 import { useDispatch, useSelector } from "react-redux";
 import { showToken, showUserData } from "store/slices/uniqueSlice";
 import { generateColorRamp, DEFAULT_THEME_COLOR } from "global/colorRamp";
-import { updateNavigation } from "store/slices/authSlice";
+import { updateNavigation, refreshSession } from "store/slices/authSlice";
 const Login = lazy(() => import("pages/Auth/Login"));
 const ForgetPassword = lazy(() => import("pages/Auth/ForgetPassword"));
 const Dashboard = lazy(() => import("pages/Dashboard"));
@@ -142,6 +142,9 @@ const AssetReports = lazy(() => import("pages/Assets/Reports"));
 const ImportAssets = lazy(() => import("pages/Assets/ImportAssets"));
 const AssetRequests = lazy(() => import("pages/Assets/Requests"));
 const AssetAudits = lazy(() => import("pages/Assets/Audits"));
+const AssetPurchases = lazy(() => import("pages/Assets/Purchases"));
+const AddAssetPurchase = lazy(() => import("pages/Assets/Purchases/AddAssetPurchase"));
+const AssetPurchaseDetail = lazy(() => import("pages/Assets/Purchases/AssetPurchaseDetail"));
 const ChartOfAccounts = lazy(() => import("pages/Finance/ChartOfAccounts"));
 const AddCOAAccount = lazy(
   () => import("pages/Finance/ChartOfAccounts/AddAccount"),
@@ -227,7 +230,9 @@ function Router() {
   const { i18n } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const token = useSelector(showToken);
   const userData = useSelector(showUserData);
+  const sessionRefreshed = useRef(false);
 
   // Tenant brand color — repaints every existing teal-* class in the app by
   // overriding the same CSS variables theme.css's own default ramp defines,
@@ -260,14 +265,20 @@ function Router() {
   }, []);
 
   useEffect(() => {
-    // Setup interceptors and update state when done
     const initInterceptors = async () => {
       await setupInterceptors(navigate);
       setupErpInterceptors(navigate);
+      if (!token) {
+        sessionRefreshed.current = false;
+        return;
+      }
+      if (sessionRefreshed.current) return;
+      sessionRefreshed.current = true;
+      dispatch(refreshSession());
     };
 
     initInterceptors();
-  }, [navigate]);
+  }, [navigate, dispatch, token]);
 
   const location = useLocation();
   useEffect(() => {
@@ -377,6 +388,10 @@ function Router() {
               <Route path="assets/import" element={<ImportAssets />} />
               <Route path="assets/requests" element={<AssetRequests />} />
               <Route path="assets/audits" element={<AssetAudits />} />
+              <Route path="assets/purchases" element={<AssetPurchases />} />
+              <Route path="assets/purchases/add" element={<AddAssetPurchase />} />
+              <Route path="assets/purchases/edit/:id" element={<AddAssetPurchase />} />
+              <Route path="assets/purchases/detail/:id" element={<AssetPurchaseDetail />} />
               <Route path="assets-categories" element={<AssetCategories />} />
               <Route
                 path="assets-categories/add"

@@ -128,6 +128,14 @@ const InvoiceDetailsTab = ({
             {invoice.paymentStatus === "Cleared" ? "Paid" : invoice.paymentStatus || "Pending"}
           </span>
         </div>
+        <DetailField
+          label={t("created_by")}
+          value={invoice.createdByName}
+        />
+        <DetailField
+          label={t("updated_by")}
+          value={invoice.updatedByName}
+        />
       </div>
       <div className="mt-8 overflow-x-auto rounded-xl border border-slate-200 dark:border-white/20">
         <table className="w-full text-sm min-w-[980px]">

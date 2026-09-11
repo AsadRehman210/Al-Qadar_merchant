@@ -16,6 +16,7 @@ import { SkeletonCards } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 import { fetchJournalEntries, showJournalEntries, showJournalEntriesTotal, showJournalEntriesLoading } from "store/slices/financeSlice";
 import FinancePage from "../FinancePage";
+import { AuditLine } from "components/AuditMeta";
 
 const { view_finance_journal, add_finance_journal } = alqadar_role_ids;
 
@@ -91,6 +92,7 @@ const JournalEntries = () => {
                       </span>
                     </div>
                   </div>
+                  <AuditLine record={j} className="mt-1" />
                   <p className="text-sm text-mutedForeground mb-3">{j.memo}</p>
                   <table className="w-full text-sm">
                     <thead>

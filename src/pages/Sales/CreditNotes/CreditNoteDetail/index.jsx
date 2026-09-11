@@ -16,6 +16,7 @@ const { status_sales_credit_note } = alqadar_role_ids;
 const fmt = (n) => (parseFloat(n) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 import { noteStatusBadge as STATUS_BADGE, noteNextStatusMap } from "global/constant";
+import AuditMeta from "components/AuditMeta";
 
 // Mirrors the backend's VALID_NEXT_STATUS guard in credit-note-service.ts —
 // Applied/Voided are terminal (stock/journal effects already fired), so
@@ -160,6 +161,7 @@ const CreditNoteDetail = () => {
                 <p className="font-semibold text-slate-800 dark:text-white mt-0.5">{f.value}</p>
               </div>
             ))}
+            <AuditMeta record={cn} />
             <div>
               <p className="text-xs font-medium text-slate-400 uppercase">{t("sales:stock_effect", { defaultValue: "Stock effect" })}</p>
               <p className={`font-semibold mt-0.5 ${RESTOCK_REASONS.has(cn.reason) ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>

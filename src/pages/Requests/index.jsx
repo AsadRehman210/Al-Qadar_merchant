@@ -16,11 +16,8 @@ import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
 import { APPROVAL_STATUS_BADGE } from "global/approvalEngine";
 import { useListFilters } from "hooks/useListFilters";
-import {
-  REQUEST_TYPES,
-  APPROVAL_STATUS,
-  requestTypeById,
-} from "./requestsFakeData";
+import { REQUEST_TYPES, APPROVAL_STATUS, requestTypeById } from "./requestsFakeData";
+import { labelOf } from "components/AuditMeta";
 import {
   fetchRequests,
   fetchRequestsSummary,
@@ -215,11 +212,17 @@ const Requests = () => {
                   <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("requests:summary")}</th>
                   <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("requests:manager")}</th>
                   <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("requests:status")}</th>
+                  <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                    {t("created_by")}
+                  </th>
+                  <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                    {t("updated_by")}
+                  </th>
                   <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">{t("requests:view_details")}</th>
                 </tr>
               </thead>
               <tbody>
-                <TableState loading={loading} data={list} colSpan={7}>
+                <TableState loading={loading} data={list} colSpan={9}>
                 {list.map((r) => {
                   const Icon = TYPE_ICON[REQUEST_TYPES.find((x) => x.id === r.type)?.icon] || LuClipboardList;
                   return (
@@ -242,6 +245,12 @@ const Requests = () => {
                       <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/70">{r.managerName}</td>
                       <td className="px-4 py-4 align-middle">
                         <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${APPROVAL_STATUS_BADGE[r.status]}`}>{r.status}</span>
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(r, "created") || ""}>
+                        {labelOf(r, "created") || "—"}
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(r, "updated") || ""}>
+                        {labelOf(r, "updated") || "—"}
                       </td>
                       <td className="px-4 py-4 align-middle text-end pr-6">
                         <span className="text-xs text-teal-600 hover:underline">{t("requests:view_details")}</span>

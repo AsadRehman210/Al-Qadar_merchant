@@ -309,6 +309,10 @@ const {
   add_asset_audit,
   edit_asset_audit,
   delete_asset_audit,
+  view_asset_purchase,
+  add_asset_purchase,
+  edit_asset_purchase,
+  delete_asset_purchase,
 } = alqadar_role_ids;
 export const menuSections = [
   {
@@ -532,7 +536,7 @@ export const menuSections = [
     title: "Asset Management",
     titleKey: "sidebar_asset_management",
     icon: Archive,
-    role: `${view_asset},${view_asset_category},${view_asset_request},${view_asset_audit}`,
+    role: `${view_asset},${view_asset_category},${view_asset_request},${view_asset_audit},${view_asset_purchase}`,
     items: [
       {
         name: "Assets",
@@ -561,6 +565,13 @@ export const menuSections = [
         href: "/assets/audits",
         icon: ScanLine,
         role: `${view_asset_audit},${add_asset_audit},${edit_asset_audit},${delete_asset_audit}`,
+      },
+      {
+        name: "Asset purchases",
+        nameKey: "sidebar_asset_purchases",
+        href: "/assets/purchases",
+        icon: ShoppingCart,
+        role: `${view_asset_purchase},${add_asset_purchase},${edit_asset_purchase},${delete_asset_purchase}`,
       },
       {
         name: "Asset reports",
@@ -1835,6 +1846,11 @@ export const yesNoOptions = [
 export const salesTaxModeOptions = [
   { id: "same", title: "sales:tax_mode_same" },
   { id: "different", title: "sales:tax_mode_different" },
+];
+
+export const salesTaxRecoverableOptions = [
+  { id: "yes", title: "sales:tax_recoverable_yes" },
+  { id: "no", title: "sales:tax_recoverable_no" },
 ];
 export const purchaseTaxModeOptions = [
   { id: "same", title: "purchase:tax_mode_same" },

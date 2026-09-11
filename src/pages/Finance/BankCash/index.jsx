@@ -18,6 +18,7 @@ import { IoEyeOutline } from "react-icons/io5";
 import { SkeletonTable } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
 import { useListFilters } from "hooks/useListFilters";
+import { labelOf } from "components/AuditMeta";
 
 const { view_finance_bank, add_finance_bank, edit_finance_bank } = alqadar_role_ids;
 
@@ -82,6 +83,12 @@ const BankCash = () => {
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:iban")}</th>
                     <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:acct_type")}</th>
                     <th className="px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap">{t("finance:balance")}</th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("created_by")}
+                    </th>
+                    <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                      {t("updated_by")}
+                    </th>
                     <th className="w-24 px-4 py-4 text-end font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">{t("actions")}</th>
                   </tr>
                 </thead>
@@ -106,6 +113,12 @@ const BankCash = () => {
                       <td className="px-4 py-4 align-middle">{row.type}</td>
                       <td className="px-4 py-4 align-middle text-end tabular-nums font-semibold">
                         {formatAmount(row.currentBalance)} {row.currency}
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                        {labelOf(row, "created") || "—"}
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                        {labelOf(row, "updated") || "—"}
                       </td>
                       <td className="px-4 py-4 align-middle pr-6">
                         <div className="flex items-center justify-end gap-3">

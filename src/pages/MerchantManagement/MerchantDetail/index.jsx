@@ -433,6 +433,8 @@ const MerchantDetail = () => {
                   />
                   <InfoRow label={t("last_payment")} value={merchant.lastPaymentDate ? String(merchant.lastPaymentDate).slice(0, 10) : "—"} />
                   <InfoRow label={t("created_at")} value={merchant.createdAt ? String(merchant.createdAt).slice(0, 10) : "—"} />
+                  <InfoRow label={t("created_by")} value={merchant.createdByName} />
+                  <InfoRow label={t("updated_by")} value={merchant.updatedByName} />
                   <InfoRow label={t("currency")} value={merchant.currency} />
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useForm, useFieldArray, useFormContext, FormProvider } from "react-hook-form";
+import { useForm, useFieldArray, useFormContext, FormProvider, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import { FiArrowLeft, FiArrowRight } from "react-icons/fi";
@@ -33,7 +33,7 @@ import {
   effectiveLineTaxPercent,
   checkRoleAuth,
 } from "global/helper";
-import { salesTaxModeOptions } from "global/constant";
+import { salesTaxModeOptions, salesTaxRecoverableOptions } from "global/constant";
 import { alqadar_role_ids } from "global/alqadarRoles";
 
 const { add_sales_quotation, edit_sales_quotation } = alqadar_role_ids;
@@ -41,8 +41,8 @@ const { add_sales_quotation, edit_sales_quotation } = alqadar_role_ids;
 const defaultLine = () => ({ ...defaultSaleLine(), unit: "pcs", batchId: "", taxPercent: null });
 
 const DEFAULT_QUOTE_FORM = {
-  customerId: "", date: dayjs().format("YYYY-MM-DD"), validUntil: dayjs().add(30, "day").format("YYYY-MM-DD"),
-  warehouseId: "", lines: [defaultLine()], taxPercent: 15, notes: "",
+  customerId: "", validUntil: dayjs().add(30, "day").format("YYYY-MM-DD"),
+  warehouseId: "", lines: [defaultLine()], taxPercent: 0, taxRecoverable: "yes", notes: "",
 };
 
 // Backend-driven search + infinite scroll, matching SearchablePaginatedDropdown's
@@ -159,11 +159,11 @@ const AddQuotation = () => {
     if (isEdit && current) {
       reset({
         customerId: current.customerId,
-        date: current.date ? String(current.date).slice(0, 10) : dayjs().format("YYYY-MM-DD"),
         validUntil: current.validUntil ? String(current.validUntil).slice(0, 10) : "",
         warehouseId: current.warehouseId,
         lines: current.lines?.length ? current.lines.map((l) => ({ ...defaultLine(), ...l })) : [defaultLine()],
-        taxPercent: current.taxPercent ?? 15,
+        taxPercent: current.taxPercent ?? 0,
+        taxRecoverable: current.taxRecoverable === false ? "no" : "yes",
         notes: current.notes || "",
       });
       setSelCustomer({ id: current.customerId, title: current.customerName });
@@ -194,8 +194,8 @@ const AddQuotation = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [warehouseId]);
 
-  const watchedLines = watch("lines");
-  const taxPercent = watch("taxPercent");
+  const watchedLines = useWatch({ control, name: "lines" }) || [];
+  const taxPercent = useWatch({ control, name: "taxPercent" });
 
   // "Same for all" (default) vs "different per product" — purely a UI mode,
   // nothing separate is persisted for it. In "same" mode every line's own
@@ -203,6 +203,11 @@ const AddQuotation = () => {
   // in "different" mode each line carries its own explicit override. The
   // backend computes totals with the exact same fallback rule.
   const [taxMode, setTaxMode] = useState(salesTaxModeOptions[0]);
+  const [selTaxRecoverable, setSelTaxRecoverable] = useState(salesTaxRecoverableOptions[0]);
+  const taxRecoverableValue = watch("taxRecoverable");
+  useEffect(() => {
+    setSelTaxRecoverable(taxRecoverableValue === "no" ? salesTaxRecoverableOptions[1] : salesTaxRecoverableOptions[0]);
+  }, [taxRecoverableValue]);
 
   // Editing an existing quotation that already carries per-line overrides
   // (saved earlier in "different" mode) — detect that once the real lines
@@ -230,28 +235,30 @@ const AddQuotation = () => {
     }
   };
 
-  const { subtotal, taxAmount, total, totalProfit } = useMemo(() => {
-    let sub = 0;
-    let tax = 0;
-    for (const l of watchedLines || []) {
-      const lineSub = lineTotal(l);
-      sub += lineSub;
-      tax += lineSub * (effectiveLineTaxPercent(l, taxPercent) / 100);
-    }
-    return {
-      subtotal: sub,
-      taxAmount: tax,
-      total: sub + tax,
-      totalProfit: computeInvoiceProfit(watchedLines),
-    };
-  }, [watchedLines, taxPercent]);
+  // Recalculate on every render from the live useWatch snapshot — do not
+  // memoize off the lines array reference. RHF can reuse the same array
+  // object when qty/price change, which would freeze the summary at 0.00.
+  let subtotal = 0;
+  let taxAmount = 0;
+  for (const l of watchedLines) {
+    const lineSub = lineTotal(l);
+    subtotal += lineSub;
+    taxAmount += lineSub * (effectiveLineTaxPercent(l, taxPercent) / 100);
+  }
+  const total = subtotal + taxAmount;
+  const totalProfit = computeInvoiceProfit(watchedLines);
 
   const fmtMoney = (n) =>
     Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const onSubmit = async (data) => {
     if (!selCustomer?.id) { toast.error(t("sales:customer_required")); return; }
-    const payload = { ...data, customerId: selCustomer.id };
+    const payload = {
+      ...data,
+      customerId: selCustomer.id,
+      taxRecoverable: data.taxRecoverable !== "no",
+      validUntil: data.validUntil ? String(data.validUntil).slice(0, 10) : null,
+    };
     try {
       if (isEdit) {
         await dispatch(updateQuotation({ id, data: payload })).unwrap();
@@ -311,7 +318,6 @@ const AddQuotation = () => {
                   loading={customerSource.loading}
                 />
               </div>
-              <FormInput label={t("sales:date")} name="date" type="date" register={register} />
               <FormInput label={t("sales:valid_until")} name="validUntil" type="date" register={register} />
               <div>
                 <SearchablePaginatedDropdown
@@ -346,6 +352,23 @@ const AddQuotation = () => {
           <div className={panelCls}>
             <div className="flex flex-wrap items-end gap-3 mb-4">
               <h3 className="text-base font-bold mr-auto">{t("sales:line_items")}</h3>
+              <div className="flex-1 min-w-[220px] max-w-xs">
+                <SelectDropdown
+                  label={t("sales:tax_type")}
+                  data={salesTaxRecoverableOptions}
+                  selected={selTaxRecoverable}
+                  setSelected={(o) => {
+                    const val = o?.id ?? "yes";
+                    setSelTaxRecoverable(o || salesTaxRecoverableOptions[0]);
+                    setValue("taxRecoverable", val, { shouldValidate: true });
+                  }}
+                  name="taxRecoverable"
+                  register={register}
+                  setValue={setValue}
+                  valueKey="id"
+                  hideClear
+                />
+              </div>
               <div className="flex-1 min-w-[220px] max-w-xs">
                 <SelectDropdown
                   label={t("sales:tax_mode")}

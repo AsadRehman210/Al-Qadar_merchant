@@ -14,6 +14,7 @@ import {
   employeeStatusOptions,
   employeeStatusBadge,
 } from "global/constant";
+import AuditMeta from "components/AuditMeta";
 
 const OfficialDetailsTab = ({ data }) => {
   const { t } = useTranslation();
@@ -120,6 +121,9 @@ const OfficialDetailsTab = ({ data }) => {
                 </div>
               </div>
             ))}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <AuditMeta record={data} />
+            </div>
           </div>
         </div>
 

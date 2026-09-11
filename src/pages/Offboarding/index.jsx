@@ -24,6 +24,7 @@ import {
 } from "store/slices/offboardingSlice";
 import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { AuditLine } from "components/AuditMeta";
 
 const { view_offboarding, add_offboarding } = alqadar_role_ids;
 
@@ -158,6 +159,7 @@ const Offboarding = () => {
                     <LuCalendarDays className="h-3.5 w-3.5" /> {t("offboarding:last_working_day")}: {dayjs(e.lastWorkingDay).format("DD MMM YYYY")}
                   </span>
                 </div>
+                <AuditLine record={e} className="mt-2" />
                 <div className="mt-4 flex items-center justify-end text-teal-600 dark:text-teal-300 text-sm font-medium">
                   {t("offboarding:view_details")} <LuArrowRight className="h-4 w-4 ltr:ml-1 rtl:mr-1 rtl:rotate-180" />
                 </div>

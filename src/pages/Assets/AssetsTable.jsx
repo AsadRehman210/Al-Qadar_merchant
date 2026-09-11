@@ -9,6 +9,7 @@ import SelectDropdown from "components/SelectDropdown";
 import ExportButton from "components/ExportButton";
 import TableState from "components/TableState";
 import { tableRows, assetStatusBadge } from "global/constant";
+import { labelOf } from "components/AuditMeta";
 
 // `data` is already the server's one page — pagination itself (page/limit)
 // is owned by the parent (AssetRegister), same contract CustomersTable
@@ -129,13 +130,19 @@ const AssetsTable = ({ data, loading, categories = [], page = 1, setPage, selRow
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("asset:status")}
                 </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("created_by")}
+                </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("updated_by")}
+                </th>
                 <th className="w-[100px] px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-2xl">
                   {t("product:actions")}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <TableState loading={loading} data={paginatedList} colSpan={9}>
+              <TableState loading={loading} data={paginatedList} colSpan={11}>
               {paginatedList.map((row) => (
                 <tr
                   key={row.id}
@@ -169,7 +176,13 @@ const AssetsTable = ({ data, loading, categories = [], page = 1, setPage, selRow
                       {t(statusKey(row.status))}
                     </span>
                   </td>
-                  <td className="px-4 py-4 align-middle pr-6">
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                    {labelOf(row, "created") || "—"}
+                  </td>
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                    {labelOf(row, "updated") || "—"}
+                  </td>
+                    <td className="px-4 py-4 align-middle pr-6">
                     <div className="flex items-center gap-2">
                       <Link
                         to={`/assets/detail/${row.id}`}

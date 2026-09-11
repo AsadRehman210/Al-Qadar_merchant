@@ -30,6 +30,7 @@ import {
   setSearch,
 } from "store/slices/payrollBatchSlice";
 import dayjs from "dayjs";
+import { labelOf } from "components/AuditMeta";
 
 const { add_payroll_run, view_payroll_run } = alqadar_role_ids;
 
@@ -171,13 +172,13 @@ const PayrollBatch = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[var(--color-teal-500)]">
-                    {[t("payroll:run_number"), t("payroll:month"), t("payroll:employees"), t("payroll:gross"), t("payroll:deductions"), t("payroll:net_pay"), t("payroll:employer_cost"), t("payroll:status"), t("payroll:actions")].map((h) => (
+                    {[t("payroll:run_number"), t("payroll:month"), t("payroll:employees"), t("payroll:gross"), t("payroll:deductions"), t("payroll:net_pay"), t("payroll:employer_cost"), t("payroll:status"), t("created_by"), t("updated_by"), t("payroll:actions")].map((h) => (
                       <th key={h} className="px-4 py-4 text-start font-semibold text-white/95 whitespace-nowrap first:pl-6">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  <TableState loading={loading} data={list} colSpan={9}>
+                  <TableState loading={loading} data={list} colSpan={11}>
                   {list.map((run) => (
                     <tr key={run.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/10">
                       <td className="px-4 py-4 pl-6 font-semibold text-slate-800 dark:text-white">{run.runNumber}</td>
@@ -194,6 +195,12 @@ const PayrollBatch = () => {
                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${RUN_STATUS_BADGE[run.status] || ""}`}>
                           {run.status}
                         </span>
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(run, "created") || ""}>
+                        {labelOf(run, "created") || "—"}
+                      </td>
+                      <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(run, "updated") || ""}>
+                        {labelOf(run, "updated") || "—"}
                       </td>
                       <td className="px-4 py-4 pr-6">
                         <button

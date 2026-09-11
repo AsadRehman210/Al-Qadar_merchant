@@ -33,6 +33,7 @@ import { SkeletonCards, SkeletonDetail } from "components/Skeleton";
 import { fetchEmployees, showEmployees, showEmployeesLoading } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { pfWithdrawalTypeOptions } from "global/constant";
+import AuditMeta from "components/AuditMeta";
 
 const { view_provident_fund, edit_provident_fund } = alqadar_role_ids;
 
@@ -216,8 +217,11 @@ const PFDetail = () => {
             <p className="text-mutedForeground text-sm">{account?.pfAccountNo || t("pf:no_account_yet")} · {employee.employeeCode} · {departmentName || "—"}</p>
           </div>
           <span className={`px-3 py-1.5 rounded-full text-sm font-semibold ${account?.status === "Active" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
-            {account?.status || t("pf:no_account_yet")}
+{account?.status || t("pf:no_account_yet")}
           </span>
+        </div>
+        <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-4 grid sm:grid-cols-2 gap-4">
+          <AuditMeta record={account} />
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

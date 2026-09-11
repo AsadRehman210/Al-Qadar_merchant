@@ -13,6 +13,7 @@ import SelectDropdown from "components/SelectDropdown";
 import Pagination from "components/Pagination";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { paymentStatusBadge, purchaseStatusBadge, tableRows } from "global/constant";
+import { labelOf } from "components/AuditMeta";
 
 const PurchasesTable = ({
   data,
@@ -82,13 +83,19 @@ const PurchasesTable = ({
                 <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
                   {t("purchase:status")}
                 </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("created_by")}
+                </th>
+                <th className="px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap">
+                  {t("updated_by")}
+                </th>
                 <th className="w-[180px] px-4 py-4 text-start font-semibold text-white/95 border-none whitespace-nowrap pr-6 rounded-tr-md">
                   {t("customers:actions")}
                 </th>
               </tr>
             </thead>
             <tbody>
-              <TableState loading={loading} data={list} colSpan={10}>
+              <TableState loading={loading} data={list} colSpan={12}>
               {list.map((row) => (
                 <tr
                   key={row.id}
@@ -148,7 +155,13 @@ const PurchasesTable = ({
                       </p>
                     )}
                   </td>
-                  <td className="px-4 py-4 align-middle pr-6">
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "created") || ""}>
+                    {labelOf(row, "created") || "—"}
+                  </td>
+                  <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(row, "updated") || ""}>
+                    {labelOf(row, "updated") || "—"}
+                  </td>
+                    <td className="px-4 py-4 align-middle pr-6">
                     <div className="flex items-center gap-2">
                       <Link
                         to={`/purchases/detail/${row.id}`}

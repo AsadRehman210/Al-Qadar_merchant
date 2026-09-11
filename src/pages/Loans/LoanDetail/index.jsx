@@ -331,6 +331,8 @@ const LoanDetail = () => {
                     { label: t("loans:interest_percent"), value: loan.interestPercent ? `${loan.interestPercent}%` : "-" },
                     { label: t("loans:per_month_installment"), value: `SAR ${formatAmount(loan.monthlyDeduction)}` },
                     { label: t("loans:applied_via"), value: loan.appliedVia === "employee" ? t("loans:self_service") : t("loans:hr_direct") },
+                    { label: t("created_by"), value: loan.createdByName },
+                    { label: t("updated_by"), value: loan.updatedByName },
                   ].map((f) => (
                     <div key={f.label}>
                       <p className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase">{f.label}</p>

@@ -8,6 +8,7 @@ import Button from "components/Button";
 import ActionPopup from "components/ActionPopup";
 import { SkeletonDetail } from "components/Skeleton";
 import {
+import AuditMeta from "components/AuditMeta";
   fetchStockTransferById,
   approveStockTransfer,
   deleteStockTransfer,
@@ -142,6 +143,7 @@ const StockTransferDetail = () => {
           <Field label={t("from_warehouse")} value={transfer.fromWarehouseName} />
           <Field label={t("to_warehouse")} value={transfer.toWarehouseName} />
           <Field label={t("approved_by")} value={transfer.approvedBy || "—"} />
+          <AuditMeta record={transfer} />
           <div className="md:col-span-2 lg:col-span-3 min-w-0">
             <p className="text-xs font-medium text-slate-500 dark:text-white/60 uppercase">{t("notes")}</p>
             <p className="font-semibold text-slate-900 dark:text-white mt-1 break-words whitespace-pre-wrap">

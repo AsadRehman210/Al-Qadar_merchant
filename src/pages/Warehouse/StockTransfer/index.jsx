@@ -25,6 +25,7 @@ import {
 } from "store/slices/stockTransferSlice";
 import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { labelOf } from "components/AuditMeta";
 
 const { view_warehouse_transfer, add_warehouse_transfer, edit_warehouse_transfer, delete_warehouse_transfer } = alqadar_role_ids;
 
@@ -161,6 +162,8 @@ const StockTransfer = () => {
                 <th className="px-4 py-3">{t("items")}</th>
                 <th className="px-4 py-3">{t("status")}</th>
                 <th className="px-4 py-3">{t("approved_by")}</th>
+                <th className="px-4 py-3">{t("created_by", { ns: "translation" })}</th>
+                <th className="px-4 py-3">{t("updated_by", { ns: "translation" })}</th>
                 <th className="px-4 py-3">{t("actions", { ns: "translation", defaultValue: "Actions" })}</th>
               </tr>
             </thead>
@@ -168,7 +171,7 @@ const StockTransfer = () => {
               {loading ? (
                 Array.from({ length: 6 }).map((_, r) => (
                   <tr key={r} className="border-b border-slate-50 dark:border-white/5">
-                    {Array.from({ length: 8 }).map((__, c) => (
+                    {Array.from({ length: 12 }).map((__, c) => (
                       <td key={c} className="px-4 py-3">
                         <Block className="h-4 w-full max-w-[120px]" />
                       </td>
@@ -177,7 +180,7 @@ const StockTransfer = () => {
                 ))
               ) : transfers.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-12 text-slate-400">
+                  <td colSpan={12} className="text-center py-12 text-slate-400">
                     {t("no_transfers")}
                   </td>
                 </tr>
@@ -200,6 +203,12 @@ const StockTransfer = () => {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-400">{tr.approvedBy || "—"}</td>
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap max-w-[140px] truncate" title={labelOf(tr, "created") || ""}>
+                        {labelOf(tr, "created") || "—"}
+                      </td>
+                      <td className="px-4 py-3 text-slate-500 whitespace-nowrap max-w-[140px] truncate" title={labelOf(tr, "updated") || ""}>
+                        {labelOf(tr, "updated") || "—"}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {checkRoleAuth(view_warehouse_transfer) && (

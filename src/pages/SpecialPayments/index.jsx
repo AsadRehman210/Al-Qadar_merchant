@@ -11,11 +11,11 @@ import SearchInput from "components/SearchInput";
 import Button from "components/Button";
 import TableState from "components/TableState";
 import { SkeletonCards } from "components/Skeleton";
-import { tableRows, specialPaymentStatusFilterOptions } from "global/constant";
+import { tableRows, specialPaymentStatusFilterOptions, SP_STATUS_BADGE } from "global/constant";
 import { checkRoleAuth, formatAmount } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
-import { SP_STATUS_BADGE } from "global/constant";
 import { useListFilters } from "hooks/useListFilters";
+import { labelOf } from "components/AuditMeta";
 import {
   fetchSpecialPayments,
   fetchSpecialPaymentsSummary,
@@ -186,13 +186,13 @@ const SpecialPayments = () => {
             <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="bg-[var(--color-teal-500)]">
-                  {[t("payroll:sp_title"), t("payroll:sp_type"), t("payroll:sp_target"), t("payroll:sp_employees"), t("payroll:sp_total"), t("payroll:sp_per_employee"), t("payroll:sp_created"), t("payroll:status"), ""].map((h) => (
+                  {[t("payroll:sp_title"), t("payroll:sp_type"), t("payroll:sp_target"), t("payroll:sp_employees"), t("payroll:sp_total"), t("payroll:sp_per_employee"), t("payroll:sp_created"), t("payroll:status"), t("created_by"), t("updated_by"), ""].map((h) => (
                     <th key={h} className="px-4 py-4 text-start font-semibold text-white/95 text-sm whitespace-nowrap first:pl-5">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <TableState loading={loading} data={list} colSpan={9}>
+                <TableState loading={loading} data={list} colSpan={11}>
                 {list.map((p) => (
                   <tr key={p.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-teal-50 dark:hover:bg-teal-500/5 transition-colors">
                     <td className="px-4 py-4 pl-5">
@@ -211,6 +211,12 @@ const SpecialPayments = () => {
                     <td className="px-4 py-4 text-xs text-slate-500 dark:text-white/50">{p.createdAtLabel}</td>
                     <td className="px-4 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${SP_STATUS_BADGE[p.status] || ""}`}>{p.status}</span>
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(p, "created") || ""}>
+                      {labelOf(p, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(p, "updated") || ""}>
+                      {labelOf(p, "updated") || "—"}
                     </td>
                     <td className="px-4 py-4 pr-5">
                       <Link to={`/special-payments/details/${p.id}`} className="text-teal-600 hover:text-teal-700">

@@ -34,6 +34,7 @@ import onboardingSlice from "./slices/onboardingSlice";
 import offboardingSlice from "./slices/offboardingSlice";
 import financeSlice from "./slices/financeSlice";
 import assetSlice from "./slices/assetSlice";
+import assetPurchaseSlice from "./slices/assetPurchaseSlice";
 import analyticsSlice from "./slices/analyticsSlice";
 import categorySlice from "./slices/categorySlice";
 import productSlice from "./slices/productSlice";
@@ -103,6 +104,7 @@ const rootReducer = combineReducers({
   offboarding: offboardingSlice,
   finance: financeSlice,
   asset: assetSlice,
+  assetPurchase: assetPurchaseSlice,
   analytics: analyticsSlice,
   category: categorySlice,
   product: productSlice,

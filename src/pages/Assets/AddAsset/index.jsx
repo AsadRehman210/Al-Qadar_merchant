@@ -104,6 +104,7 @@ const AddAsset = () => {
   const insuranceTouched = (d) =>
     [d.insPolicyNo, d.insProvider, d.insStartDate, d.insExpiryDate, d.insPremium, d.insCoverage]
       .some((x) => String(x ?? "").trim() !== "");
+  const costLocked = Boolean(id && (existing?.acquisitionJournalEntryId || existing?.purchaseInvoiceId || existing?.assetPurchaseId));
   const purchaseDate = watch("purchaseDate");
   const insStartDate = watch("insStartDate");
   const requireIfInsurance = (v) => {
@@ -129,7 +130,7 @@ const AddAsset = () => {
       location: data.location || undefined,
       purchaseDate: data.purchaseDate || undefined,
       warrantyUntil: data.warrantyUntil || undefined,
-      purchaseCost: data.purchaseCost === "" ? undefined : parseFloat(data.purchaseCost),
+      purchaseCost: costLocked || data.purchaseCost === "" ? undefined : parseFloat(data.purchaseCost),
       currentValue: data.currentValue === "" ? undefined : parseFloat(data.currentValue),
       currency: (data.currency || "SAR").toUpperCase(),
       depreciationMethod: selDeprMethod?.id || "straight_line",
@@ -198,7 +199,7 @@ const AddAsset = () => {
             className="!h-11 !w-11 !min-w-11 !p-0 !rounded-md shrink-0 bg-white border border-slate-200 dark:bg-white/10 dark:border-white/20" iconClass="!text-lg" />
           <div className="flex-1 min-w-0">
             <h1 className="text-3xl font-bold">{id ? t("asset:edit_asset") : t("asset:add_asset")}</h1>
-            <p className="text-mutedForeground">{t("asset:assets_desc")}</p>
+            <p className="text-mutedForeground">{id ? t("asset:assets_desc") : t("asset:add_asset_vs_purchase")}</p>
           </div>
         </div>
 
@@ -252,8 +253,13 @@ const AddAsset = () => {
           <div className={sectionCls.replace("!border-l-[var(--color-teal-500)]", "!border-l-purple-500")}>
             <h3 className="text-base font-bold text-slate-800 dark:text-white mb-5">{t("asset:valuation_depreciation")}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div>
               <FormInput label={t("asset:purchase_cost")} name="purchaseCost" type="number" register={register} errors={errors}
-                placeholder="0" min={0.01} decimal decimalPlaces={3} maxLength={10} required />
+                placeholder="0" min={0.01} decimal decimalPlaces={3} maxLength={10} required disabled={costLocked} />
+              {costLocked && (
+                <p className="text-xs text-slate-400 dark:text-white/40 mt-1">{t("asset:cost_locked_hint")}</p>
+              )}
+              </div>
               <FormInput label={t("asset:current_value")} name="currentValue" type="number" register={register} errors={errors}
                 placeholder="0" min={0} decimal decimalPlaces={3} maxLength={10}
                 validate={(v) => {

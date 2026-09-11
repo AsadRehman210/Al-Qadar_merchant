@@ -12,6 +12,7 @@ import { useListFilters } from "hooks/useListFilters";
 import { fetchCreditNotes, showCreditNotes, showCreditNotesTotal, showCreditNotesLoading, clearCreditNotesList } from "store/slices/creditNoteSlice";
 import { checkRoleAuth } from "global/helper";
 import { alqadar_role_ids } from "global/alqadarRoles";
+import { labelOf } from "components/AuditMeta";
 
 const { view_sales_credit_note, add_sales_credit_note } = alqadar_role_ids;
 
@@ -72,13 +73,13 @@ const CreditNotes = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[var(--color-teal-500)]">
-                  {[t("sales:cn_number"), t("sales:customer"), t("sales:original_invoice"), t("sales:reason"), t("sales:date"), t("sales:warehouse"), t("sales:total"), t("sales:status"), ""].map((h) => (
+                  {[t("sales:cn_number"), t("sales:customer"), t("sales:original_invoice"), t("sales:reason"), t("sales:date"), t("sales:warehouse"), t("sales:total"), t("sales:status"), t("created_by"), t("updated_by"), ""].map((h) => (
                     <th key={h} className="px-4 py-3 text-start font-semibold text-white/90 text-xs">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                <TableState loading={loading} data={rows} colSpan={9}>
+                <TableState loading={loading} data={rows} colSpan={11}>
                 {rows.map((r) => (
                   <tr key={r.id} className="border-t border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer"
                     onClick={() => navigate(`/credit-notes/detail/${r.id}`)}>
@@ -91,6 +92,12 @@ const CreditNotes = () => {
                     <td className="px-4 py-3 font-semibold tabular-nums">{r.currency} {fmt(r.total)}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_BADGE[r.status] || ""}`}>{r.status}</span>
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(r, "created") || ""}>
+                      {labelOf(r, "created") || "—"}
+                    </td>
+                    <td className="px-4 py-4 align-middle text-slate-600 dark:text-white/90 whitespace-nowrap max-w-[140px] truncate" title={labelOf(r, "updated") || ""}>
+                      {labelOf(r, "updated") || "—"}
                     </td>
                     <td className="px-4 py-3 text-right">
                       <button type="button" onClick={(e) => { e.stopPropagation(); navigate(`/credit-notes/detail/${r.id}`); }}

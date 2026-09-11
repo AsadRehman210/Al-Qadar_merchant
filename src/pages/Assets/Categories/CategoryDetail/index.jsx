@@ -112,6 +112,14 @@ const CategoryDetail = () => {
                   : t("asset:inactive")}
               </dd>
             </div>
+            <div>
+              <dt className="text-mutedForeground">{t("created_by")}</dt>
+              <dd className="font-medium text-slate-800 dark:text-white/90 mt-1">{row.createdByName || "—"}</dd>
+            </div>
+            <div>
+              <dt className="text-mutedForeground">{t("updated_by")}</dt>
+              <dd className="font-medium text-slate-800 dark:text-white/90 mt-1">{row.updatedByName || "—"}</dd>
+            </div>
             <div className="sm:col-span-2">
               <dt className="text-mutedForeground">{t("asset:description")}</dt>
               <dd className="text-slate-700 dark:text-white/85 mt-1 whitespace-pre-wrap">

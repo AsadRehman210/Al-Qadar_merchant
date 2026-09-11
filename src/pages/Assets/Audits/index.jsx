@@ -21,6 +21,7 @@ import {
   showActiveAssetAuditLoading,
 } from "store/slices/assetSlice";
 import { SkeletonTable, SkeletonList } from "components/Skeleton";
+import { AuditLine } from "components/AuditMeta";
 
 const { add_asset_audit } = alqadar_role_ids;
 
@@ -186,6 +187,7 @@ const AssetAudits = () => {
                         {fmtDate(session.completedAt)} · {session.results.length} {t("asset:assets_title")}
                       </p>
                       <p className="text-xs text-slate-400">{t("asset:started_on")} {fmtDate(session.startedAt)}</p>
+                      <AuditLine record={session} className="mt-1" />
                     </div>
                     <div className="flex gap-3 text-xs font-semibold shrink-0">
                       <span className="flex items-center gap-1 text-emerald-600"><FiCheckCircle className="h-3.5 w-3.5" /> {verified}</span>

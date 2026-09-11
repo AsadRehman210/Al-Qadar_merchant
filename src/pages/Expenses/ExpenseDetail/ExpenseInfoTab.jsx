@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import Badge from "components/Badge";
 import { formatAmount, getStatusBadgeVariant, PANEL_CLASS } from "./expenseDetailUtils";
+import AuditMeta from "components/AuditMeta";
 
 const ExpenseInfoTab = ({ expense }) => {
   const { t } = useTranslation();

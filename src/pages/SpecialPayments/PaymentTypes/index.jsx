@@ -21,6 +21,7 @@ import {
   showSpecialPayments,
 } from "store/slices/payrollBatchSlice";
 import { SkeletonList } from "components/Skeleton";
+import { AuditLine } from "components/AuditMeta";
 
 const { view_special_payment_type, add_special_payment_type, edit_special_payment_type, delete_special_payment_type } = alqadar_role_ids;
 
@@ -270,6 +271,7 @@ const PaymentTypes = () => {
                   {/* Name + desc */}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-slate-900 dark:text-white">{type.name}</p>
+                    <AuditLine record={type} className="mt-0.5" />
                     {type.description && (
                       <p className="text-xs text-slate-500 dark:text-white/60 truncate mt-0.5">{type.description}</p>
                     )}

@@ -24,6 +24,7 @@ import {
 import { fetchEmployees, showEmployees } from "store/slices/employeeSlice";
 import { fetchDepartments, showDepartments } from "store/slices/departmentSlice";
 import { SkeletonDetail } from "components/Skeleton";
+import AuditMeta from "components/AuditMeta";
 
 const { view_special_payment, edit_special_payment } = alqadar_role_ids;
 
@@ -211,6 +212,9 @@ const SPDetail = () => {
               <p className={`font-bold text-sm ${c.cls}`}>{c.value}</p>
             </div>
           ))}
+        </div>
+        <div className="bg-white dark:bg-white/10 border border-slate-200 dark:border-white/20 rounded-2xl p-4 grid sm:grid-cols-2 gap-4">
+          <AuditMeta record={sp} />
         </div>
 
         {/* Approval trail */}

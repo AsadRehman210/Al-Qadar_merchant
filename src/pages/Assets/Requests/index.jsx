@@ -28,6 +28,7 @@ import {
 } from "store/slices/assetSlice";
 import { SkeletonCards } from "components/Skeleton";
 import EmptyState from "components/EmptyState";
+import { AuditLine } from "components/AuditMeta";
 
 const { add_asset_request, edit_asset_request, approve_asset_request } = alqadar_role_ids;
 
@@ -247,6 +248,7 @@ const AssetRequests = () => {
                       <p className="text-sm text-slate-500 dark:text-white/60 mt-1">
                         {r.categoryName || "—"} · {t("asset:requested_on")} {r.requestedDate ? String(r.requestedDate).slice(0, 10) : "—"}
                       </p>
+                      <AuditLine record={r} className="mt-1" />
                       {r.justification && <p className="text-sm text-slate-600 dark:text-white/70 mt-1">{r.justification}</p>}
                       {r.decidedBy && (
                         <p className="text-xs text-slate-400 mt-1">
